@@ -15,7 +15,8 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.models.base import Base, IdMixin, TimestampMixin
 
 DEFAULT_APPEARANCE = {"primary_color": "#0f766e", "position": "right", "launcher_label": "Ask us", "theme": "light"}
-DEFAULT_ESCALATION = {"enabled": True, "ask_email": True}
+# ticket_fallback: when nobody replies within wait_seconds, offer a form that opens a ticket (Phase 3).
+DEFAULT_ESCALATION = {"enabled": True, "ask_email": True, "ticket_fallback": True, "wait_seconds": 120, "fallback_form_id": None}
 
 
 class Chatbot(IdMixin, TimestampMixin, Base):
