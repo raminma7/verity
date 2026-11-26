@@ -1,0 +1,63 @@
+# Local stack: Postgres (with pgvector for Phase 2), Redis, Mailpit (catches every email), API, worker, web.
+# docker compose up --build   →  app http://localhost:3000 · email http://localhost:8025
+name: verity
+
+x-api-env: &api-env
+  VERITY_ENV: dev
+  VERITY_DATABASE_URL: postgresql+asyncpg://verity:verity@postgres:5432/verity
+  VERITY_REDIS_URL: redis://redis:6379/0
+  VERITY_APP_URL: http://localhost:3000
+  VERITY_ALLOWED_ORIGINS: '["http://localhost:3000"]'
+  VERITY_EMAIL_BACKEND: smtp
+  VERITY_SMTP_HOST: mailpit
+  VERITY_SMTP_PORT: "1025"
+  VERITY_ADMIN_EMAIL: ${VERITY_ADMIN_EMAIL:-admin@example.com}
+  VERITY_ADMIN_PASSWORD: ${VERITY_ADMIN_PASSWORD:-Admin-pass-123}
+  VERITY_SECRET_KEY: ${VERITY_SECRET_KEY:-ZGV2LW9ubHktc2VjcmV0LWtleS1jaGFuZ2UtbWUtMDA=}
+
+services:
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: verity
+      POSTGRES_PASSWORD: verity
+      POSTGRES_DB: verity
+    ports: ["5432:5432"]
+    volumes: [pgdata:/var/lib/postgresql/data]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U verity"]
+      interval: 3s
+      retries: 20
+
+  redis:
+    image: redis:7-alpine
+    ports: ["6379:6379"]
+
+  mailpit:
+    image: axllent/mailpit:v1.21
+    ports: ["8025:8025", "1025:1025"]
+
+  api:
+    build: apps/api
+    environment: *api-env
+    ports: ["8000:8000"]
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_started }
+
+  worker:
+    build: apps/api
+    command: python -m app.worker
+    environment: *api-env
+    depends_on: [api]
+
+  web:
+    build:
+      context: apps/web
+      args:
+        VERITY_API_URL: http://api:8000
+    ports: ["3000:3000"]
+    depends_on: [api]
+
+volumes:
+  pgdata:
