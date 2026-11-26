@@ -2,14 +2,14 @@
 
 AI customer support in one workspace: a knowledge base (RAG), an embeddable chatbot and a ticketing system, with email built in. The full product plan is in [`docs/product-plan.md`](docs/product-plan.md).
 
-This repository holds **Phases 1 and 2**: accounts, workspaces, roles, plans, subscriptions and the AI token quota (Phase 1), and the knowledge base, retrieval-augmented answers with citations, the embeddable chatbot with live handoff to people, and the Redis job queue (Phase 2).
+This repository holds **Phases 1 to 3**: accounts, workspaces, roles, plans, subscriptions and the AI token quota (Phase 1); the knowledge base, retrieval-augmented answers with citations, the embeddable chatbot with live handoff to people, and the Redis job queue (Phase 2); and ticket categories, tickets, the form builder, and chatbot forms that the AI offers and prefills and that open tickets (Phase 3).
 
 | Phase | Scope | State |
 |---|---|---|
 | 1 | Registration, email verification, auth, 2FA, workspaces, RBAC, plans, subscriptions, token quota, customer dashboard, system admin | **Done** |
 | 2 | Knowledge base, RAG, document processing, crawling, chatbot, live handoff, live token tracking | **Done** |
-| 3 | Form builder, chatbot forms that open tickets, ticket categories, ticket management | Next |
-| 4 | Email integration, spam detection, automatic replies, threading | |
+| 3 | Form builder, chatbot forms that open tickets, ticket categories, ticket management | **Done** |
+| 4 | Email integration, spam detection, automatic replies, threading | Next |
 | 5 | External API tools, routing, analytics, real payments (Stripe) | |
 
 ## Layout
@@ -22,10 +22,10 @@ docs/      product plan
 
 ### API (`apps/api`)
 
-- `app/routers/` — `auth`, `me`, `workspaces` (members, roles, invitations, audit), `billing`, `usage`, `admin`, `knowledge` (sources, retrieval settings, Test retrieval), `chatbots` (settings, conversations, replies, Ask), `widget` (the public chatbot API)
-- `app/services/` — `quota` (token reserve/settle), `subscriptions` (periods, renewals), `payments` (provider interface + mock), `permissions` (role catalogue), `email`, `audit`, `ingest/` (parsers, chunker, pipeline), `crawler`, `ai/` (Voyage embeddings, Claude generation, the `Meter` every AI call goes through), `rag` (hybrid retrieval, cited answers), `conversations` (answers and the handoff), `storage`
+- `app/routers/` — `auth`, `me`, `workspaces` (members, roles, invitations, audit), `billing`, `usage`, `admin`, `knowledge` (sources, retrieval settings, Test retrieval), `chatbots` (settings, conversations, replies, Ask, conversation → ticket), `widget` (the public chatbot API, including forms), `tickets` (categories, tickets, notes, replies), `forms` (the form builder)
+- `app/services/` — `quota` (token reserve/settle), `subscriptions` (periods, renewals), `payments` (provider interface + mock), `permissions` (role catalogue), `email`, `audit`, `ingest/` (parsers, chunker, pipeline), `crawler`, `ai/` (Voyage embeddings, Claude generation, the `Meter` every AI call goes through), `rag` (hybrid retrieval, cited answers), `conversations` (answers and the handoff), `tickets` (numbering, timeline, status, reopen on reply), `forms` (field definitions and value checks), `forms_ai` (form activation and prefill, and the handoff timeout), `storage`
 - `app/core/deps.py` — session auth, `workspace_context` (tenant resolution) and `require(...)` (permission and subscription checks)
-- `app/jobs/` + `app/worker.py` — the SAQ job queue on Redis: ingestion, crawls and deletions, plus cron jobs for website re-sync (every 15 minutes), renewals, stale token holds and audit retention (every 5 minutes)
+- `app/jobs/` + `app/worker.py` — the SAQ job queue on Redis: ingestion, crawls and deletions, the handoff check scheduled when a conversation is handed over, plus cron jobs for website re-sync (every 15 minutes), renewals, stale token holds and audit retention (every 5 minutes) and lost handoff checks (every minute)
 
 ### Web (`apps/web`)
 
@@ -33,6 +33,7 @@ docs/      product plan
 - `src/design/verity.css` is the design system's component stylesheet, unchanged. `src/components/ui.tsx` ports its components (Button, Badge, Field, Segmented, Switch, Icon…) to typed React with the same `vr-` classes.
 - `src/design/app.css` adds what the design system doesn't have yet (plan cards, usage meters, banners, tables, the app shell), built only from its tokens and rules: teal acts, lime marks evidence, no gradients, status always has a word.
 - `src/components/rag.tsx` ports the design system's Ask and Library components (QueryBar, AnswerCard, Citation, SourceCard, RelevanceMeter, PipelineTrace, DocumentRow, FileTag); the screens follow its AppLibrary, AppUpload, AppDocument, AppAsk, AppHistory and AppSettings layouts.
+- `src/components/chat-form.tsx` renders a chatbot form exactly as customers see it: the widget uses it, and so does the form builder's live preview. Tickets, the ticket detail, Forms and Settings → Tickets aren't in the design system yet, so they are built only from its tokens and rules (`app.css`, Phase 3 section).
 - `public/widget.js` is the one-line embed; `src/app/widget/[key]` is the chat that runs inside its iframe, and `src/middleware.ts` sets that page's `frame-ancestors` from the chatbot's authorized domains.
 - The browser only talks to Next; `/api/*` is proxied to FastAPI so the session cookie stays first-party.
 
@@ -61,6 +62,14 @@ docs/      product plan
 **Chatbot and widget.** Each chatbot has a name, logo, colour, position, theme, language, tone, welcome message, behaviour instructions, model (Claude Opus 5.5 by default; Sonnet 5.5 and Haiku 5.5 available), a no-answer message and a fallback message for when AI is unavailable (allowance used up, subscription lapsed, provider down or refusing). Sites embed one script tag; the chat runs in an iframe that only renders inside the chatbot's authorized domains (`frame-ancestors`), and the API refuses any call whose embedding origin isn't authorized. The plan's `chatbot_domains` limit counts domains across all chatbots. Visitors are anonymous: each conversation has a random token whose hash is stored. Widget calls are rate limited per visitor, IP and chatbot. Answers stream over server-sent events.
 
 **Live handoff.** A visitor can ask for a person at any time, and is offered one when the assistant can't answer. The conversation moves to "Needs a person", members who can reply are notified in the app and by email, and the assistant stays silent: new messages wait for the team. Agents reply from the dashboard (replying to an open conversation takes it over), the widget picks replies up within seconds, and resolving hands the conversation back to the assistant. `services/conversations.escalate()` is the single entry point, ready for Phase 3 to open a ticket. See "Human Handoff and Chatbot Forms" in the product plan.
+
+**Tickets.** Tickets come from chatbot forms, from agents turning a chat into a ticket, and from the team (manual); each has a `source`, and `email` is reserved for Phase 4. Numbers are per workspace (#1, #2…), taken with one `UPDATE … RETURNING`, so parallel tickets never share one. Statuses New → Open → Pending → Resolved → Closed follow a transition table on the server; assigning a new ticket or replying to it opens it. Only members whose role can work tickets can be assigned. Internal notes and every change go on the ticket's timeline; the customer never sees notes. Search covers subject, description, requester, form values and `#number`, with filters for status, priority, category, assignee and source. A customer's message in the chat lands on its ticket: Pending moves to Open, Resolved reopens when the workspace's `reopen_on_reply` is on, and Closed stays closed. Categories are created, renamed, archived and ordered per workspace (`tickets.configure`: Owner and Administrator); a category can't be archived while forms still use it.
+
+**Forms.** Forms have text, email, number, select, multi-select, date, long-text and checkbox fields, each required or optional with validation (lengths, patterns, ranges, number of choices, date limits). Definitions are checked when saved; submitted values are checked again on the server, and patterns run with a timeout. Each form maps to one ticket category and is offered by the chatbots linked to it. Changing fields bumps the form's version, and a ticket keeps the fields exactly as the customer saw them. Every workspace has a built-in "Contact the team" form (name, email, message) that must keep a required email.
+
+**Chatbot forms.** After each answer, the chatbot's own model reads the conversation and the conditions of the chatbot's forms ("the customer wants to return an order") and, when one clearly fits, offers that form in the chat as a `messages.kind = "form"` block. When the customer opens it, the model prefills the fields from what they said; every value is re-checked against its field, and consent checkboxes are never ticked for them. The customer reviews, edits and presses "Confirm and send"; **nothing is submitted without that click** (the API refuses a submission without `confirmed`). Both calls use structured outputs through the `Meter` (operations `form_activation` and `form_prefill`). Without AI (allowance used up, provider down), forms still work: nothing is offered on its own, customers can open forms themselves under "Leave a request", and prefill fills only the name and email the chat already has.
+
+**Handoff and forms together.** "Talk to a person" goes through `escalate()` as before. When the chatbot's ticket fallback is on, the email is no longer asked up front: `escalate()` schedules a check on the job queue, and if nobody from the team replies within the chatbot's wait (two minutes by default), the chat offers the workspace's form that fits the conversation, or the contact form. Sending it opens a ticket and the assistant takes the chat back with the ticket number. `escalate()` is still the single path: live handoff, a ticket from a form, and an agent's "Create ticket" on a conversation all go through it. Agents reply to a ticket in its chat, and resolving the ticket hands the chat back to the assistant.
 
 **Token tracking.** Every embedding (documents and questions) and every generation goes through `Meter`: reserve an estimate, call the provider, settle the real usage (or release the hold on any error, cancellation or disconnect). Usage is recorded per operation (`embedding`, `chat_response`, `kb_ask`) and model, including the model that actually answered when a server-side fallback ran.
 
@@ -99,11 +108,15 @@ In development, `POST /api/dev/simulate-usage` runs the real reserve → settle 
 ## Tests
 
 ```bash
-make test-api   # 124 API tests: Phase 1, plus parsers, chunker, crawler and SSRF guard, every plan limit (with parallel uploads), metering,
-                #   hybrid retrieval and citations, chatbot and widget, handoff, the Redis worker, roles and tenant isolation
+make test-api   # 191 API tests: Phase 1, plus parsers, chunker, crawler and SSRF guard, every plan limit (with parallel uploads), metering,
+                #   hybrid retrieval and citations, chatbot and widget, handoff, the Redis worker, roles and tenant isolation;
+                #   Phase 3: categories, every field type and rule, tickets and their workflow, search, reopen on reply, form
+                #   activation, prefill and confirmation, the handoff timeout (with a real worker), every role and tenant isolation
 make test-web   # lint, typecheck, production build
 make e2e        # Playwright: Phase 1 flows, plus upload → indexed → Ask with citations → chatbot on a customer site → handoff →
-                #   agent reply reaches the visitor → widget refused on an unauthorized site (needs `make worker` and fake providers)
+                #   agent reply reaches the visitor → widget refused on an unauthorized site; Phase 3: categories → form builder →
+                #   the chatbot offers and prefills a form → ticket → reopen on reply → the handoff fallback → chat to ticket
+                #   (needs `make worker` and fake providers)
 ```
 
 ## Decisions worth knowing
@@ -116,4 +129,6 @@ make e2e        # Playwright: Phase 1 flows, plus upload → indexed → Ask wit
 - **An iframe for the widget** — the customer's CSS and scripts can't touch it, it reuses the design system, and the browser itself enforces the authorized domains.
 - **Fake AI providers for tests, CI and e2e** — deterministic, free and offline, while the quota, queue, retrieval and citation code paths stay real.
 - **Mock payments** until Phase 5, behind the provider interface.
+- **Forms use the chatbot's own model** for activation and prefill, so one setting decides cost and quality for each chatbot. Each AI answer from a chatbot with forms is followed by one short classification call (citations and structured outputs can't share a request).
+- **A scheduled job plus a sweeper for the handoff timeout**: the job fires on time, the every-minute sweeper catches checks lost while no worker ran, and each escalation gets at most one offer.
 - **Model weights are business settings.** The seeded weights and list prices for the Claude 5.5 models and `voyage-4` are placeholders for admins to set under Admin → Model weights.
