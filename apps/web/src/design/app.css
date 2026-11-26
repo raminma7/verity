@@ -189,3 +189,108 @@ a.vr-btn { text-decoration: none; }
   .vr-title { font-size: 28px; line-height: 34px; }
   .vr-scrim { position: fixed; inset: 0; z-index: 25; background: rgba(0,0,0,.3); }
 }
+
+/* ---- Phase 2: knowledge base, Ask, chatbots, conversations, widget -------------------------------
+   Built from the design system's tokens and rules: teal acts, lime marks evidence (fill only), status
+   always carries a word, only the AnswerCard and QueryBar are raised. */
+
+.vr-docrow-head { background: var(--surface-sunken); padding-top: 10px; padding-bottom: 10px; }
+.vr-docrow-head > span:first-child { width: 34px; }
+.vr-docrow:last-child { border-bottom: 0; }
+.vr-docrow-name { color: var(--ink); text-decoration: none; }
+a.vr-docrow-name:hover { color: var(--brand); }
+.vr-docrow-sub { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vr-docrow-progress-indeterminate span { animation: vr-slide 1.4s ease-in-out infinite; }
+@keyframes vr-slide { 0% { transform: translateX(-100%); } 100% { transform: translateX(250%); } }
+@media (prefers-reduced-motion: reduce) { .vr-docrow-progress-indeterminate span { animation: none; width: 60% !important; } }
+@media (max-width: 720px) {
+  .vr-docrow { grid-template-columns: auto minmax(0, 1fr) auto; }
+  .vr-docrow-chunks, .vr-docrow-head > span:nth-child(3) { display: none; }
+  .vr-docrow-status { grid-column: 2; }
+}
+
+.vr-progress { display: block; height: 4px; border-radius: 999px; background: var(--surface-sunken); overflow: hidden; }
+.vr-progress > span { display: block; height: 100%; transition: width 300ms ease; }
+
+.vr-drop { display: flex; flex-direction: column; align-items: center; gap: var(--space-4); padding: 56px var(--space-6); border: 1.5px dashed var(--line-strong); border-radius: var(--radius-lg); background: var(--surface); text-align: center; cursor: pointer; transition: border-color 150ms, background 150ms; }
+.vr-drop:hover, .vr-drop.is-over { border-color: var(--brand); background: var(--brand-soft); }
+.vr-drop-tile { width: 56px; height: 56px; border-radius: 16px; display: grid; place-items: center; background: var(--highlight); color: var(--on-highlight); }
+
+.vr-doc-layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: var(--space-6); align-items: start; }
+.vr-paper { display: flex; flex-direction: column; gap: 2px; padding: var(--space-6); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md); }
+.vr-chunk { display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; text-align: left; font: inherit; color: var(--ink); background: transparent; border: 0; border-left: 3px solid transparent; border-radius: 0 var(--radius-sm) var(--radius-sm) 0; cursor: pointer; }
+.vr-chunk:hover { background: var(--surface-sunken); }
+.vr-chunk.is-on { background: var(--highlight-soft); border-left-color: var(--highlight); }
+.vr-chunk-id { font-size: 11px; line-height: 16px; color: var(--ink-muted); }
+.vr-chunk-text { white-space: pre-line; font-size: var(--text-answer-size); line-height: var(--text-answer-line); }
+
+.vr-ask { display: flex; gap: var(--space-8); align-items: flex-start; }
+.vr-ask-main { flex: 1; min-width: 0; max-width: 780px; display: flex; flex-direction: column; gap: var(--space-6); }
+.vr-rail { width: 360px; flex: none; display: flex; flex-direction: column; gap: var(--space-4); position: sticky; top: var(--space-6); max-height: calc(100vh - 48px); overflow-y: auto; }
+.vr-answer-selected .vr-answer { outline: 2px solid var(--brand-soft); outline-offset: 2px; }
+.vr-source { cursor: pointer; }
+a.vr-source-name { color: var(--ink); text-decoration: none; }
+a.vr-source-name:hover { color: var(--brand); text-decoration: underline; }
+.vr-event { display: flex; justify-content: space-between; gap: var(--space-3); padding: 8px 12px; font-size: 12px; line-height: 16px; color: var(--ink-muted); border-top: 1px dashed var(--line-strong); border-bottom: 1px dashed var(--line-strong); }
+.vr-agent-msg { display: flex; flex-direction: column; gap: 6px; padding: var(--space-4); border-radius: var(--radius-md); background: var(--brand-soft); border: 1px solid var(--line); }
+@media (max-width: 1100px) {
+  .vr-ask { flex-direction: column; }
+  .vr-rail { width: 100%; position: static; max-height: none; }
+  .vr-doc-layout { grid-template-columns: 1fr; }
+}
+
+.vr-bot-layout { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: var(--space-6); align-items: start; }
+@media (max-width: 1100px) { .vr-bot-layout { grid-template-columns: 1fr; } }
+.vr-textarea { height: auto; padding: 10px 12px; }
+.vr-textarea textarea { width: 100%; border: 0; outline: 0; resize: vertical; font: inherit; color: var(--ink); background: transparent; }
+.vr-color { width: 44px; height: 40px; padding: 2px; border: 1px solid var(--line-strong); border-radius: var(--radius-md); background: var(--surface); cursor: pointer; }
+.vr-slider { width: 100%; accent-color: var(--brand); }
+
+/* Widget, and its preview in the dashboard. --w-brand is the chatbot's own colour. */
+.vr-wpreview, .vr-widget { --w-brand: var(--brand); display: flex; flex-direction: column; background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow-pop); overflow: hidden; }
+.vr-wpreview { height: 420px; }
+.vr-wpreview-head, .vr-widget-head { display: flex; align-items: center; gap: 10px; padding: 14px 16px; background: var(--w-brand); color: #fff; }
+.vr-wpreview-head img, .vr-widget-head img { border-radius: 8px; object-fit: cover; background: #fff; }
+.vr-wpreview-dot { width: 10px; height: 10px; border-radius: 3px; background: var(--highlight); flex: none; }
+.vr-wpreview-body, .vr-widget-body { flex: 1; display: flex; flex-direction: column; gap: 10px; padding: 16px; overflow-y: auto; background: var(--ground); }
+.vr-wpreview-input { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; border-top: 1px solid var(--line); color: var(--ink-muted); font-size: 13px; }
+.vr-wpreview-send { width: 28px; height: 28px; border-radius: 999px; background: var(--w-brand); }
+.vr-wmsg { max-width: 85%; padding: 10px 14px; border-radius: 16px; font-size: 14px; line-height: 21px; overflow-wrap: anywhere; }
+.vr-wmsg.is-bot { align-self: flex-start; background: var(--surface); border: 1px solid var(--line); border-radius: 16px 16px 16px 6px; }
+.vr-wmsg.is-me { align-self: flex-end; background: var(--ink); color: var(--ground); border-radius: 16px 16px 6px 16px; white-space: pre-line; }
+.vr-wmsg.is-agent { align-self: flex-start; background: var(--brand-soft); border: 1px solid var(--line); border-radius: 16px 16px 16px 6px; white-space: pre-line; }
+.vr-wmsg-author { display: block; font-size: 11px; line-height: 16px; font-weight: 600; color: var(--ink-muted); }
+.vr-wmsg .vr-cite { margin-left: 3px; text-decoration: none; }
+.vr-wsources { display: flex; flex-direction: column; gap: 2px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); font-size: 12px; line-height: 17px; color: var(--ink-muted); }
+.vr-wsources a { color: var(--ink-muted); }
+.vr-wsources-label { font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 600; }
+.vr-wevent { align-self: center; max-width: 90%; text-align: center; font-size: 12px; line-height: 17px; color: var(--ink-muted); }
+.vr-wlauncher { display: inline-flex; align-items: center; gap: 8px; height: 48px; padding: 0 18px; border: 0; border-radius: 999px; background: var(--w-brand, var(--brand)); color: #fff; font: 500 14px/20px var(--font-sans); box-shadow: var(--shadow-pop); cursor: pointer; }
+.vr-wlauncher img { border-radius: 6px; }
+
+html:has(.vr-widget-root), body:has(.vr-widget-root) { background: transparent; min-height: 0; }
+.vr-widget-root { position: fixed; inset: 0; display: flex; align-items: flex-end; justify-content: flex-end; padding: 8px; }
+.vr-widget-root[data-position="left"] { justify-content: flex-start; }
+.vr-widget-root.is-open { padding: 0; }
+.vr-widget { width: 100%; height: 100%; border-radius: var(--radius-lg); }
+.vr-widget-head b { display: block; font-size: 15px; line-height: 20px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vr-widget-sub { display: block; font-size: 12px; line-height: 16px; opacity: 0.85; }
+.vr-widget-link { border: 1px solid rgba(255,255,255,0.5); background: transparent; color: #fff; border-radius: 999px; padding: 4px 10px; font: 500 12px/16px var(--font-sans); cursor: pointer; white-space: nowrap; }
+.vr-widget-x { display: grid; place-items: center; width: 30px; height: 30px; border: 0; border-radius: 8px; background: transparent; color: #fff; cursor: pointer; }
+.vr-widget-x:hover, .vr-widget-link:hover { background: rgba(255,255,255,0.15); }
+.vr-widget-chip { align-self: flex-start; border: 1px solid var(--line-strong); background: var(--surface); color: var(--ink); border-radius: 999px; padding: 6px 14px; font: 500 13px/18px var(--font-sans); cursor: pointer; }
+.vr-widget-chip:hover { border-color: var(--w-brand); color: var(--w-brand); }
+.vr-widget-email { display: flex; gap: 8px; }
+.vr-widget-email input { flex: 1; min-width: 0; height: 38px; padding: 0 12px; border: 1px solid var(--line-strong); border-radius: var(--radius-md); background: var(--surface); color: var(--ink); font: inherit; }
+.vr-widget-email button { height: 38px; padding: 0 14px; border: 0; border-radius: var(--radius-md); background: var(--w-brand); color: #fff; font: 500 13px/18px var(--font-sans); cursor: pointer; }
+.vr-widget-err { font-size: 12px; line-height: 17px; color: var(--danger); }
+.vr-widget-input { display: flex; align-items: flex-end; gap: 8px; padding: 10px 12px; border-top: 1px solid var(--line); background: var(--surface); }
+.vr-widget-input textarea { flex: 1; resize: none; max-height: 120px; border: 0; outline: 0; padding: 8px 4px; font: inherit; color: var(--ink); background: transparent; }
+.vr-widget-input button { flex: none; display: grid; place-items: center; width: 36px; height: 36px; border: 0; border-radius: 999px; background: var(--w-brand); color: #fff; cursor: pointer; }
+.vr-widget-input button:disabled { opacity: 0.45; cursor: default; }
+.vr-widget-foot { margin: 0; padding: 6px 12px 10px; font-size: 11px; line-height: 14px; text-align: center; color: var(--ink-muted); background: var(--surface); }
+.vr-typing { display: inline-flex; gap: 4px; }
+.vr-typing i { width: 6px; height: 6px; border-radius: 999px; background: var(--ink-muted); animation: vr-blink 1s infinite ease-in-out; }
+.vr-typing i:nth-child(2) { animation-delay: 0.15s; }
+.vr-typing i:nth-child(3) { animation-delay: 0.3s; }
+@keyframes vr-blink { 0%, 80%, 100% { opacity: 0.25; } 40% { opacity: 1; } }

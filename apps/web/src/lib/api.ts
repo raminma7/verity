@@ -49,7 +49,78 @@ function safeJson(text: string): unknown {
   }
 }
 
+async function upload<T>(path: string, file: File, field = "file"): Promise<T> {
+  const form = new FormData();
+  form.append(field, file);
+  let res: Response;
+  try {
+    res = await fetch(`/api${path}`, { method: "POST", credentials: "same-origin", body: form, cache: "no-store" });
+  } catch {
+    throw new ApiError(0, { code: "network", message: "Can't reach Verity. Check your connection and try again." });
+  }
+  const json = safeJson(await res.text());
+  if (!res.ok) {
+    const detail = json && typeof json === "object" && "detail" in json ? (json as { detail: unknown }).detail : null;
+    if (detail && typeof detail === "object") throw new ApiError(res.status, detail as Record<string, unknown>);
+    throw new ApiError(res.status, { code: "error", message: res.status === 413 ? "This file is too large." : "Upload failed." });
+  }
+  return json as T;
+}
+
+/**
+ * POSTs JSON and reads a server-sent event stream, calling onEvent for each event as it arrives.
+ * Errors before the stream starts are thrown as ApiError, like every other call.
+ */
+export async function streamEvents(
+  url: string,
+  body: unknown,
+  onEvent: (event: string, data: unknown) => void,
+  headers: Record<string, string> = {},
+  signal?: AbortSignal,
+): Promise<void> {
+  let res: Response;
+  try {
+    res = await fetch(url, {
+      method: "POST",
+      credentials: "same-origin",
+      headers: { "Content-Type": "application/json", Accept: "text/event-stream", ...headers },
+      body: JSON.stringify(body),
+      cache: "no-store",
+      signal,
+    });
+  } catch (e) {
+    if ((e as Error)?.name === "AbortError") return;
+    throw new ApiError(0, { code: "network", message: "Can't reach Verity. Check your connection and try again." });
+  }
+  if (!res.ok || !res.body) {
+    const json = safeJson(await res.text());
+    const detail = json && typeof json === "object" && "detail" in json ? (json as { detail: unknown }).detail : null;
+    throw new ApiError(res.status, (detail && typeof detail === "object" ? detail : { message: "Request failed." }) as Record<string, unknown>);
+  }
+  const reader = res.body.getReader();
+  const decoder = new TextDecoder();
+  let buf = "";
+  for (;;) {
+    const { value, done } = await reader.read();
+    if (done) break;
+    buf += decoder.decode(value, { stream: true });
+    let i: number;
+    while ((i = buf.indexOf("\n\n")) >= 0) {
+      const chunk = buf.slice(0, i);
+      buf = buf.slice(i + 2);
+      let event = "message";
+      let data = "";
+      for (const line of chunk.split("\n")) {
+        if (line.startsWith("event: ")) event = line.slice(7);
+        else if (line.startsWith("data: ")) data += line.slice(6);
+      }
+      onEvent(event, safeJson(data));
+    }
+  }
+}
+
 export const api = {
+  upload,
   get: <T>(path: string) => request<T>("GET", path),
   post: <T>(path: string, body: unknown = {}) => request<T>("POST", path, body),
   put: <T>(path: string, body: unknown) => request<T>("PUT", path, body),
@@ -143,3 +214,120 @@ export type UsageSummary =
       embedding_weighted: number;
       ai_available: boolean;
     };
+
+// ---- Knowledge base ------------------------------------------------------------------------------
+
+export type TraceStep = { name: string; detail?: string; ms?: number | null; state?: "done" | "running" | "pending" | "error" };
+
+export type Source = {
+  id: string;
+  kind: "file" | "website";
+  name: string;
+  status: "queued" | "processing" | "ready" | "failed";
+  error_code: string | null;
+  error_message: string | null;
+  notice: string | null;
+  chunk_count: number;
+  token_count: number;
+  steps: TraceStep[];
+  created_at: string;
+  updated_at: string;
+  processed_at: string | null;
+  file_type?: string;
+  size_bytes?: number;
+  root_url?: string;
+  domain?: string;
+  include_paths?: string[];
+  exclude_paths?: string[];
+  max_depth?: number;
+  sync_interval?: "off" | "daily" | "weekly";
+  last_synced_at?: string | null;
+  next_sync_at?: string | null;
+  page_count?: number;
+};
+
+export type KnowledgeStats = {
+  usage: { documents: number; domains: number; crawled_pages: number; storage_bytes: number };
+  limits: { documents: number; domains: number; crawled_pages: number; storage_mb: number };
+  by_status: Record<string, number>;
+  chunks: number;
+  max_upload_mb: number;
+};
+
+export type Citation = {
+  n: number;
+  chunk_id?: string;
+  source_id?: string;
+  title: string;
+  type: string;
+  url: string | null;
+  page: number | null;
+  section: string;
+  excerpt?: string;
+  cited_text: string;
+  score?: number;
+};
+
+export type ChatMessage = {
+  id: string;
+  role: "visitor" | "member" | "assistant" | "agent" | "system";
+  kind: "text" | "form" | "event";
+  content: string;
+  data: {
+    blocks?: { text: string; cites: number[] }[];
+    outcome?: "answered" | "no_answer" | "fallback";
+    sources?: { chunk_id: string; title: string; type: string; section: string; score: number; below_cutoff: boolean }[];
+    offer_escalation?: boolean;
+    event?: "escalated" | "agent_joined" | "resolved";
+    reason?: string;
+    name?: string;
+  };
+  citations: Citation[];
+  confidence?: "high" | "medium" | "low" | "none" | null;
+  is_fallback?: boolean;
+  model?: string | null;
+  latency_ms?: number | null;
+  trace?: TraceStep[];
+  author?: string | null;
+  created_at: string;
+};
+
+export type Conversation = {
+  id: string;
+  chatbot_id: string | null;
+  channel: "widget" | "dashboard";
+  status: "open" | "escalated" | "resolved";
+  title: string;
+  visitor_name: string | null;
+  visitor_email: string | null;
+  origin: string | null;
+  page_url: string | null;
+  escalated_at: string | null;
+  escalation_reason: string | null;
+  resolved_at: string | null;
+  message_count: number;
+  last_message_at: string | null;
+  created_at: string;
+  confidence?: string | null;
+};
+
+export type Chatbot = {
+  id: string;
+  name: string;
+  public_key: string;
+  allowed_domains: string[];
+  appearance: { primary_color: string; position: "left" | "right"; launcher_label: string; theme: "light" | "dark" | "auto" };
+  logo_url: string | null;
+  language: string;
+  tone: "friendly" | "professional" | "concise";
+  welcome_message: string;
+  instructions: string;
+  fallback_message: string;
+  no_answer_message: string;
+  model: string;
+  escalation: { enabled: boolean; ask_email: boolean };
+  status: "active" | "paused";
+  snippet?: string;
+  created_at: string;
+  updated_at: string;
+};
