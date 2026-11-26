@@ -78,3 +78,9 @@ jobs:
       - name: End-to-end tests
         working-directory: apps/web
         run: npm run test:e2e
+      - name: Server logs
+        if: failure()
+        run: |
+          echo "--- api.log"; tail -n 200 apps/api/api.log || true
+          echo "--- worker.log"; tail -n 200 apps/api/worker.log || true
+          echo "--- web.log"; tail -n 100 apps/web/web.log || true
