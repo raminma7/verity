@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { Badge, Banner, Button, Card, Field, PageHeader, Segmented, Select, Spinner, Switch } from "@/components/ui";
-import { api, errorText, type Chatbot } from "@/lib/api";
+import { api, errorText, type Chatbot, type ChatForm } from "@/lib/api";
 import { useSession } from "@/lib/session";
 import { useData } from "@/lib/use-data";
 
@@ -38,6 +38,7 @@ export default function ChatbotSettings() {
   const router = useRouter();
   const { can } = useSession();
   const data = useData<Chatbot>(`/chatbots/${id}`);
+  const forms = useData<ChatForm[]>("/forms");
   const [bot, setBot] = useState<Chatbot | null>(null);
   const [tab, setTab] = useState("behaviour");
   const [domains, setDomains] = useState("");
@@ -296,14 +297,46 @@ export default function ChatbotSettings() {
                 disabled={!manage}
               />
               <Switch
-                label="Ask for their email"
-                help="So the team can reach them if they leave before someone replies."
-                checked={bot.escalation.ask_email}
-                onChange={(v) => set("escalation", { ...bot.escalation, ask_email: v })}
+                label="Offer a ticket form if nobody replies"
+                help="If no one from the team answers in time, the chat offers the form that fits the conversation, or the contact form. Sending it opens a ticket and the assistant takes the chat back."
+                checked={bot.escalation.ticket_fallback ?? true}
+                onChange={(v) => set("escalation", { ...bot.escalation, ticket_fallback: v })}
                 disabled={!manage || !bot.escalation.enabled}
               />
+              {bot.escalation.ticket_fallback ?? true ? (
+                <div className="vr-form-row" style={{ marginTop: 12 }}>
+                  <Field
+                    label="Wait before offering it (seconds)"
+                    type="number"
+                    min={10}
+                    max={3600}
+                    className="vr-mono"
+                    value={bot.escalation.wait_seconds ?? 120}
+                    disabled={!manage || !bot.escalation.enabled}
+                    onChange={(e) => set("escalation", { ...bot.escalation, wait_seconds: Number(e.target.value) })}
+                  />
+                  <Select
+                    label="When no other form fits"
+                    value={bot.escalation.fallback_form_id ?? ""}
+                    disabled={!manage || !bot.escalation.enabled}
+                    onChange={(v) => set("escalation", { ...bot.escalation, fallback_form_id: v || null })}
+                    options={[{ value: "", label: "Contact the team (built in)" }, ...(forms.data ?? []).filter((x) => x.status === "active" && !x.is_contact).map((x) => ({ value: x.id, label: x.name }))]}
+                  />
+                </div>
+              ) : (
+                <Switch
+                  label="Ask for their email first"
+                  help="So the team can reach them if they leave before someone replies."
+                  checked={bot.escalation.ask_email}
+                  onChange={(v) => set("escalation", { ...bot.escalation, ask_email: v })}
+                  disabled={!manage || !bot.escalation.enabled}
+                />
+              )}
               <p className="vr-help" style={{ marginTop: 12 }}>
-                Members whose role can reply to conversations get an in-app and email notice. While someone has the conversation, the assistant stays quiet; resolving it hands it back.
+                Members whose role can reply to conversations get an in-app and email notice. While someone has the conversation, the assistant stays quiet; resolving it hands it back.{" "}
+                <Link className="vr-link" href="/forms">
+                  Manage forms →
+                </Link>
               </p>
             </Card>
           ) : null}
