@@ -278,9 +278,16 @@ export type ChatMessage = {
     outcome?: "answered" | "no_answer" | "fallback";
     sources?: { chunk_id: string; title: string; type: string; section: string; score: number; below_cutoff: boolean }[];
     offer_escalation?: boolean;
-    event?: "escalated" | "agent_joined" | "resolved";
+    event?: "escalated" | "agent_joined" | "resolved" | "ticket_created";
     reason?: string;
     name?: string;
+    /** kind "form": the form block offered in the chat. */
+    form?: FormBlock;
+    state?: "offered" | "submitted" | "dismissed";
+    ticket_number?: number;
+    notice?: "ticket_created";
+    custom?: boolean;
+    values?: Record<string, FormValue>;
   };
   citations: Citation[];
   confidence?: "high" | "medium" | "low" | "none" | null;
@@ -309,6 +316,7 @@ export type Conversation = {
   last_message_at: string | null;
   created_at: string;
   confidence?: string | null;
+  ticket_number?: number | null;
 };
 
 export type Chatbot = {
@@ -325,9 +333,93 @@ export type Chatbot = {
   fallback_message: string;
   no_answer_message: string;
   model: string;
-  escalation: { enabled: boolean; ask_email: boolean };
+  escalation: { enabled: boolean; ask_email: boolean; ticket_fallback?: boolean; wait_seconds?: number; fallback_form_id?: string | null };
   status: "active" | "paused";
   snippet?: string;
   created_at: string;
   updated_at: string;
+};
+
+// ---- Phase 3: forms and tickets -----------------------------------------------------------------
+
+export type FieldType = "text" | "email" | "number" | "select" | "multiselect" | "date" | "textarea" | "checkbox";
+export type FormValue = string | number | boolean | string[] | null;
+
+export type FormField = {
+  key: string;
+  label: string;
+  type: FieldType;
+  required: boolean;
+  help?: string;
+  placeholder?: string;
+  options: string[];
+  validation: { min_length?: number; max_length?: number; pattern?: string; min?: number | string; max?: number | string; integer?: boolean; min_selected?: number; max_selected?: number };
+};
+
+export type FormBlock = { form_id: string; version: number; title: string; description: string; fields: FormField[]; submit_label: string };
+
+export type ChatForm = {
+  id: string;
+  name: string;
+  description: string;
+  category_id: string;
+  category: string | null;
+  activation_condition: string;
+  status: "draft" | "active" | "archived";
+  fields: FormField[];
+  version: number;
+  submit_label: string;
+  success_message: string;
+  is_contact: boolean;
+  chatbot_ids: string[];
+  created_at: string;
+  updated_at: string;
+};
+
+export type TicketCategory = { id: string; name: string; description: string; position: number; archived: boolean; open_tickets: number };
+
+export type TicketStatus = "new" | "open" | "pending" | "resolved" | "closed";
+export type TicketPriority = "low" | "normal" | "high" | "urgent";
+
+export type Ticket = {
+  id: string;
+  number: number;
+  subject: string;
+  description: string;
+  status: TicketStatus;
+  priority: TicketPriority;
+  category_id: string | null;
+  category: string | null;
+  assignee_id: string | null;
+  assignee: string | null;
+  source: "chatbot_form" | "conversation" | "manual" | "email";
+  form_id: string | null;
+  conversation_id: string | null;
+  requester_name: string | null;
+  requester_email: string | null;
+  reopened_count: number;
+  resolved_at: string | null;
+  closed_at: string | null;
+  last_activity_at: string | null;
+  created_at: string;
+};
+
+export type TicketEvent = {
+  id: string;
+  kind: "created" | "customer_message" | "agent_reply" | "note" | "status" | "assignment" | "priority" | "category" | "reopened";
+  body: string;
+  data: Record<string, string | number | null | undefined>;
+  internal: boolean;
+  author: string | null;
+  created_at: string;
+};
+
+export type TicketDetail = {
+  ticket: Ticket;
+  form: { name: string | null; version: number | null; fields: { key: string; label: string; type: FieldType; value: FormValue }[] } | null;
+  events: TicketEvent[];
+  conversation: Conversation | null;
+  messages: ChatMessage[];
+  can_manage: boolean;
+  can_reply: boolean;
 };

@@ -294,3 +294,77 @@ html:has(.vr-widget-root), body:has(.vr-widget-root) { background: transparent; 
 .vr-typing i:nth-child(2) { animation-delay: 0.15s; }
 .vr-typing i:nth-child(3) { animation-delay: 0.3s; }
 @keyframes vr-blink { 0%, 80%, 100% { opacity: 0.25; } 40% { opacity: 1; } }
+
+/* ---- Phase 3: chatbot forms, tickets, form builder ------------------------------------------------
+   Same rules: the chatbot's colour (or teal) acts, lime stays for evidence, status carries a word, and only
+   the AnswerCard and QueryBar are raised; everything else sits on a line border. */
+
+/* A form block in the chat (also the builder's live preview). */
+.vr-wform-card { align-self: stretch; display: flex; flex-direction: column; gap: 8px; padding: 12px 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px 16px 16px 6px; font-size: 14px; line-height: 20px; }
+.vr-wform-card > b { font-weight: 600; }
+.vr-wform-card.is-done { align-self: flex-start; padding: 8px 12px; background: var(--surface-sunken); }
+.vr-wform-sub { color: var(--ink-muted); font-size: 13px; line-height: 19px; }
+.vr-wform { display: flex; flex-direction: column; gap: 12px; margin-top: 4px; }
+.vr-wform-note { margin: 0; font-size: 12px; line-height: 17px; color: var(--ink-muted); }
+.vr-wfield { display: flex; flex-direction: column; gap: 4px; }
+.vr-wlabel { font-size: 13px; line-height: 18px; font-weight: 500; color: var(--ink); padding: 0; }
+.vr-wopt { font-weight: 400; color: var(--ink-muted); }
+.vr-winput { width: 100%; min-height: 38px; padding: 8px 12px; border: 1px solid var(--line-strong); border-radius: var(--radius-md); background: var(--surface); color: var(--ink); font: inherit; font-size: 14px; }
+textarea.vr-winput { resize: vertical; }
+.vr-winput:focus-visible { outline: 2px solid var(--w-brand, var(--brand)); outline-offset: 1px; }
+.vr-wfield.is-error .vr-winput { border-color: var(--danger); }
+.vr-wfieldset { display: flex; flex-direction: column; gap: 6px; margin: 0; padding: 0; border: 0; }
+.vr-wcheck { display: flex; align-items: flex-start; gap: 8px; font-size: 14px; line-height: 20px; cursor: pointer; }
+.vr-wcheck input { margin-top: 3px; accent-color: var(--w-brand, var(--brand)); }
+.vr-whelp { font-size: 12px; line-height: 16px; color: var(--ink-muted); }
+.vr-werr { font-size: 12px; line-height: 16px; color: var(--danger); }
+.vr-wform-actions { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; }
+.vr-wbtn { display: inline-flex; align-items: center; gap: 6px; height: 36px; padding: 0 14px; border: 0; border-radius: var(--radius-md); background: var(--w-brand, var(--brand)); color: #fff; font: 500 13px/18px var(--font-sans); cursor: pointer; }
+.vr-wbtn:disabled { opacity: .6; cursor: default; }
+.vr-wbtn-ghost { height: 36px; padding: 0 12px; border: 1px solid var(--line-strong); border-radius: var(--radius-md); background: transparent; color: var(--ink); font: 500 13px/18px var(--font-sans); cursor: pointer; }
+.vr-wpick { display: flex; flex-wrap: wrap; gap: 6px; }
+
+/* Tickets list */
+.vr-filters { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; }
+.vr-filters > .vr-field { min-width: 160px; }
+.vr-filters .vr-grow { flex: 1 1 240px; max-width: 420px; }
+.vr-table a.vr-row-link { color: var(--ink); text-decoration: none; font-weight: 500; }
+.vr-table a.vr-row-link:hover { color: var(--brand); text-decoration: underline; }
+.vr-table td.vr-sub { color: var(--ink-muted); font-size: 13px; }
+.vr-num { font-family: var(--font-mono); font-variant-numeric: tabular-nums; color: var(--ink-muted); font-size: 13px; white-space: nowrap; }
+
+/* Ticket detail: timeline + properties rail */
+.vr-ticket { display: grid; grid-template-columns: minmax(0, 1fr) 340px; gap: var(--space-6); align-items: start; }
+.vr-timeline { display: flex; flex-direction: column; gap: var(--space-3); }
+.vr-tl-item { display: flex; flex-direction: column; gap: 6px; padding: var(--space-4); border-radius: var(--radius-md); border: 1px solid var(--line); background: var(--surface); }
+.vr-tl-item.is-customer { background: var(--surface); }
+.vr-tl-item.is-agent { background: var(--brand-soft); }
+.vr-tl-item.is-note { background: var(--surface-sunken); border-style: dashed; border-color: var(--line-strong); }
+.vr-tl-item p { margin: 0; white-space: pre-line; }
+.vr-tl-meta { display: flex; align-items: center; gap: 6px; font-size: 12px; line-height: 16px; color: var(--ink-muted); }
+.vr-tl-meta b { color: var(--ink); font-weight: 600; }
+.vr-composer { display: flex; flex-direction: column; gap: 10px; }
+.vr-props { display: flex; flex-direction: column; gap: var(--space-4); }
+.vr-convo { display: flex; flex-direction: column; gap: 10px; max-height: 560px; overflow-y: auto; }
+.vr-convo .vr-bubble { align-self: flex-end; }
+@media (max-width: 1100px) { .vr-ticket { grid-template-columns: 1fr; } }
+
+/* Categories */
+.vr-cat-row { display: flex; align-items: center; gap: 12px; padding: 12px var(--space-4); border-top: 1px solid var(--line); }
+.vr-cat-row:first-child { border-top: 0; }
+.vr-cat-row > span:first-child { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 2px; }
+.vr-cat-row.is-archived { color: var(--ink-muted); }
+
+/* Form builder: field list, editor, live preview */
+.vr-builder { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: var(--space-6); align-items: start; }
+.vr-fieldlist { display: flex; flex-direction: column; }
+.vr-fieldrow { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-top: 1px solid var(--line); cursor: pointer; background: var(--surface); text-align: left; font: inherit; color: var(--ink); border-left: 0; border-right: 0; border-bottom: 0; width: 100%; }
+.vr-fieldrow:first-child { border-top: 0; }
+.vr-fieldrow:hover { background: var(--surface-sunken); }
+.vr-fieldrow.is-on { background: var(--brand-soft); }
+.vr-fieldrow > span:nth-child(1) { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.vr-fieldrow small { color: var(--ink-muted); font-size: 12px; }
+.vr-options { display: flex; flex-direction: column; gap: 6px; }
+.vr-preview-frame { position: sticky; top: var(--space-6); }
+.vr-preview-frame .vr-wpreview { height: auto; min-height: 420px; }
+@media (max-width: 1100px) { .vr-builder { grid-template-columns: 1fr; } .vr-preview-frame { position: static; } }

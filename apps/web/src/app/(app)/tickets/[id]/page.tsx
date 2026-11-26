@@ -1,0 +1,327 @@
+"use client";
+
+import Link from "next/link";
+import { useParams } from "next/navigation";
+import { useEffect, useState } from "react";
+
+import { EventLine } from "@/components/chat";
+import { PriorityBadge, StatusBadge } from "@/components/tickets";
+import { Banner, Button, Card, dateTime, Icon, Segmented, Select, Spinner } from "@/components/ui";
+import { api, errorText, type ChatMessage, type TicketCategory, type TicketDetail, type TicketEvent } from "@/lib/api";
+import { PRIORITY, PRIORITY_ORDER, SOURCE, STATUS, STATUS_ORDER, showValue } from "@/lib/tickets";
+import { useData } from "@/lib/use-data";
+
+// Where each status may go; mirrors the API's transition table so only valid choices are offered.
+const NEXT: Record<string, string[]> = {
+  new: ["new", "open", "pending", "resolved", "closed"],
+  open: ["open", "pending", "resolved", "closed"],
+  pending: ["pending", "open", "resolved", "closed"],
+  resolved: ["resolved", "open", "closed"],
+  closed: ["closed", "open"],
+};
+
+export default function TicketPage() {
+  const { id } = useParams<{ id: string }>();
+  const data = useData<TicketDetail>(`/tickets/${id}`);
+  const cats = useData<TicketCategory[]>("/ticket-categories?include_archived=true");
+  const people = useData<{ id: string; name: string }[]>("/tickets/assignees");
+  const [mode, setMode] = useState<"reply" | "note">("note");
+  const [text, setText] = useState("");
+  const [busy, setBusy] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  const { reload } = data;
+
+  useEffect(() => {
+    if (data.data?.can_reply) setMode("reply");
+  }, [data.data?.can_reply]);
+  useEffect(() => {
+    const t = setInterval(reload, 10000);
+    return () => clearInterval(t);
+  }, [reload]);
+
+  if (data.loading && !data.data) return <Spinner />;
+  if (data.error || !data.data) return <Banner tone="danger">{data.error?.message ?? "Not found."}</Banner>;
+  const { ticket: t, form, events, messages, can_manage, can_reply } = data.data;
+  const catName = (cid: string | number | null | undefined) => cats.data?.find((c) => c.id === cid)?.name ?? "No category";
+  const personName = (pid: string | number | null | undefined) => (pid ? people.data?.find((p) => p.id === pid)?.name ?? "a former member" : "nobody");
+
+  async function change(patch: Record<string, unknown>) {
+    setBusy("props");
+    setErr(null);
+    try {
+      await api.patch(`/tickets/${id}`, patch);
+      await reload();
+    } catch (e) {
+      setErr(errorText(e));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  async function send(e: React.FormEvent) {
+    e.preventDefault();
+    if (!text.trim()) return;
+    setBusy("send");
+    setErr(null);
+    try {
+      await api.post(`/tickets/${id}/${mode === "reply" ? "reply" : "notes"}`, { text });
+      setText("");
+      await reload();
+    } catch (e2) {
+      setErr(errorText(e2));
+    } finally {
+      setBusy(null);
+    }
+  }
+
+  return (
+    <>
+      <div>
+        <Link className="vr-link" href="/tickets" style={{ fontSize: 13 }}>
+          ← Tickets
+        </Link>
+      </div>
+      <header style={{ display: "flex", alignItems: "flex-start", gap: 12, flexWrap: "wrap" }}>
+        <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 4 }}>
+          <span className="vr-eyebrow">
+            <span className="vr-mono">#{t.number}</span> · {SOURCE[t.source] ?? t.source} · opened {dateTime(t.created_at)}
+          </span>
+          <h1 className="vr-h" style={{ margin: 0 }}>
+            {t.subject}
+          </h1>
+        </div>
+        <PriorityBadge priority={t.priority} />
+        <StatusBadge status={t.status} />
+      </header>
+      {err ? <Banner tone="danger">{err}</Banner> : null}
+      <div className="vr-ticket">
+        <section className="vr-timeline" aria-label="Timeline">
+          {t.description ? (
+            <div className="vr-tl-item">
+              <span className="vr-tl-meta">
+                <b>Description</b>
+              </span>
+              <p>{t.description}</p>
+            </div>
+          ) : null}
+          {events.map((e) => (
+            <TimelineItem key={e.id} e={e} catName={catName} personName={personName} formName={form?.name ?? null} />
+          ))}
+          {can_manage ? (
+            <form className="vr-card vr-panel-body vr-composer" onSubmit={send}>
+              <Segmented
+                label="Write"
+                value={mode}
+                onChange={(v) => setMode(v as "reply" | "note")}
+                options={[...(can_reply ? [{ value: "reply", label: "Reply in the chat" }] : []), { value: "note", label: "Internal note" }]}
+              />
+              <span className="vr-input vr-textarea">
+                <textarea
+                  rows={4}
+                  value={text}
+                  aria-label={mode === "reply" ? "Reply to the customer" : "Internal note"}
+                  placeholder={mode === "reply" ? "Write to the customer. It appears in their chat within a few seconds." : "Only your team sees internal notes."}
+                  onChange={(e) => setText(e.target.value)}
+                />
+              </span>
+              <div className="vr-actions" style={{ justifyContent: "space-between" }}>
+                <span className="vr-help">
+                  {mode === "reply"
+                    ? "Replying takes the chat over: the assistant stays quiet until the ticket is resolved."
+                    : can_reply
+                      ? "The customer never sees internal notes."
+                      : "This ticket has no chat to reply in. Email replies arrive with the email integration."}
+                </span>
+                <Button type="submit" variant="primary" busy={busy === "send"} disabled={!text.trim() || (mode === "reply" && t.status === "closed")}>
+                  {mode === "reply" ? "Send reply" : "Add note"}
+                </Button>
+              </div>
+            </form>
+          ) : (
+            <p className="vr-muted" style={{ fontSize: 13 }}>
+              Your role can read tickets but not change them.
+            </p>
+          )}
+        </section>
+        <aside className="vr-props" aria-label="Ticket details">
+          <Card title="Properties">
+            <div className="vr-form">
+              <Select
+                label="Status"
+                value={t.status}
+                disabled={!can_manage || busy === "props"}
+                onChange={(v) => change({ status: v })}
+                options={STATUS_ORDER.filter((s) => NEXT[t.status].includes(s)).map((s) => ({ value: s, label: STATUS[s].label }))}
+              />
+              <Select
+                label="Priority"
+                value={t.priority}
+                disabled={!can_manage || busy === "props"}
+                onChange={(v) => change({ priority: v })}
+                options={PRIORITY_ORDER.map((p) => ({ value: p, label: PRIORITY[p].label }))}
+              />
+              <Select
+                label="Category"
+                value={t.category_id ?? ""}
+                disabled={!can_manage || busy === "props"}
+                onChange={(v) => change({ category_id: v || null })}
+                options={[
+                  { value: "", label: "No category" },
+                  ...(cats.data ?? []).filter((c) => !c.archived || c.id === t.category_id).map((c) => ({ value: c.id, label: c.archived ? `${c.name} (archived)` : c.name })),
+                ]}
+              />
+              <Select
+                label="Assignee"
+                value={t.assignee_id ?? ""}
+                disabled={!can_manage || busy === "props"}
+                onChange={(v) => change(v ? { assignee_id: v } : { unassign: true })}
+                options={[{ value: "", label: "Unassigned" }, ...(people.data ?? []).map((p) => ({ value: p.id, label: p.name }))]}
+              />
+            </div>
+          </Card>
+          <Card title="Requester">
+            <dl className="vr-kv" style={{ gridTemplateColumns: "90px 1fr" }}>
+              <dt>Name</dt>
+              <dd>{t.requester_name || "—"}</dd>
+              <dt>Email</dt>
+              <dd style={{ overflowWrap: "anywhere" }}>{t.requester_email || "—"}</dd>
+              {t.reopened_count ? (
+                <>
+                  <dt>Reopened</dt>
+                  <dd>{t.reopened_count}×</dd>
+                </>
+              ) : null}
+            </dl>
+          </Card>
+          {form ? (
+            <Card title={form.name ? `Submitted form · ${form.name}` : "Submitted form"}>
+              <dl className="vr-kv" style={{ gridTemplateColumns: "1fr" }} aria-label="Submitted form data">
+                {form.fields.map((f) => (
+                  <div key={f.key} style={{ display: "contents" }}>
+                    <dt>{f.label}</dt>
+                    <dd className={f.type === "number" ? "vr-mono" : undefined} style={{ marginBottom: 8, overflowWrap: "anywhere", whiteSpace: "pre-line" }}>
+                      {showValue(f.value)}
+                    </dd>
+                  </div>
+                ))}
+              </dl>
+              {form.version ? <p className="vr-help">Form version {form.version}, as the customer saw it.</p> : null}
+            </Card>
+          ) : null}
+          {data.data.conversation ? (
+            <Card
+              title="Chat conversation"
+              actions={
+                <Link className="vr-link" href={`/conversations/${data.data.conversation.id}`} style={{ fontSize: 13 }}>
+                  Open →
+                </Link>
+              }
+            >
+              <div className="vr-convo" aria-label="Conversation history">
+                {messages.map((m) => (
+                  <ConvoLine key={m.id} m={m} />
+                ))}
+              </div>
+            </Card>
+          ) : null}
+        </aside>
+      </div>
+    </>
+  );
+}
+
+function TimelineItem({
+  e,
+  catName,
+  personName,
+  formName,
+}: {
+  e: TicketEvent;
+  catName: (id: string | number | null | undefined) => string;
+  personName: (id: string | number | null | undefined) => string;
+  formName: string | null;
+}) {
+  const when = <span className="vr-mono">{dateTime(e.created_at)}</span>;
+  if (e.kind === "customer_message")
+    return (
+      <div className="vr-tl-item is-customer">
+        <span className="vr-tl-meta">
+          <b>Customer</b> wrote in the chat · {when}
+        </span>
+        <p>{e.body}</p>
+      </div>
+    );
+  if (e.kind === "agent_reply")
+    return (
+      <div className="vr-tl-item is-agent">
+        <span className="vr-tl-meta">
+          <b>{e.author ?? "Team"}</b> replied in the chat · {when}
+        </span>
+        <p>{e.body}</p>
+      </div>
+    );
+  if (e.kind === "note")
+    return (
+      <div className="vr-tl-item is-note">
+        <span className="vr-tl-meta">
+          <Icon name="lock" size={14} />
+          <b>Internal note</b> · {e.author ?? "Team"} · {when}
+        </span>
+        <p>{e.body}</p>
+      </div>
+    );
+  const who = e.author ?? "Verity";
+  const label = (s: unknown) => STATUS[s as keyof typeof STATUS]?.label ?? String(s);
+  const text =
+    e.kind === "created"
+      ? e.data.source === "chatbot_form"
+        ? `Opened from the chatbot form “${e.data.form ?? formName ?? "form"}”.`
+        : e.data.source === "conversation"
+          ? `${who} turned a chat conversation into this ticket.`
+          : `${who} opened this ticket.`
+      : e.kind === "status"
+        ? `${who} changed the status from ${label(e.data.from)} to ${label(e.data.to)}.`
+        : e.kind === "priority"
+          ? `${who} set the priority to ${PRIORITY[e.data.to as keyof typeof PRIORITY]?.label ?? e.data.to}.`
+          : e.kind === "category"
+            ? `${who} moved it to ${catName(e.data.to)}.`
+            : e.kind === "assignment"
+              ? e.data.to
+                ? `${who} assigned it to ${personName(e.data.to)}.`
+                : `${who} unassigned it.`
+              : e.kind === "reopened"
+                ? "Reopened: the customer replied."
+                : e.kind;
+  return (
+    <div className="vr-event" role="note">
+      <span>{text}</span>
+      {when}
+    </div>
+  );
+}
+
+function ConvoLine({ m }: { m: ChatMessage }) {
+  if (m.kind === "event") return <EventLine m={m} />;
+  if (m.kind === "form")
+    return (
+      <div className="vr-wform-card is-done">
+        <b>{m.data.form?.title ?? "Form"}</b>
+        <span className="vr-wform-sub">
+          {m.data.state === "submitted" ? `Sent · ticket #${m.data.ticket_number}` : m.data.state === "dismissed" ? "Closed by the customer" : "Offered, not sent yet"}
+        </span>
+      </div>
+    );
+  if (m.role === "visitor") return <div className="vr-bubble">{m.content}</div>;
+  if (m.role === "agent")
+    return (
+      <div className="vr-agent-msg">
+        <span className="vr-eyebrow">{m.author ?? "Team"}</span>
+        <p style={{ margin: 0, whiteSpace: "pre-line" }}>{m.content}</p>
+      </div>
+    );
+  return (
+    <div className="vr-wmsg is-bot" style={{ maxWidth: "100%" }}>
+      {m.content}
+    </div>
+  );
+}

@@ -108,6 +108,7 @@ function Conversations() {
                       {[c.visitor_email || c.visitor_name || "Anonymous visitor", c.origin?.replace(/^https?:\/\//, ""), `${c.message_count} messages`].filter(Boolean).join(" · ")}
                     </span>
                   </span>
+                  {c.ticket_number ? <span className="vr-num">Ticket #{c.ticket_number}</span> : null}
                   {c.confidence ? <ConfidenceBadge confidence={c.confidence as "high"} /> : null}
                   <StatusPill c={c} />
                   <span className="vr-mono vr-muted" style={{ fontSize: 12, width: 80, textAlign: "right" }}>

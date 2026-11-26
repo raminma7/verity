@@ -17,7 +17,8 @@ const PRODUCT: NavItem[] = [
   { href: "/knowledge", label: "Knowledge base", icon: "book", perm: "knowledge.read" },
   { href: "/chatbots", label: "Chatbots", icon: "chat", perm: "chatbots.read" },
   { href: "/conversations", label: "Conversations", icon: "clock", perm: "chatbots.read" },
-  { href: "/tickets", label: "Tickets", icon: "tag", soon: "Phase 3" },
+  { href: "/tickets", label: "Tickets", icon: "tag", perm: "tickets.read" },
+  { href: "/forms", label: "Forms", icon: "file", perm: "chatbots.read" },
   { href: "/inbox", label: "Email", icon: "mail", soon: "Phase 4" },
 ];
 
