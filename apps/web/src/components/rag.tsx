@@ -332,7 +332,7 @@ export function DocumentRow({
         )}
         <span className="vr-docrow-sub">{sub}</span>
       </span>
-      <span className="vr-docrow-chunks">{chunks ? `${chunks} chunks` : "—"}</span>
+      <span className="vr-docrow-chunks">{chunks ? `${chunks} chunk${chunks === 1 ? "" : "s"}` : "—"}</span>
       <span className="vr-docrow-status">
         <StatusBadge status={status} />
         {status === "indexing" ? (

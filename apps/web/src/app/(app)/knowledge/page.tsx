@@ -4,11 +4,18 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
 import { DocumentRow } from "@/components/rag";
-import { Banner, Button, EmptyState, Field, Icon, PageHeader, Segmented, Spinner, Stat, UsageMeter, fmt } from "@/components/ui";
+import { Banner, Button, EmptyState, Field, fmt, Icon, PageHeader, Segmented, Spinner, Stat } from "@/components/ui";
 import { api, errorText, type KnowledgeStats, type Source } from "@/lib/api";
 import { ACTIVE, docStatus, sourceSub } from "@/lib/knowledge";
+import { limitText } from "@/lib/limits";
 import { useSession } from "@/lib/session";
 import { useData } from "@/lib/use-data";
+
+function of(used: number, limit: number, noun: string) {
+  if (limit < 0) return `Unlimited ${noun}`;
+  const left = Math.max(0, limit - used);
+  return left === 0 ? `Plan limit of ${fmt(limit)} reached` : `${fmt(left)} of ${fmt(limit)} left on your plan`;
+}
 
 export default function KnowledgeBase() {
   const { can } = useSession();
@@ -78,22 +85,14 @@ export default function KnowledgeBase() {
 
       {st ? (
         <div className="vr-grid vr-grid-4">
-          <div className="vr-card" style={{ padding: 16 }}>
-            <Stat label="Documents" value={fmt(st.usage.documents)} />
-            <UsageMeter used={st.usage.documents} total={st.limits.documents} />
-          </div>
-          <div className="vr-card" style={{ padding: 16 }}>
-            <Stat label="Websites" value={fmt(st.usage.domains)} />
-            <UsageMeter used={st.usage.domains} total={st.limits.domains} />
-          </div>
-          <div className="vr-card" style={{ padding: 16 }}>
-            <Stat label="Crawled pages" value={fmt(st.usage.crawled_pages)} />
-            <UsageMeter used={st.usage.crawled_pages} total={st.limits.crawled_pages} />
-          </div>
-          <div className="vr-card" style={{ padding: 16 }}>
-            <Stat label="Storage" value={`${(st.usage.storage_bytes / 1024 / 1024).toFixed(1)} MB`} note={`${fmt(st.chunks)} searchable chunks`} />
-            <UsageMeter used={Math.round(st.usage.storage_bytes / 1024 / 1024)} total={st.limits.storage_mb} />
-          </div>
+          <Stat label="Documents" value={fmt(st.usage.documents)} note={of(st.usage.documents, st.limits.documents, "documents")} />
+          <Stat label="Websites" value={fmt(st.usage.domains)} note={of(st.usage.domains, st.limits.domains, "websites")} />
+          <Stat label="Crawled pages" value={fmt(st.usage.crawled_pages)} note={of(st.usage.crawled_pages, st.limits.crawled_pages, "pages")} />
+          <Stat
+            label="Storage"
+            value={`${(st.usage.storage_bytes / 1024 / 1024).toFixed(1)} MB`}
+            note={`${st.limits.storage_mb < 0 ? "Unlimited" : `of ${limitText("storage_mb", st.limits.storage_mb)}`} · ${fmt(st.chunks)} searchable chunk${st.chunks === 1 ? "" : "s"}`}
+          />
         </div>
       ) : null}
 
