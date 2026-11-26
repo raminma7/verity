@@ -1,38 +1,32 @@
-"""Background jobs: subscription renewals, stale token holds and audit retention.
+"""The background worker: a SAQ worker on Redis.
 
     python -m app.worker
 
-Phase 2 moves ingestion and crawling onto a proper queue; these periodic jobs stay here.
+Runs queued jobs (document ingestion, website crawls, deletions) and cron jobs (website re-sync,
+subscription renewals, stale token holds, audit retention). Run as many workers as you like: queued jobs
+are handed to one worker each, and cron jobs are de-duplicated across workers.
 """
 
 import asyncio
 import logging
 
-from app.core.db import SessionLocal
-from app.routers.admin import purge_audit
-from app.services import quota
-from app.services.subscriptions import renew_due
+from saq import CronJob, Worker
 
-log = logging.getLogger("verity.worker")
-INTERVAL = 300
+from app.jobs import get_queue
+from app.jobs.tasks import CRON, FUNCTIONS
 
 
-async def tick() -> None:
-    async with SessionLocal() as db:
-        renewed = await renew_due(db)
-        released = await quota.release_stale(db)
-        purged = await purge_audit(db)
-    log.info("renewals=%s released=%s purged=%s", renewed, released, purged)
+def build_worker(**kwargs) -> Worker:
+    by_name = {f.__name__: f for f in FUNCTIONS}
+    cron = [CronJob(by_name[name], cron=expr, timeout=1800) for name, expr in CRON]
+    return Worker(get_queue(), functions=FUNCTIONS, cron_jobs=cron, concurrency=kwargs.pop("concurrency", 4), **kwargs)
 
 
 async def main() -> None:
-    logging.basicConfig(level=logging.INFO)
-    while True:
-        try:
-            await tick()
-        except Exception:
-            log.exception("worker tick failed")
-        await asyncio.sleep(INTERVAL)
+    logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(name)s %(message)s")
+    worker = build_worker()
+    await worker.queue.connect()
+    await worker.start()  # stops cleanly on SIGINT / SIGTERM
 
 
 if __name__ == "__main__":

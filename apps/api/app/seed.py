@@ -73,10 +73,14 @@ PLANS = [
 
 MULTIPLIERS = [
     # model, operation, input weight, output weight, $ in /1M, $ out /1M
+    # Weights are what customers are charged in weighted tokens; admins tune them (and the provider cost
+    # columns, which only feed admin cost reports) under Admin → Model weights.
     ("claude-haiku-5-5", "*", 1.0, 5.0, 1.0, 5.0),
     ("claude-sonnet-5-5", "*", 3.0, 15.0, 3.0, 15.0),
     ("claude-opus-5-5", "*", 5.0, 25.0, 5.0, 25.0),
     ("text-embedding", "embedding", 0.1, 0.0, 0.1, 0.0),
+    ("voyage-4", "embedding", 0.1, 0.0, 0.1, 0.0),
+    ("fake-embedding", "embedding", 0.1, 0.0, 0.0, 0.0),
 ]
 
 

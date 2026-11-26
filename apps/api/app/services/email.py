@@ -136,3 +136,15 @@ async def send_payment_receipt(to: str, workspace: str, plan: str, amount: str, 
         f"Renews on: {period_end}\n\nBilling history:\n\n{url}",
         [url],
     )
+
+
+async def send_escalation(to: str, workspace: str, chatbot: str, question: str, conversation_id: str) -> None:
+    url = link(f"/conversations/{conversation_id}")
+    snippet = " ".join(question.split())[:300]
+    await send_email(
+        to,
+        f"A customer is waiting for a reply in {workspace}",
+        f"A conversation with {chatbot} was handed to your team. The assistant stays quiet until someone resolves it."
+        f"\n\nLast message from the customer:\n“{snippet}”\n\nReply here:\n\n{url}",
+        [url],
+    )

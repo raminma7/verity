@@ -35,6 +35,22 @@ Verity is an AI-powered SaaS customer support platform that integrates a knowled
 - Provide a dynamic form builder with customizable fields, AI-based activation conditions, and ticket category mapping.
 - Automatically prefill form fields using conversation context, subject to customer confirmation.
 
+### Human Handoff and Chatbot Forms
+
+The chatbot has two ways to bring a person into a conversation. They solve different problems and are designed to work together.
+
+| | Live handoff (Phase 2) | Chatbot form → ticket (Phase 3) |
+|---|---|---|
+| What it is | A team member takes over the live conversation from the AI. | A structured request, filled in inside the chat, that becomes a ticket. |
+| Trigger | The customer asks for a person, or the AI can't find an answer or is unavailable (for example, the token allowance is used up). | A form's AI activation condition matches the conversation (for example, a return request), or the customer chooses a form. |
+| Best for | Someone on the team is online; quick back-and-forth; urgent or unclear issues. | Nobody is online; work that needs follow-up over hours or days; requests that need specific data (order number, email) or routing to a category. |
+| AI behaviour | The AI stops replying until an agent resolves the conversation. | The AI prefills the form from the conversation; the customer confirms before submitting. |
+| Result | One conversation thread with agent replies (Open → Escalated → Resolved). | A ticket in the mapped category, with the form data and the conversation history. |
+
+- **How they work together:** when a customer escalates and no one replies, the chatbot offers the matching form so the request isn't lost. From Phase 3, an agent can also turn an escalated conversation into a ticket.
+- **Who can reply:** anyone whose role allows replying to conversations (by default Workspace Owner, Workspace Administrator and Support Agent), not only administrators.
+- **Prepared in Phase 2 so forms need no rework:** messages have a type (text, form or event), the widget renders messages as typed blocks, escalation runs through a single service that Phase 3 extends to create tickets, and the customer's name and email are stored on the conversation.
+
 ## 4. Ticketing System
 
 - Create and manage custom ticket categories.
@@ -123,7 +139,7 @@ Verity is an AI-powered SaaS customer support platform that integrates a knowled
 ## 8. Development Roadmap
 
 | Phase 1 | User registration, email verification, authentication, password recovery, customer dashboard, workspace management, RBAC, subscription plans, and quota management infrastructure |
-| Phase 2 | Knowledge base, RAG, document processing, website crawling, chatbot, and token tracking |
-| Phase 3 | Dynamic form builder, ticket categories, and ticket management |
+| Phase 2 | Knowledge base, RAG, document processing, website crawling, chatbot, live human handoff, and token tracking |
+| Phase 3 | Dynamic form builder, chatbot forms that create tickets, ticket categories, and ticket management |
 | Phase 4 | Email integration, spam detection, automatic responses, and email threading |
 | Phase 5 | External API integrations, intelligent routing, advanced analytics, payment processing, subscription purchases, automatic subscription activation, and subscription upgrades |

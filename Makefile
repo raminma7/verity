@@ -17,7 +17,7 @@ seed:             ## roles, default plans, model weights, first admin (VERITY_AD
 api:              ## API on :8000 (emails go to the in-memory outbox at /api/dev/outbox)
 	cd $(API) && VERITY_EMAIL_BACKEND=$${VERITY_EMAIL_BACKEND:-memory} .venv/bin/uvicorn app.main:app --reload --port 8000
 
-worker:           ## renewals, stale token holds, audit retention
+worker:           ## job queue: ingestion, crawls, re-sync, renewals, stale token holds, audit retention
 	cd $(API) && .venv/bin/python -m app.worker
 
 web:              ## web app on :3000

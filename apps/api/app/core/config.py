@@ -48,6 +48,37 @@ class Settings(BaseSettings):
 
     payment_provider: str = "mock"
 
+    # Background jobs: "saq" (Redis queue, run `python -m app.worker`) or "inline" (tests: run immediately).
+    queue: str = "saq"
+
+    # Uploaded files and chatbot logos. Local disk for now, behind app.services.storage.Storage.
+    storage_dir: str = "./storage"
+    max_upload_mb: int = 25
+
+    # AI providers: "anthropic" / "voyage" for real calls, "fake" for tests, CI and e2e (deterministic, no network).
+    llm_provider: str = "anthropic"
+    embedding_provider: str = "voyage"
+    anthropic_api_key: str | None = None
+    voyage_api_key: str | None = None
+    voyage_url: str = "https://api.voyageai.com/v1/embeddings"
+    embedding_model: str = "voyage-4"
+    default_chat_model: str = "claude-opus-5-5"
+    chat_models: list[str] = ["claude-opus-5-5", "claude-sonnet-5-5", "claude-haiku-5-5"]
+    llm_timeout_seconds: float = 60.0
+
+    # Website crawling
+    crawl_user_agent: str = "VerityBot/1.0 (+https://verity.local/bot)"
+    crawl_max_pages_per_run: int = 500
+    crawl_max_page_bytes: int = 5 * 1024 * 1024
+    crawl_timeout_seconds: float = 15.0
+    # Tests and local development may crawl a server on localhost. Never enable in production.
+    crawl_allow_private: bool = False
+
+    # Public chatbot widget rate limits
+    rl_widget_message: str = "20/60"  # per visitor
+    rl_widget_ip: str = "60/60"  # per IP
+    rl_widget_bot: str = "600/60"  # per chatbot
+
     @property
     def is_dev(self) -> bool:
         return self.env in ("dev", "test")

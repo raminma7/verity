@@ -9,6 +9,7 @@ import { useSession } from "@/lib/session";
 const PREFS = [
   { key: "usage_alerts", label: "AI usage alerts", help: "Email me when a workspace I manage reaches 80% and 90% of its token allowance." },
   { key: "billing", label: "Billing emails", help: "Receipts, renewals and failed payments for workspaces I manage." },
+  { key: "escalations", label: "Chatbot handoffs", help: "Email me when a chatbot conversation is handed to the team and is waiting for a reply." },
   { key: "product_updates", label: "Product updates", help: "Occasional news about new Verity features." },
 ];
 

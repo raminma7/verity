@@ -3,6 +3,11 @@ import os
 os.environ.setdefault("VERITY_DATABASE_URL", "postgresql+asyncpg://postgres:postgres@localhost:5432/verity_test")
 os.environ["VERITY_ENV"] = "test"
 os.environ["VERITY_EMAIL_BACKEND"] = "memory"
+os.environ["VERITY_QUEUE"] = "inline"
+os.environ["VERITY_LLM_PROVIDER"] = "fake"
+os.environ["VERITY_EMBEDDING_PROVIDER"] = "fake"
+os.environ.setdefault("VERITY_STORAGE_DIR", "/tmp/verity-test-storage")
+os.environ["VERITY_CRAWL_ALLOW_PRIVATE"] = "true"
 os.environ["VERITY_ADMIN_EMAIL"] = "root@example.org"
 os.environ["VERITY_ADMIN_PASSWORD"] = "Admin-pass-123"
 
@@ -27,6 +32,7 @@ PASSWORD = "Correct-horse-42"
 @pytest.fixture(scope="session", autouse=True)
 async def database():
     async with engine.begin() as conn:
+        await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
     await seed()

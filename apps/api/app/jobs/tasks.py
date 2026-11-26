@@ -1,0 +1,60 @@
+"""Job functions run by the worker. Each takes SAQ's `ctx` first and keyword arguments after."""
+
+import logging
+import uuid
+
+from app.core.db import SessionLocal
+from app.services import quota
+from app.services.subscriptions import renew_due
+
+log = logging.getLogger("verity.jobs")
+
+
+async def maintenance(ctx) -> dict:
+    """Subscription renewals, stale token holds and audit retention (every 5 minutes)."""
+    from app.routers.admin import purge_audit
+
+    async with SessionLocal() as db:
+        renewed = await renew_due(db)
+        released = await quota.release_stale(db)
+        purged = await purge_audit(db)
+    log.info("renewals=%s released=%s purged=%s", renewed, released, purged)
+    return {"renewed": renewed, "released": released, "purged": purged}
+
+
+def _final_attempt(ctx) -> bool:
+    job = ctx.get("job") if ctx else None
+    return job is None or job.attempts >= job.retries
+
+
+async def ingest_source(ctx, *, source_id: str, version: int) -> None:
+    from app.services.ingest.pipeline import ingest_file
+
+    await ingest_file(uuid.UUID(source_id), version, final_attempt=_final_attempt(ctx))
+
+
+async def crawl_source(ctx, *, source_id: str, version: int) -> None:
+    from app.services.ingest.pipeline import crawl_website
+
+    await crawl_website(uuid.UUID(source_id), version, final_attempt=_final_attempt(ctx))
+
+
+async def remove_source(ctx, *, source_id: str) -> None:
+    from app.services.ingest.pipeline import delete_source
+
+    await delete_source(uuid.UUID(source_id))
+
+
+async def sync_websites(ctx) -> int:
+    """Queues every website whose periodic re-sync is due (every 15 minutes)."""
+    from app.jobs import enqueue
+    from app.services.ingest.pipeline import due_websites
+
+    due = await due_websites()
+    for source_id, version in due:
+        await enqueue("crawl_source", key=f"crawl:{source_id}:{version}", job_timeout=3600, source_id=str(source_id), version=version)
+    return len(due)
+
+
+FUNCTIONS = [maintenance, ingest_source, crawl_source, remove_source, sync_websites]
+CRON = [("maintenance", "*/5 * * * *"), ("sync_websites", "*/15 * * * *")]

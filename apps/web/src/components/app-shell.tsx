@@ -13,8 +13,10 @@ type NavItem = { href: string; label: string; icon: IconName; perm?: string; soo
 
 const PRODUCT: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: "home" },
-  { href: "/knowledge", label: "Knowledge base", icon: "book", soon: "Phase 2" },
-  { href: "/chatbots", label: "Chatbots", icon: "chat", soon: "Phase 2" },
+  { href: "/ask", label: "Ask", icon: "spark", perm: "knowledge.read" },
+  { href: "/knowledge", label: "Knowledge base", icon: "book", perm: "knowledge.read" },
+  { href: "/chatbots", label: "Chatbots", icon: "chat", perm: "chatbots.read" },
+  { href: "/conversations", label: "Conversations", icon: "clock", perm: "chatbots.read" },
   { href: "/tickets", label: "Tickets", icon: "tag", soon: "Phase 3" },
   { href: "/inbox", label: "Email", icon: "mail", soon: "Phase 4" },
 ];
