@@ -27,6 +27,7 @@ PASSWORD = "Correct-horse-42"
 @pytest.fixture(scope="session", autouse=True)
 async def database():
     async with engine.begin() as conn:
+        await conn.execute(text("CREATE EXTENSION IF NOT EXISTS vector"))
         await conn.run_sync(Base.metadata.drop_all)
         await conn.run_sync(Base.metadata.create_all)
     await seed()
