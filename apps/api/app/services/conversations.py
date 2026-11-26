@@ -1,14 +1,19 @@
-"""Conversations: visitor and member messages, AI answers, and the live handoff to people.
+"""Conversations: visitor and member messages, AI answers, and handing a conversation to the team.
 
     open ──(escalate: visitor asks, no answer, AI unavailable; or an agent replies)──▶ escalated
     escalated ──(agent resolves)──▶ resolved ──(visitor writes again)──▶ open
+    escalated ──(nobody replies within wait_seconds)──▶ a form is offered in the chat
+    any ──(visitor submits a form: escalate(ticket=…, live=False, hand_back=True))──▶ open, with a ticket
 
 While a conversation is escalated the AI never answers; visitor messages wait for an agent. `escalate()` is
-the single entry point for handing a conversation to the team, so Phase 3 can extend it to open a ticket.
+the single entry point for handing a conversation to the team: live (a person takes over), as a ticket
+(from a chatbot form or an agent's conversion), or both.
 """
 
+import time
 import uuid
 from collections.abc import AsyncIterator
+from dataclasses import dataclass
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -54,6 +59,10 @@ def message_out(m: Message) -> dict:
     }
 
 
+# What the widget may see of a message's data. Never prefill values, usage ids or ticket ids.
+PUBLIC_DATA = ("blocks", "event", "offer_escalation", "form", "state", "reason", "ticket_number", "notice", "errors")
+
+
 def public_message_out(m: Message, author: str | None = None) -> dict:
     """What a visitor sees: no models, traces or token counts."""
     return {
@@ -61,7 +70,7 @@ def public_message_out(m: Message, author: str | None = None) -> dict:
         "role": m.role,
         "kind": m.kind,
         "content": m.content,
-        "data": {k: v for k, v in (m.data or {}).items() if k in ("blocks", "event", "offer_escalation")},
+        "data": {k: v for k, v in (m.data or {}).items() if k in PUBLIC_DATA},
         "citations": [{k: c.get(k) for k in ("n", "title", "type", "url", "page", "section", "cited_text")} for c in m.citations],
         "author": author,
         "created_at": m.created_at,
@@ -136,6 +145,12 @@ async def ask(db: AsyncSession, conv: Conversation, text: str, *, role: str, ope
         conv.status = "open"
         conv.resolved_at = None
     question = add_message(db, conv, role, text[:MAX_MESSAGE_CHARS])
+    if role == "visitor":
+        from app.services import tickets as tk
+
+        ticket = await tk.open_ticket_for(db, conv.id)
+        if ticket is not None:
+            await tk.customer_replied(db, ticket, text)
     await db.commit()
     yield {"type": "message", "message": question}
     if conv.status == "escalated":
@@ -173,13 +188,28 @@ async def ask(db: AsyncSession, conv: Conversation, text: str, *, role: str, ope
     )
     await db.commit()
     yield {"type": "message", "message": reply}
+    if conv.channel == "widget" and final["outcome"] in ("answered", "no_answer"):
+        from app.services import forms_ai
+
+        form = await forms_ai.maybe_offer(db, conv)
+        if form is not None:
+            yield {"type": "message", "message": form}
 
 
-async def responders(db: AsyncSession, workspace_id: uuid.UUID) -> list[User]:
+async def responders(db: AsyncSession, workspace_id: uuid.UUID, permission: str = "conversations.reply") -> list[User]:
     rows = (
         await db.execute(select(Membership, User).join(User, User.id == Membership.user_id).where(Membership.workspace_id == workspace_id))
     ).all()
-    return [u for m, u in rows if "conversations.reply" in m.role.permissions and u.status == "active"]
+    return [u for m, u in rows if permission in m.role.permissions and u.status == "active"]
+
+
+@dataclass
+class EscalationResult:
+    escalated: bool  # the conversation was newly handed to people live
+    ticket: object | None = None  # app.models.Ticket
+
+    def __bool__(self) -> bool:
+        return self.escalated
 
 
 async def escalate(
@@ -191,47 +221,114 @@ async def escalate(
     name: str | None = None,
     actor_id: uuid.UUID | None = None,
     ip: str | None = None,
-) -> bool:
-    """Hands the conversation to the team. Returns False if people already have it."""
+    ticket=None,
+    live: bool = True,
+    hand_back: bool = False,
+) -> EscalationResult:
+    """Hands the conversation to the team.
+
+    live: people take the conversation over (the AI goes quiet) and are notified; if the chatbot's ticket
+    fallback is on, a check is scheduled to offer a form when nobody replies within `wait_seconds`.
+    ticket (a services.tickets.TicketSpec): also opens a ticket linked to this conversation and notifies
+    the people who work tickets.
+    hand_back: after a ticket from a chatbot form, the assistant takes the chat back and tells the customer
+    their ticket number.
+    """
+    from app.services import tickets as tk
+
     if email:
         conv.visitor_email = email.strip().lower()[:320]
     if name:
         conv.visitor_name = " ".join(name.split())[:120]
-    if conv.status == "escalated":
-        await db.commit()
-        return False
-    conv.status = "escalated"
-    conv.escalated_at = utcnow()
-    conv.escalation_reason = reason
-    conv.resolved_at = None
-    add_message(db, conv, "system", "", kind="event", data={"event": "escalated", "reason": reason})
     ws = await db.get(Workspace, conv.workspace_id)
     bot = await db.get(Chatbot, conv.chatbot_id) if conv.chatbot_id else None
-    db.add(
-        Notification(
-            workspace_id=ws.id,
-            kind="conversation_escalated",
-            title="A customer is waiting for a reply",
-            body=(conv.title or "New conversation")[:300],
-            data={"conversation_id": str(conv.id)},
-            created_at=utcnow(),
+    result = EscalationResult(escalated=False)
+
+    if ticket is not None:
+        ticket.requester_email = ticket.requester_email or conv.visitor_email
+        ticket.requester_name = ticket.requester_name or conv.visitor_name
+        t = await tk.create(db, ws.id, ticket, ip=ip)
+        t.conversation_id = conv.id
+        result.ticket = t
+        add_message(db, conv, "system", "", kind="event", data={"event": "ticket_created", "ticket_number": t.number, "reason": reason})
+        db.add(
+            Notification(
+                workspace_id=ws.id,
+                kind="ticket_created",
+                title=f"New ticket #{t.number}",
+                body=t.subject[:300],
+                data={"ticket_id": str(t.id), "conversation_id": str(conv.id)},
+                created_at=utcnow(),
+            )
         )
-    )
-    audit(
-        db,
-        "conversation.escalated",
-        actor_id=actor_id,
-        workspace_id=ws.id,
-        target_type="conversation",
-        target_id=conv.id,
-        ip=ip,
-        reason=reason,
-    )
+        if hand_back:
+            if conv.status == "escalated":
+                conv.status = "open"
+                conv.resolved_at = None
+            form = ticket.form
+            add_message(
+                db,
+                conv,
+                "assistant",
+                (getattr(form, "success_message", "") or "").strip()
+                or f"Your request is registered as ticket #{t.number}. Someone from our support team will contact you soon.",
+                data={"notice": "ticket_created", "ticket_number": t.number, "custom": bool(getattr(form, "success_message", ""))},
+            )
+
+    if live:
+        if conv.status == "escalated":
+            await db.commit()
+            return result
+        conv.status = "escalated"
+        conv.escalated_at = utcnow()
+        conv.escalation_reason = reason
+        conv.resolved_at = None
+        add_message(db, conv, "system", "", kind="event", data={"event": "escalated", "reason": reason})
+        db.add(
+            Notification(
+                workspace_id=ws.id,
+                kind="conversation_escalated",
+                title="A customer is waiting for a reply",
+                body=(conv.title or "New conversation")[:300],
+                data={"conversation_id": str(conv.id)},
+                created_at=utcnow(),
+            )
+        )
+        audit(
+            db,
+            "conversation.escalated",
+            actor_id=actor_id,
+            workspace_id=ws.id,
+            target_type="conversation",
+            target_id=conv.id,
+            ip=ip,
+            reason=reason,
+        )
+        result.escalated = True
     await db.commit()
-    for u in await responders(db, ws.id):
-        if u.notification_prefs.get("escalations", True):
-            await mail.send_escalation(u.email, ws.name, bot.name if bot else "the assistant", conv.title, str(conv.id))
-    return True
+
+    if result.escalated:
+        for u in await responders(db, ws.id):
+            if u.notification_prefs.get("escalations", True):
+                await mail.send_escalation(u.email, ws.name, bot.name if bot else "the assistant", conv.title, str(conv.id))
+        esc = (bot.escalation if bot else {}) or {}
+        if bot is not None and conv.channel == "widget" and esc.get("ticket_fallback", True):
+            from app.jobs import enqueue
+
+            wait = int(esc.get("wait_seconds", 120))
+            await enqueue(
+                "handoff_check",
+                key=f"handoff:{conv.id}:{conv.escalated_at.timestamp():.0f}",
+                scheduled=int(time.time()) + wait,
+                conversation_id=str(conv.id),
+                escalated_at=conv.escalated_at.isoformat(),
+            )
+    if result.ticket is not None:
+        t = result.ticket
+        for u in await responders(db, ws.id, "tickets.manage"):
+            if u.notification_prefs.get("tickets", True):
+                await mail.send_ticket_created(u.email, ws.name, t.number, t.subject, str(t.id))
+    return result
 
 
 async def agent_reply(db: AsyncSession, conv: Conversation, user: User, text: str, *, ip: str | None = None, ticket=None) -> Message:

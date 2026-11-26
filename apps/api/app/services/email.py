@@ -148,3 +148,13 @@ async def send_escalation(to: str, workspace: str, chatbot: str, question: str, 
         f"\n\nLast message from the customer:\n“{snippet}”\n\nReply here:\n\n{url}",
         [url],
     )
+
+
+async def send_ticket_created(to: str, workspace: str, number: int, subject: str, ticket_id: str) -> None:
+    url = link(f"/tickets/{ticket_id}")
+    await send_email(
+        to,
+        f"New ticket #{number} in {workspace}",
+        f"A customer opened ticket #{number}:\n\n“{' '.join(subject.split())[:300]}”\n\nOpen it here:\n\n{url}",
+        [url],
+    )

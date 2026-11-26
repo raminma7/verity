@@ -40,6 +40,8 @@ class TicketSpec:
     requester_name: str | None = None
     requester_email: str | None = None
     form: object | None = None  # app.models.Form
+    form_fields: list | None = None  # the fields the customer saw (defaults to the form's current fields)
+    form_version: int | None = None
     form_data: dict = field(default_factory=dict)
     created_by: uuid.UUID | None = None
 
@@ -129,8 +131,8 @@ async def create(db: AsyncSession, workspace_id: uuid.UUID, spec: TicketSpec, *,
         assignee_id=spec.assignee_id,
         source=spec.source,
         form_id=form.id if form else None,
-        form_version=form.version if form else None,
-        form_snapshot=list(form.fields) if form else [],
+        form_version=(spec.form_version or form.version) if form else None,
+        form_snapshot=list(spec.form_fields if spec.form_fields is not None else form.fields) if form else [],
         form_data=spec.form_data,
         requester_name=(" ".join(spec.requester_name.split())[:120] or None) if spec.requester_name else None,
         requester_email=spec.requester_email.strip().lower()[:320] if spec.requester_email else None,
