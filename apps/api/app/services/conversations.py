@@ -234,8 +234,19 @@ async def escalate(
     return True
 
 
-async def agent_reply(db: AsyncSession, conv: Conversation, user: User, text: str, *, ip: str | None = None) -> Message:
-    """A person answers. Replying takes the conversation over: the AI stays quiet until it's resolved."""
+async def agent_reply(db: AsyncSession, conv: Conversation, user: User, text: str, *, ip: str | None = None, ticket=None) -> Message:
+    """A person answers. Replying takes the conversation over: the AI stays quiet until it's resolved.
+
+    When the conversation has an open ticket (or `ticket` is given), the reply is also added to its timeline.
+    """
+    from app.services import tickets as tk
+
+    ticket = ticket or await tk.open_ticket_for(db, conv.id)
+    if ticket is not None and ticket.status != "closed":
+        tk.add_event(db, ticket, "agent_reply", text[:MAX_MESSAGE_CHARS], author_id=user.id)
+        if ticket.status == "new":
+            tk.set_status(db, ticket, "open", actor_id=user.id)
+        ticket.assignee_id = ticket.assignee_id or user.id
     if conv.status != "escalated":
         conv.status = "escalated"
         conv.escalated_at = conv.escalated_at or utcnow()

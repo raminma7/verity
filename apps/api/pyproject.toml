@@ -25,6 +25,7 @@ dependencies = [
   "trafilatura>=2.4",
   "python-multipart>=0.0.20",
   "charset-normalizer>=3.4",
+  "regex>=2024.11",
 ]
 
 [dependency-groups]
