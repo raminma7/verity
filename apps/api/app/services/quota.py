@@ -157,6 +157,14 @@ async def settle(
     return event
 
 
+async def retarget(db: AsyncSession, reservation_id: uuid.UUID, model: str) -> None:
+    """Records the model that actually answered (a server-side fallback), so settle uses its weights."""
+    await db.execute(
+        text("UPDATE token_reservations SET model = :model WHERE id = :id AND status = 'held'"), {"id": reservation_id, "model": model}
+    )
+    await db.commit()
+
+
 async def release(db: AsyncSession, reservation_id: uuid.UUID) -> bool:
     res = await _claim(db, reservation_id, "released")
     if res is None:
