@@ -7,7 +7,7 @@ from sqlalchemy.orm import Mapped, mapped_column
 
 from app.models.base import Base, IdMixin, TimestampMixin
 
-DEFAULT_NOTIFICATIONS = {"usage_alerts": True, "billing": True, "product_updates": False}
+DEFAULT_NOTIFICATIONS = {"usage_alerts": True, "billing": True, "escalations": True, "product_updates": False}
 
 
 class User(IdMixin, TimestampMixin, Base):
