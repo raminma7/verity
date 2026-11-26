@@ -345,6 +345,7 @@ textarea.vr-winput { resize: vertical; }
 .vr-tl-meta b { color: var(--ink); font-weight: 600; }
 .vr-composer { display: flex; flex-direction: column; gap: 10px; }
 .vr-props { display: flex; flex-direction: column; gap: var(--space-4); }
+.vr-props dl { margin: 0; }
 .vr-convo { display: flex; flex-direction: column; gap: 10px; max-height: 560px; overflow-y: auto; }
 .vr-convo .vr-bubble { align-self: flex-end; }
 @media (max-width: 1100px) { .vr-ticket { grid-template-columns: 1fr; } }

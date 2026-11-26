@@ -279,11 +279,6 @@ export function Widget({ chatKey, origin, page }: { chatKey: string; origin: str
             <b>{cfg.name}</b>
             <span className="vr-widget-sub">{status === "escalated" ? t(lang, "waiting") : cfg.workspace}</span>
           </span>
-          {forms.length && status !== "escalated" ? (
-            <button type="button" className="vr-widget-link" aria-expanded={picking} onClick={() => setPicking(!picking)}>
-              {t(lang, "request")}
-            </button>
-          ) : null}
           {cfg.escalation.enabled && status === "open" && messages.length ? (
             <button type="button" className="vr-widget-link" onClick={() => (cfg.escalation.ask_email && !cfg.escalation.ticket_fallback ? setAsking(true) : escalate())}>
               {t(lang, "human")}
@@ -311,6 +306,11 @@ export function Widget({ chatKey, origin, page }: { chatKey: string; origin: str
               <input type="email" required placeholder={t(lang, "email")} value={email} onChange={(e) => setEmail(e.target.value)} aria-label={t(lang, "email")} autoFocus />
               <button type="submit">{t(lang, "send")}</button>
             </form>
+          ) : null}
+          {forms.length && status !== "escalated" && !picking ? (
+            <button type="button" className="vr-widget-chip" aria-expanded={false} onClick={() => setPicking(true)}>
+              {t(lang, "request")}
+            </button>
           ) : null}
           {picking ? (
             <div className="vr-wpick" role="group" aria-label={t(lang, "request")}>
@@ -450,6 +450,7 @@ function WidgetForm({ m, lang, actions }: { m: Msg; lang: string; actions: FormA
           copy={formCopy(lang)}
           onChange={(k, v) => {
             setValues((prev) => ({ ...prev, [k]: v }));
+            setMsg(null);
             setErrors((prev) => {
               const next = { ...prev };
               delete next[k];

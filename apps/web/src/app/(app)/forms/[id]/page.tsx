@@ -45,7 +45,8 @@ export default function FormBuilder() {
   const manage = can("chatbots.manage");
   const loaded = useData<ChatForm>(isNew ? null : `/forms/${id}`);
   const cats = useData<TicketCategory[]>("/ticket-categories");
-  const bots = useData<Chatbot[]>("/chatbots");
+  const botsData = useData<{ chatbots: Chatbot[] }>("/chatbots");
+  const bots = { data: botsData.data?.chatbots };
   const [f, setF] = useState<Draft | null>(isNew ? BLANK : null);
   const [sel, setSel] = useState(0);
   const [preview, setPreview] = useState<Record<string, FormValue>>({});
@@ -301,7 +302,18 @@ export default function FormBuilder() {
             <Card title={`Field · ${field.label}`}>
               <div className="vr-form">
                 <div className="vr-form-row">
-                  <Field label="Label" value={field.label} disabled={ro} maxLength={120} onChange={(e) => setField({ label: e.target.value })} />
+                  <Field
+                    label="Label"
+                    value={field.label}
+                    disabled={ro}
+                    maxLength={120}
+                    onChange={(e) => {
+                      const others = f.fields.filter((_, i) => i !== sel).map((x) => x.key);
+                      // The key follows the label until someone edits the key itself.
+                      const auto = field.key === slug(field.label, others);
+                      setField({ label: e.target.value, ...(auto ? { key: slug(e.target.value, others) } : {}) });
+                    }}
+                  />
                   <Select label="Type" value={field.type} disabled={ro} onChange={(v) => setField({ type: v as FieldType, validation: {}, options: v === "select" || v === "multiselect" ? (field.options.length ? field.options : ["Option 1"]) : [] })} options={TYPES} />
                 </div>
                 <div className="vr-form-row">
