@@ -253,3 +253,22 @@ async def test_tenant_isolation(client):
     async with SessionLocal() as db:
         assert (await db.get(KnowledgeSource, sid)).status == "ready"
         assert (await db.execute(select(func.count()).select_from(KnowledgePage))).scalar_one() >= 2
+
+
+async def test_embedding_outage_is_a_stable_error(client, monkeypatch):
+    from app.services.ai import embeddings
+
+    await owner(client)
+
+    class Down:
+        model = "fake-embedding"
+
+        async def embed(self, texts, input_type):
+            raise embeddings.EmbeddingError("embedding_rate_limited", "Voyage rate limit reached", retryable=True)
+
+    monkeypatch.setattr(embeddings, "_embedder", Down())
+    r = await client.post("/api/knowledge/search", json={"query": "refunds"})
+    assert r.status_code == 503 and r.json()["detail"]["code"] == "embedding_unavailable"
+    r = await upload(client, "a.txt", b"Some text.")
+    src = (await client.get(f"/api/knowledge/sources/{r.json()['id']}")).json()
+    assert src["status"] == "failed" and src["error_code"] == "embedding_rate_limited" and "Reprocess" in src["error_message"]

@@ -127,7 +127,7 @@ async def frame_policy(key: str, db: Db):
             if dev:
                 out.append(f"http://{h}")
         if d == "localhost":
-            out += ["http://localhost:*", "http://127.0.0.1:*", "https://localhost:*"]
+            out += ["http://localhost:*", "https://localhost:*"]
     return {"ancestors": sorted(set(out))}
 
 

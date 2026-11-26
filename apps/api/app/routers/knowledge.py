@@ -18,11 +18,11 @@ from app.core.deps import Db, WorkspaceContext, client_ip, require
 from app.core.errors import ApiError, not_found
 from app.jobs import enqueue
 from app.models import KnowledgeChunk, KnowledgePage, KnowledgeSource
+from app.services.ai.embeddings import EmbeddingError
 from app.services.audit import audit
 from app.services.crawler import CrawlError, normalize_root, site_host
 from app.services.ingest.parsers import MIME, ParseError, detect_type
 from app.services.ingest.pipeline import mark_queued
-from app.services.quota import QuotaExhausted
 from app.services.rag import DEFAULT_RETRIEVAL, hit_out, retrieval_settings, retrieve
 from app.services.storage import get_storage
 from app.services.subscriptions import effective_limits
@@ -513,8 +513,8 @@ async def test_retrieval(body: SearchIn, db: Db, ctx: WorkspaceContext = READ):
     """Runs retrieval only (one metered query embedding), showing passages above and below the cut-off."""
     try:
         found = await retrieve(db, ctx.workspace, body.query.strip(), settings=body.settings.model_dump() if body.settings else None)
-    except QuotaExhausted:
-        raise
+    except EmbeddingError:
+        raise ApiError(503, "embedding_unavailable", "The embedding service is busy or unavailable. Try again in a minute.") from None
     kept = {h.chunk_id for h in found.hits}
     return {
         "results": [{**hit_out(h), "kept": h.chunk_id in kept} for h in found.candidates],

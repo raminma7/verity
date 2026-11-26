@@ -75,13 +75,34 @@ class Retrieval:
     trace: list[dict] = field(default_factory=list)
 
 
+# Words too common to count as evidence on their own (English, German, French, Spanish, Dutch).
+STOPWORDS = set(
+    """a an and are as at be but by can could did do does for from had has have how i if in into is it its me my
+    no not of on or our please should so than that the their them then there these they this to us was we were what
+    when where which who why will with would you your yours
+    aber als am an auch auf aus bei bin bis das dass dem den der des die du ein eine einen er es für hat ich ihr im
+    in ist ja kann mit nicht noch oder sie sind und uns von was wie wir wo zu zum zur
+    au aux avec ce ces dans de des du elle en est et il je la le les leur mais me mon ne nous on ou par pas pour
+    qu que qui sa se ses son sur ta te tu un une vos votre vous
+    al como con cual de del el en es esta este la las lo los me mi para pero por que se su sus te tu un una y yo
+    een het ik je met niet ook op te van voor wat zijn""".split()  # noqa: SIM905 (easier to read and edit)
+)
+
+
 def keyword_terms(query: str) -> list[str]:
     """Question words OR-ed together: a question rarely contains every word of the passage that answers it."""
     seen: list[str] = []
     for w in re.findall(r"\w+", query.lower()):
-        if len(w) >= 2 and w not in seen:
+        if len(w) >= 2 and w not in STOPWORDS and w not in seen:
             seen.append(w)
     return seen[:32]
+
+
+def strong_keyword_match(terms: list[str], content: str) -> bool:
+    """Enough to keep a passage on keywords alone: two question terms, or one distinctive one (a name, a code)."""
+    words = set(re.findall(r"\w+", content.lower()))
+    matched = [t for t in terms if t in words]
+    return len(matched) >= 2 or any(len(t) >= 6 or any(c.isdigit() for c in t) for t in matched)
 
 
 def _step(trace: list, name: str, detail: str, t0: float, state: str = "done") -> float:
@@ -152,7 +173,8 @@ async def retrieve(db: AsyncSession, ws: Workspace, query: str, *, settings: dic
     min_rel = float(cfg["min_relevance"])
     for h in ranked:
         # A strong keyword match keeps a passage even when its embedding is a little less similar.
-        h.below_cutoff = h.relevance < min_rel and not (h.keyword_rank is not None and h.keyword_rank <= 3)
+        rescued = h.keyword_rank is not None and h.keyword_rank <= 3 and strong_keyword_match(terms, h.content)
+        h.below_cutoff = h.relevance < min_rel and not rescued
     kept = [h for h in ranked if not h.below_cutoff][: int(cfg["top_k"])]
     _step(trace, "Retrieve", f"{len(vec_rows)} vector + {len(kw_rows)} keyword candidates · {len(kept)} kept", t)
     return Retrieval(kept, ranked[:20], trace)

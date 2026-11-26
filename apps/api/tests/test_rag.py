@@ -133,3 +133,20 @@ async def test_retrieval_never_crosses_tenants(client):
         assert all(r["title"] == "cat.pdf" for r in results)
     results = (await client.post("/api/knowledge/search", json={"query": "office cat Biscuit"})).json()["results"]
     assert all(r["title"] != "cat.pdf" for r in results)
+
+
+async def test_common_words_alone_do_not_count_as_evidence(client):
+    ws = await setup_kb(client)
+    async with SessionLocal() as db:
+        # "can", "with" and "how" appear in the documents, but that isn't evidence of an answer.
+        _, final = await collect(db, ws, "Can I pay with zebra xylophones?")
+        assert final["outcome"] == "no_answer"
+        # A distinctive term (a feature name) still finds its passage.
+        found = await rag.retrieve(db, ws, "authentication")
+        assert found.hits and found.hits[0].title == "security.txt"
+
+
+def test_keyword_terms_drop_stopwords():
+    assert rag.keyword_terms("How do I enable two-factor authentication?") == ["enable", "two", "factor", "authentication"]
+    assert rag.strong_keyword_match(["error", "e1042"], "Error E1042 means the card was declined.")
+    assert not rag.strong_keyword_match(["pay", "zebra"], "You can pay by card.")

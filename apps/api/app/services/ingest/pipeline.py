@@ -157,7 +157,7 @@ async def ingest_file(source_id: uuid.UUID, version: int, *, final_attempt: bool
         if e.retryable and not final_attempt:
             raise
         trace.fail("Embed", str(e))
-        await _fail(source_id, version, e.code, "The embedding service is unavailable. Try reprocessing in a few minutes.", trace)
+        await _fail(source_id, version, e.code, "The embedding service is busy or unavailable. Reprocess in a few minutes.", trace)
     except Exception:
         if not final_attempt:
             raise
