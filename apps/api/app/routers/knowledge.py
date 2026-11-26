@@ -22,6 +22,8 @@ from app.services.audit import audit
 from app.services.crawler import CrawlError, normalize_root, site_host
 from app.services.ingest.parsers import MIME, ParseError, detect_type
 from app.services.ingest.pipeline import mark_queued
+from app.services.quota import QuotaExhausted
+from app.services.rag import DEFAULT_RETRIEVAL, hit_out, retrieval_settings, retrieve
 from app.services.storage import get_storage
 from app.services.subscriptions import effective_limits
 
@@ -467,3 +469,54 @@ async def remove(source_id: uuid.UUID, request: Request, db: Db, ctx: WorkspaceC
     await db.commit()
     await enqueue("remove_source", key=f"remove:{src.id}", source_id=str(src.id))
     return {"id": src.id, "status": "deleting"}
+
+
+# ---- Retrieval settings and "Test retrieval" ------------------------------------------------------
+
+
+class RetrievalIn(BaseModel):
+    top_k: int = Field(ge=1, le=12)
+    min_relevance: float = Field(ge=0.0, le=0.95)
+    hybrid_weight: float = Field(ge=0.0, le=1.0)
+
+
+@router.get("/settings")
+async def get_retrieval(ctx: WorkspaceContext = READ):
+    return {"retrieval": retrieval_settings(ctx.workspace), "defaults": DEFAULT_RETRIEVAL}
+
+
+@router.put("/settings")
+async def put_retrieval(body: RetrievalIn, request: Request, db: Db, ctx: WorkspaceContext = MANAGE):
+    ws = ctx.workspace
+    ws.settings = {**(ws.settings or {}), "retrieval": body.model_dump()}
+    audit(
+        db,
+        "knowledge.retrieval_updated",
+        actor_id=ctx.user.id,
+        workspace_id=ws.id,
+        target_type="workspace",
+        target_id=ws.id,
+        ip=client_ip(request),
+        **body.model_dump(),
+    )
+    await db.commit()
+    return {"retrieval": retrieval_settings(ws)}
+
+
+class SearchIn(BaseModel):
+    query: str = Field(min_length=1, max_length=1000)
+    settings: RetrievalIn | None = None
+
+
+@router.post("/search")
+async def test_retrieval(body: SearchIn, db: Db, ctx: WorkspaceContext = READ):
+    """Runs retrieval only (one metered query embedding), showing passages above and below the cut-off."""
+    try:
+        found = await retrieve(db, ctx.workspace, body.query.strip(), settings=body.settings.model_dump() if body.settings else None)
+    except QuotaExhausted:
+        raise
+    kept = {h.chunk_id for h in found.hits}
+    return {
+        "results": [{**hit_out(h), "kept": h.chunk_id in kept} for h in found.candidates],
+        "trace": found.trace,
+    }
