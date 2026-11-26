@@ -60,7 +60,7 @@ def message_out(m: Message) -> dict:
 
 
 # What the widget may see of a message's data. Never prefill values, usage ids or ticket ids.
-PUBLIC_DATA = ("blocks", "event", "offer_escalation", "form", "state", "reason", "ticket_number", "notice", "errors")
+PUBLIC_DATA = ("blocks", "event", "offer_escalation", "form", "state", "reason", "ticket_number", "notice", "custom")
 
 
 def public_message_out(m: Message, author: str | None = None) -> dict:
