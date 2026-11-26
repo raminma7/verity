@@ -9,10 +9,13 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres:16
+        image: pgvector/pgvector:pg16
         env: { POSTGRES_PASSWORD: postgres, POSTGRES_DB: verity_test }
         ports: ["5432:5432"]
         options: --health-cmd pg_isready --health-interval 5s --health-retries 10
+      redis:
+        image: redis:7
+        ports: ["6379:6379"]
     defaults: { run: { working-directory: apps/api } }
     steps:
       - uses: actions/checkout@v4
@@ -38,7 +41,7 @@ jobs:
     needs: [api, web]
     services:
       postgres:
-        image: postgres:16
+        image: pgvector/pgvector:pg16
         env: { POSTGRES_PASSWORD: postgres, POSTGRES_DB: verity }
         ports: ["5432:5432"]
         options: --health-cmd pg_isready --health-interval 5s --health-retries 10
@@ -47,6 +50,10 @@ jobs:
         ports: ["6379:6379"]
     env:
       VERITY_EMAIL_BACKEND: memory
+      # No AI provider calls in CI: deterministic fake embeddings and answers through the real quota path.
+      VERITY_LLM_PROVIDER: fake
+      VERITY_EMBEDDING_PROVIDER: fake
+      VERITY_STORAGE_DIR: /tmp/verity-storage
       VERITY_ADMIN_EMAIL: admin@example.com
       VERITY_ADMIN_PASSWORD: Admin-pass-123
     steps:
@@ -60,6 +67,7 @@ jobs:
           uv venv .venv && uv pip install --python .venv/bin/python -e .
           .venv/bin/alembic upgrade head && .venv/bin/python -m app.seed
           nohup .venv/bin/uvicorn app.main:app --port 8000 > api.log 2>&1 &
+          nohup .venv/bin/python -m app.worker > worker.log 2>&1 &
       - name: Build and start web
         working-directory: apps/web
         run: |

@@ -1,4 +1,4 @@
-# Local stack: Postgres (with pgvector for Phase 2), Redis, Mailpit (catches every email), API, worker, web.
+# Local stack: Postgres with pgvector, Redis (rate limits + job queue), Mailpit (catches every email), API, worker, web.
 # docker compose up --build   →  app http://localhost:3000 · email http://localhost:8025
 name: verity
 
@@ -14,6 +14,12 @@ x-api-env: &api-env
   VERITY_ADMIN_EMAIL: ${VERITY_ADMIN_EMAIL:-admin@example.com}
   VERITY_ADMIN_PASSWORD: ${VERITY_ADMIN_PASSWORD:-Admin-pass-123}
   VERITY_SECRET_KEY: ${VERITY_SECRET_KEY:-ZGV2LW9ubHktc2VjcmV0LWtleS1jaGFuZ2UtbWUtMDA=}
+  VERITY_STORAGE_DIR: /data/storage
+  # AI providers. Without keys, set both to "fake" for a deterministic local stack with no provider calls.
+  VERITY_LLM_PROVIDER: ${VERITY_LLM_PROVIDER:-anthropic}
+  VERITY_EMBEDDING_PROVIDER: ${VERITY_EMBEDDING_PROVIDER:-voyage}
+  VERITY_ANTHROPIC_API_KEY: ${VERITY_ANTHROPIC_API_KEY:-}
+  VERITY_VOYAGE_API_KEY: ${VERITY_VOYAGE_API_KEY:-}
 
 services:
   postgres:
@@ -41,14 +47,17 @@ services:
     build: apps/api
     environment: *api-env
     ports: ["8000:8000"]
+    volumes: [storage:/data/storage]
     depends_on:
       postgres: { condition: service_healthy }
       redis: { condition: service_started }
 
+  # Runs the Redis job queue: ingestion, crawls, deletions, website re-sync and the periodic billing jobs.
   worker:
     build: apps/api
     command: python -m app.worker
     environment: *api-env
+    volumes: [storage:/data/storage]
     depends_on: [api]
 
   web:
@@ -61,3 +70,4 @@ services:
 
 volumes:
   pgdata:
+  storage:
