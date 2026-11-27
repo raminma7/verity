@@ -121,7 +121,9 @@ async def _fetch(account_id: uuid.UUID, *, final_attempt: bool) -> str:
                     acct.fetch_state = {**result.state, "last_uid": raw.uid}
                     await db.commit()
                     processed += 1
-                if not result.more:
+                # Keep going until a fetch finds nothing new: mail that arrived while this job ran is picked up now
+                # (a second job for this mailbox would be dropped by its queue key while this one runs).
+                if not result.messages:
                     break
         except TransportError as e:
             await db.rollback()

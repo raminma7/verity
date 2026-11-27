@@ -20,6 +20,8 @@ x-api-env: &api-env
   VERITY_EMBEDDING_PROVIDER: ${VERITY_EMBEDDING_PROVIDER:-voyage}
   VERITY_ANTHROPIC_API_KEY: ${VERITY_ANTHROPIC_API_KEY:-}
   VERITY_VOYAGE_API_KEY: ${VERITY_VOYAGE_API_KEY:-}
+  # Connected mailboxes: "imap" (real IMAP/SMTP servers) or "fake" (mailboxes in Redis, fed by /api/dev/mailbox).
+  VERITY_MAIL_TRANSPORT: ${VERITY_MAIL_TRANSPORT:-imap}
 
 services:
   postgres:

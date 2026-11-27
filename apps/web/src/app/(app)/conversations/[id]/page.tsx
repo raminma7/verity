@@ -177,7 +177,10 @@ export default function ConversationPage() {
               }}
             />
             <div className="vr-query-bar">
-              <span className="vr-query-hint">{c.status === "escalated" ? "The customer sees this in the chat within a few seconds." : "Replying hands the conversation to you; the assistant stops answering."}</span>
+              <span className="vr-query-hint">
+                {c.status === "escalated" ? "The customer sees this in the chat within a few seconds" : "Replying hands the conversation to you; the assistant stops answering"}
+                {c.visitor_email ? `, and by email at ${c.visitor_email}.` : "."}
+              </span>
               <div className="vr-query-meta">
                 <span className="vr-query-hint">⌘⏎ to send</span>
                 <button type="submit" className="vr-send" disabled={busy || !text.trim()} aria-label="Send reply">
