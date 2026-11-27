@@ -5,7 +5,23 @@ from pydantic import BaseModel, Field
 
 from app.core.config import get_settings
 from app.core.deps import Db, WorkspaceContext, require
-from app.routers import admin, auth, billing, chatbots, email, forms, knowledge, me, routing, tickets, tools, usage, widget, workspaces
+from app.routers import (
+    admin,
+    analytics,
+    auth,
+    billing,
+    chatbots,
+    email,
+    forms,
+    knowledge,
+    me,
+    routing,
+    tickets,
+    tools,
+    usage,
+    widget,
+    workspaces,
+)
 from app.services import email as mail
 from app.services import payments, quota
 
@@ -57,6 +73,7 @@ def create_app() -> FastAPI:
         billing.router,
         usage.router,
         admin.router,
+        analytics.router,
         knowledge.router,
         chatbots.router,
         forms.router,
