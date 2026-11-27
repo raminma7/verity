@@ -8,7 +8,7 @@ import { EventLine } from "@/components/chat";
 import { EmailCard } from "@/components/email";
 import { PriorityBadge, StatusBadge } from "@/components/tickets";
 import { Banner, Button, Card, dateTime, Icon, Segmented, Select, Spinner } from "@/components/ui";
-import { api, errorText, type ChatMessage, type TicketCategory, type TicketDetail, type TicketEmail, type TicketEvent } from "@/lib/api";
+import { api, errorText, type ChatMessage, type Team, type TicketCategory, type TicketDetail, type TicketEmail, type TicketEvent } from "@/lib/api";
 import { PRIORITY, PRIORITY_ORDER, SOURCE, STATUS, STATUS_ORDER, showValue } from "@/lib/tickets";
 import { useData } from "@/lib/use-data";
 
@@ -26,6 +26,7 @@ export default function TicketPage() {
   const data = useData<TicketDetail>(`/tickets/${id}`);
   const cats = useData<TicketCategory[]>("/ticket-categories?include_archived=true");
   const people = useData<{ id: string; name: string }[]>("/tickets/assignees");
+  const teams = useData<{ items: Team[] }>("/teams");
   const [mode, setMode] = useState<"reply" | "note">("note");
   const [text, setText] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
@@ -54,6 +55,18 @@ export default function TicketPage() {
     ...events.map((e) => ({ at: e.created_at, event: e })),
     ...emails.filter((m) => !linked.has(m.id)).map((m) => ({ at: m.created_at, email: m })),
   ].sort((a, b) => a.at.localeCompare(b.at));
+  async function autoAssign() {
+    setBusy("route");
+    setErr(null);
+    try {
+      await api.post(`/tickets/${id}/route`);
+      await reload();
+    } catch (e) {
+      setErr(errorText(e));
+    } finally {
+      setBusy(null);
+    }
+  }
   async function retry(emailId: string) {
     setBusy(`retry-${emailId}`);
     setErr(null);
@@ -222,6 +235,19 @@ export default function TicketPage() {
                 onChange={(v) => change(v ? { assignee_id: v } : { unassign: true })}
                 options={[{ value: "", label: "Unassigned" }, ...(people.data ?? []).map((p) => ({ value: p.id, label: p.name }))]}
               />
+              <Select
+                label="Team"
+                value={t.team_id ?? ""}
+                disabled={!can_manage || busy === "props"}
+                onChange={(v) => change({ team_id: v || null })}
+                options={[{ value: "", label: "No team" }, ...(teams.data?.items ?? []).map((x) => ({ value: x.id, label: x.name }))]}
+              />
+              {can_manage && !t.assignee_id ? (
+                <Button size="sm" icon="users" busy={busy === "route"} onClick={autoAssign}>
+                  Auto-assign
+                </Button>
+              ) : null}
+              {t.first_response_at ? <span className="vr-help">First response {dateTime(t.first_response_at)}</span> : null}
             </div>
           </Card>
           <Card title="Requester">
@@ -338,7 +364,17 @@ function TimelineItem({
                 : `${who} unassigned it.`
               : e.kind === "reopened"
                 ? "Reopened: the customer replied."
-                : e.kind;
+                : e.kind === "routed"
+                  ? e.data.assignee
+                    ? `Routed to ${e.data.assignee}${e.data.team ? ` in ${e.data.team}` : ""} (${e.data.reason}).`
+                    : e.data.team
+                      ? `Routed to ${e.data.team}’s queue: ${e.data.reason}.`
+                      : `Not routed: ${e.data.reason}.`
+                  : e.kind === "team"
+                    ? e.data.to
+                      ? `${who} moved it to the team ${e.data.team ?? ""}.`
+                      : `${who} removed it from its team.`
+                    : e.kind;
   return (
     <div className="vr-event" role="note">
       <span>{text}</span>

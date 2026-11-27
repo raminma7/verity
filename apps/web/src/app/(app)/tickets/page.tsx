@@ -6,7 +6,7 @@ import { Suspense, useEffect, useState } from "react";
 
 import { PriorityBadge, StatusBadge } from "@/components/tickets";
 import { Banner, Button, EmptyState, Field, PageHeader, Segmented, Select, Spinner } from "@/components/ui";
-import type { Ticket, TicketCategory, TicketStatus } from "@/lib/api";
+import type { Team, Ticket, TicketCategory, TicketStatus } from "@/lib/api";
 import { ago } from "@/lib/knowledge";
 import { useSession } from "@/lib/session";
 import { PRIORITY, PRIORITY_ORDER, SOURCE, STATUS, STATUS_ORDER } from "@/lib/tickets";
@@ -28,6 +28,7 @@ function Tickets() {
   const [priority, setPriority] = useState("");
   const [category, setCategory] = useState("");
   const [assignee, setAssignee] = useState(params.get("assignee") ?? "");
+  const [team, setTeam] = useState(params.get("team") ?? "");
   const [q, setQ] = useState("");
   const [term, setTerm] = useState("");
   useEffect(() => {
@@ -40,10 +41,12 @@ function Tickets() {
   if (priority) query.set("priority", priority);
   if (category) query.set("category_id", category);
   if (assignee) query.set("assignee", assignee);
+  if (team) query.set("team", team);
   if (term) query.set("q", term);
   const data = useData<{ items: Ticket[]; counts: Record<TicketStatus, number> }>(`/tickets?${query.toString()}`);
   const cats = useData<TicketCategory[]>("/ticket-categories");
   const people = useData<{ id: string; name: string }[]>("/tickets/assignees");
+  const teams = useData<{ items: Team[] }>("/teams");
   const { reload } = data;
   useEffect(() => {
     const t = setInterval(reload, 15000);
@@ -86,6 +89,14 @@ function Tickets() {
           onChange={setAssignee}
           options={[{ value: "", label: "Anyone" }, { value: "me", label: "Assigned to me" }, { value: "none", label: "Unassigned" }, ...(people.data ?? []).map((p) => ({ value: p.id, label: p.name }))]}
         />
+        {teams.data?.items.length ? (
+          <Select
+            label="Team"
+            value={team}
+            onChange={setTeam}
+            options={[{ value: "", label: "All teams" }, { value: "mine", label: "My teams" }, { value: "none", label: "No team" }, ...teams.data.items.map((t) => ({ value: t.id, label: t.name }))]}
+          />
+        ) : null}
         <Select label="Priority" value={priority} onChange={setPriority} options={[{ value: "", label: "Any priority" }, ...PRIORITY_ORDER.map((p) => ({ value: p, label: PRIORITY[p].label }))]} />
         <Select label="Category" value={category} onChange={setCategory} options={[{ value: "", label: "All categories" }, ...(cats.data ?? []).map((c) => ({ value: c.id, label: c.name }))]} />
       </div>
@@ -94,8 +105,8 @@ function Tickets() {
       ) : data.error ? (
         <Banner tone="danger">{data.error.message}</Banner>
       ) : !data.data?.items.length ? (
-        <EmptyState icon="tag" title={term || priority || category || assignee ? "No tickets match" : "No tickets here"}>
-          {term || priority || category || assignee
+        <EmptyState icon="tag" title={term || priority || category || assignee || team ? "No tickets match" : "No tickets here"}>
+          {term || priority || category || assignee || team
             ? "Try another search or clear a filter."
             : "Tickets appear when customers send a chatbot form, when an agent turns a chat into a ticket, or when your team adds one."}
         </EmptyState>
@@ -135,7 +146,10 @@ function Tickets() {
                   <td>
                     <StatusBadge status={t.status} />
                   </td>
-                  <td className="vr-sub">{t.assignee ?? "Unassigned"}</td>
+                  <td className="vr-sub">
+                    {t.assignee ?? "Unassigned"}
+                    {t.team ? <div className="vr-muted" style={{ fontSize: 12 }}>{t.team}</div> : null}
+                  </td>
                   <td className="num">{ago(t.last_activity_at)}</td>
                 </tr>
               ))}
