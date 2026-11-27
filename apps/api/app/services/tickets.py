@@ -1,7 +1,8 @@
 """Tickets: numbering, creation, the timeline, status changes and reopening on a customer reply.
 
-Tickets come from chatbot forms and agent conversions (both through conversations.escalate()), and from
-manual submissions in the dashboard. Email (Phase 4) will create them through `create()` with source "email".
+Tickets come from chatbot forms and agent conversions (both through conversations.escalate()), from manual
+submissions in the dashboard and from email (services.mail.ingest), all through `create()`, which also routes
+unassigned tickets (services.routing).
 """
 
 import uuid
@@ -44,6 +45,7 @@ class TicketSpec:
     form_version: int | None = None
     form_data: dict = field(default_factory=dict)
     created_by: uuid.UUID | None = None
+    team_id: uuid.UUID | None = None  # route inside this team (when no assignee is given)
 
 
 async def next_number(db: AsyncSession, workspace_id: uuid.UUID) -> int:
@@ -129,6 +131,8 @@ async def create(db: AsyncSession, workspace_id: uuid.UUID, spec: TicketSpec, *,
         priority=spec.priority,
         category_id=spec.category_id,
         assignee_id=spec.assignee_id,
+        team_id=spec.team_id,
+        assigned_at=utcnow() if spec.assignee_id else None,
         source=spec.source,
         form_id=form.id if form else None,
         form_version=(spec.form_version or form.version) if form else None,
@@ -159,7 +163,17 @@ async def create(db: AsyncSession, workspace_id: uuid.UUID, spec: TicketSpec, *,
     )
     if spec.assignee_id and spec.assignee_id != spec.created_by:
         notify_assignee(db, t, spec.assignee_id)
+    if not spec.assignee_id:
+        from app.services import routing
+
+        await routing.route(db, t, actor_id=spec.created_by)
     return t
+
+
+def mark_first_response(t: Ticket) -> None:
+    """The team answered the customer: keeps the time of the first answer."""
+    if t.first_response_at is None:
+        t.first_response_at = utcnow()
 
 
 def notify_created(db: AsyncSession, t: Ticket, *, conversation_id: uuid.UUID | None = None) -> None:
@@ -256,7 +270,7 @@ async def open_ticket_for(db: AsyncSession, conversation_id: uuid.UUID) -> Ticke
     ).scalar_one_or_none()
 
 
-def ticket_out(t: Ticket, *, category: str | None = None, assignee: str | None = None) -> dict:
+def ticket_out(t: Ticket, *, category: str | None = None, assignee: str | None = None, team: str | None = None) -> dict:
     return {
         "id": t.id,
         "number": t.number,
@@ -268,6 +282,10 @@ def ticket_out(t: Ticket, *, category: str | None = None, assignee: str | None =
         "category": category,
         "assignee_id": t.assignee_id,
         "assignee": assignee,
+        "team_id": t.team_id,
+        "team": team,
+        "assigned_at": t.assigned_at,
+        "first_response_at": t.first_response_at,
         "source": t.source,
         "form_id": t.form_id,
         "form_version": t.form_version,
