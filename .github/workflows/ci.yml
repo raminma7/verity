@@ -53,6 +53,8 @@ jobs:
       # No AI provider calls in CI: deterministic fake embeddings and answers through the real quota path.
       VERITY_LLM_PROVIDER: fake
       VERITY_EMBEDDING_PROVIDER: fake
+      # Mailboxes live in Redis (the fake mail transport); /api/dev/mailbox puts mail in and reads what was sent.
+      VERITY_MAIL_TRANSPORT: fake
       VERITY_STORAGE_DIR: /tmp/verity-storage
       VERITY_ADMIN_EMAIL: admin@example.com
       VERITY_ADMIN_PASSWORD: Admin-pass-123

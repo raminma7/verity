@@ -27,6 +27,21 @@ def parse_rule(rule: str) -> tuple[int, int]:
     return int(count), int(seconds)
 
 
+async def allow(key: str, rule: str) -> bool:
+    """Counts one more event in the window and says whether it is still within the limit (no exception)."""
+    limit, window = parse_rule(rule)
+    r = get_redis()
+    now = time.time()
+    k = f"rl:{key}"
+    async with r.pipeline(transaction=True) as p:
+        p.zremrangebyscore(k, 0, now - window)
+        p.zadd(k, {f"{now}:{uuid.uuid4().hex}": now})
+        p.zcard(k)
+        p.expire(k, window)
+        _, _, count, _ = await p.execute()
+    return count <= limit
+
+
 async def hit(key: str, rule: str) -> None:
     """Sliding-window limiter on a Redis sorted set. Raises 429 when the window is full."""
     limit, window = parse_rule(rule)

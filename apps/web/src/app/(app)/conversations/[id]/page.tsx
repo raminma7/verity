@@ -137,11 +137,15 @@ export default function ConversationPage() {
             </div>
           ) : m.role === "visitor" ? (
             <div key={m.id} className="vr-bubble">
+              {m.data.channel === "email" ? <span className="vr-bubble-tag">By email</span> : null}
               {m.content}
             </div>
           ) : m.role === "agent" ? (
             <div key={m.id} className="vr-agent-msg">
-              <span className="vr-eyebrow">{m.author ?? "Team"} · {dateTime(m.created_at)}</span>
+              <span className="vr-eyebrow">
+                {m.author ?? "Team"} · {dateTime(m.created_at)}
+                {m.data.emailed_to ? ` · also emailed to ${m.data.emailed_to}` : ""}
+              </span>
               <p style={{ margin: 0, whiteSpace: "pre-line" }}>{m.content}</p>
             </div>
           ) : m.role === "assistant" ? (
@@ -173,7 +177,10 @@ export default function ConversationPage() {
               }}
             />
             <div className="vr-query-bar">
-              <span className="vr-query-hint">{c.status === "escalated" ? "The customer sees this in the chat within a few seconds." : "Replying hands the conversation to you; the assistant stops answering."}</span>
+              <span className="vr-query-hint">
+                {c.status === "escalated" ? "The customer sees this in the chat within a few seconds" : "Replying hands the conversation to you; the assistant stops answering"}
+                {c.visitor_email ? `, and by email at ${c.visitor_email}.` : "."}
+              </span>
               <div className="vr-query-meta">
                 <span className="vr-query-hint">⌘⏎ to send</span>
                 <button type="submit" className="vr-send" disabled={busy || !text.trim()} aria-label="Send reply">

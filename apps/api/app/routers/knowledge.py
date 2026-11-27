@@ -17,7 +17,7 @@ from app.core.config import get_settings
 from app.core.deps import Db, WorkspaceContext, client_ip, require
 from app.core.errors import ApiError, not_found
 from app.jobs import enqueue
-from app.models import KnowledgeChunk, KnowledgePage, KnowledgeSource
+from app.models import EmailAttachment, KnowledgeChunk, KnowledgePage, KnowledgeSource
 from app.services.ai.embeddings import EmbeddingError
 from app.services.audit import audit
 from app.services.crawler import CrawlError, normalize_root, site_host
@@ -58,7 +58,15 @@ async def usage(db: AsyncSession, workspace_id: uuid.UUID) -> dict:
             .where(live, KnowledgePage.status == "ready")
         )
     ).scalar_one()
-    return {"documents": docs, "domains": domains, "crawled_pages": pages, "storage_bytes": int(storage)}
+    # Kept email attachments share the plan's storage with documents.
+    attached = (
+        await db.execute(
+            select(func.coalesce(func.sum(EmailAttachment.size), 0)).where(
+                EmailAttachment.workspace_id == workspace_id, EmailAttachment.storage_key.is_not(None)
+            )
+        )
+    ).scalar_one()
+    return {"documents": docs, "domains": domains, "crawled_pages": pages, "storage_bytes": int(storage) + int(attached)}
 
 
 def _ok(limit: int, used: int, adding: int = 1) -> bool:

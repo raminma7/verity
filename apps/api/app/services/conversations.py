@@ -251,16 +251,7 @@ async def escalate(
         t.conversation_id = conv.id
         result.ticket = t
         add_message(db, conv, "system", "", kind="event", data={"event": "ticket_created", "ticket_number": t.number, "reason": reason})
-        db.add(
-            Notification(
-                workspace_id=ws.id,
-                kind="ticket_created",
-                title=f"New ticket #{t.number}",
-                body=t.subject[:300],
-                data={"ticket_id": str(t.id), "conversation_id": str(conv.id)},
-                created_at=utcnow(),
-            )
-        )
+        tk.notify_created(db, t, conversation_id=conv.id)
         if hand_back:
             if conv.status == "escalated":
                 conv.status = "open"
@@ -323,7 +314,9 @@ async def escalate(
             if u.notification_prefs.get("escalations", True):
                 await mail.send_escalation(u.email, ws.name, bot.name if bot else "the assistant", conv.title, str(conv.id))
         esc = (bot.escalation if bot else {}) or {}
-        if bot is not None and conv.channel == "widget" and esc.get("ticket_fallback", True):
+        # An email reply on a conversation that already has an open ticket is the ticket's business: no new check.
+        already_ticketed = reason == "email_reply" and await tk.open_ticket_for(db, conv.id) is not None
+        if bot is not None and conv.channel == "widget" and esc.get("ticket_fallback", True) and not already_ticketed:
             from app.jobs import enqueue
 
             wait = int(esc.get("wait_seconds", 120))
@@ -336,6 +329,11 @@ async def escalate(
             )
     if result.ticket is not None:
         t = result.ticket
+        if reason in ("form_submitted", "handoff_timeout") and t.requester_email:
+            from app.services.mail import outbound
+
+            await outbound.send_ticket_confirmation(db, t, reason=reason)
+            await db.refresh(t)
         for u in await responders(db, ws.id, "tickets.manage"):
             if u.notification_prefs.get("tickets", True):
                 await mail.send_ticket_created(u.email, ws.name, t.number, t.subject, str(t.id))
@@ -367,7 +365,37 @@ async def agent_reply(db: AsyncSession, conv: Conversation, user: User, text: st
         db, "conversation.replied", actor_id=user.id, workspace_id=conv.workspace_id, target_type="conversation", target_id=conv.id, ip=ip
     )
     await db.commit()
+    # The visitor may have left: when we have their email (from the chat or a submitted form), send it there too.
+    from app.services.mail import outbound
+
+    to = conv.visitor_email or (ticket.requester_email if ticket is not None else None)
+    if to and conv.channel == "widget":
+        sent = await outbound.email_chat_reply(db, conv, ticket, user, text[:MAX_MESSAGE_CHARS], to=to)
+        if sent is not None:
+            await db.refresh(m)
+            m.data = {**(m.data or {}), "emailed_to": to, "email_message_id": str(sent.id)}
+            await db.commit()
     return m
+
+
+async def email_reply(db: AsyncSession, conv: Conversation, text: str, *, email_message_id: uuid.UUID) -> object | None:
+    """The visitor answered one of our emails: their reply joins the conversation (and its open ticket).
+
+    The AI never answers email; the conversation goes to the team. Returns the ticket it landed on, if any.
+    """
+    from app.services import tickets as tk
+
+    if conv.status == "resolved":
+        conv.status = "open"
+        conv.resolved_at = None
+    add_message(db, conv, "visitor", text[:MAX_MESSAGE_CHARS], data={"channel": "email", "email_message_id": str(email_message_id)})
+    ticket = await tk.open_ticket_for(db, conv.id)
+    if ticket is not None:
+        await tk.customer_replied(db, ticket, text, channel="email", email_message_id=str(email_message_id))
+    await db.commit()
+    if conv.status != "escalated":
+        await escalate(db, conv, reason="email_reply")
+    return ticket
 
 
 async def resolve(db: AsyncSession, conv: Conversation, user: User, *, ip: str | None = None) -> None:

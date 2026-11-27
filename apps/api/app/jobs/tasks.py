@@ -101,5 +101,41 @@ async def sweep_handoffs(ctx) -> int:
     return offered
 
 
-FUNCTIONS = [maintenance, ingest_source, crawl_source, remove_source, sync_websites, handoff_check, sweep_handoffs]
-CRON = [("maintenance", "*/5 * * * *"), ("sync_websites", "*/15 * * * *"), ("sweep_handoffs", "* * * * *")]
+async def poll_mailboxes(ctx) -> int:
+    """Every minute: queues a fetch for each active mailbox (keyed, so a mailbox is never queued twice)."""
+    from app.services.mail.fetch import poll_due
+
+    return await poll_due()
+
+
+async def fetch_mailbox(ctx, *, account_id: str) -> str:
+    from app.services.mail.fetch import fetch_mailbox as run
+
+    return await run(uuid.UUID(account_id), final_attempt=_final_attempt(ctx))
+
+
+async def send_email_message(ctx, *, email_id: str) -> str:
+    from app.services.mail.outbound import send
+
+    async with SessionLocal() as db:
+        return await send(db, uuid.UUID(email_id), final_attempt=_final_attempt(ctx))
+
+
+FUNCTIONS = [
+    maintenance,
+    ingest_source,
+    crawl_source,
+    remove_source,
+    sync_websites,
+    handoff_check,
+    sweep_handoffs,
+    poll_mailboxes,
+    fetch_mailbox,
+    send_email_message,
+]
+CRON = [
+    ("maintenance", "*/5 * * * *"),
+    ("sync_websites", "*/15 * * * *"),
+    ("sweep_handoffs", "* * * * *"),
+    ("poll_mailboxes", "* * * * *"),
+]

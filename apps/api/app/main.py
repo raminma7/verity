@@ -5,7 +5,7 @@ from pydantic import BaseModel, Field
 
 from app.core.config import get_settings
 from app.core.deps import Db, WorkspaceContext, require
-from app.routers import admin, auth, billing, chatbots, forms, knowledge, me, tickets, usage, widget, workspaces
+from app.routers import admin, auth, billing, chatbots, email, forms, knowledge, me, tickets, usage, widget, workspaces
 from app.services import email as mail
 from app.services import quota
 
@@ -60,6 +60,7 @@ def create_app() -> FastAPI:
         chatbots.router,
         forms.router,
         tickets.router,
+        email.router,
         widget.router,
     ):
         api.include_router(r)
@@ -74,7 +75,59 @@ def create_app() -> FastAPI:
         @dev.get("/outbox")
         async def outbox(to: str | None = None):
             items = [m for m in mail.OUTBOX if to is None or m.to == to.lower()]
-            return [{"to": m.to, "subject": m.subject, "text": m.text, "links": m.links} for m in items[-20:]]
+            return [{"to": m.to, "subject": m.subject, "text": m.text, "links": m.links, "headers": m.headers} for m in items[-20:]]
+
+        @dev.post("/mailbox/{address}/deliver")
+        async def deliver_mail(address: str, request: Request, fetch: bool = True):
+            """Fake mail transport only: puts a raw message in a mailbox, then fetches it (like new mail arriving)."""
+            from sqlalchemy import select
+
+            from app.core.db import SessionLocal
+            from app.models import EmailAccount
+            from app.services.mail.fetch import queue_fetch
+            from app.services.mail.transport import FakeTransport
+
+            if s.mail_transport != "fake":
+                return JSONResponse({"detail": {"code": "fake_transport_only", "message": "Set VERITY_MAIL_TRANSPORT=fake."}}, 409)
+            uid = await FakeTransport.deliver(address, await request.body())
+            if fetch:
+                async with SessionLocal() as db:
+                    ids = (
+                        (
+                            await db.execute(
+                                select(EmailAccount.id).where(EmailAccount.address == address.lower(), EmailAccount.status == "active")
+                            )
+                        )
+                        .scalars()
+                        .all()
+                    )
+                for i in ids:
+                    await queue_fetch(i)
+            return {"uid": uid}
+
+        @dev.get("/mailbox/{address}/sent")
+        async def sent_mail(address: str):
+            from email import policy
+            from email.parser import Parser
+
+            from app.services.mail.transport import FakeTransport
+
+            out = []
+            for raw in (await FakeTransport.sent(address))[-50:]:
+                m = Parser(policy=policy.default).parsestr(raw)
+                body = m.get_body(("plain",))
+                out.append(
+                    {
+                        "to": str(m["To"]),
+                        "subject": str(m["Subject"]),
+                        "message_id": str(m["Message-ID"]),
+                        "in_reply_to": str(m["In-Reply-To"] or ""),
+                        "references": str(m["References"] or ""),
+                        "auto_submitted": str(m["Auto-Submitted"] or ""),
+                        "text": body.get_content() if body is not None else "",
+                    }
+                )
+            return out
 
         class SimIn(BaseModel):
             model: str = "claude-haiku-5-5"

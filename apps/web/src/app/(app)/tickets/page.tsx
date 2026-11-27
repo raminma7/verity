@@ -57,7 +57,7 @@ function Tickets() {
     <>
       <PageHeader
         title="Tickets"
-        subtitle="Requests from chatbot forms, chat conversations and your team. Work them from New to Resolved; customers who reply reopen them."
+        subtitle="Requests from email, chatbot forms, chat conversations and your team. Work them from New to Resolved; customers who reply reopen them."
         actions={
           can("tickets.manage") ? (
             <Button variant="primary" icon="plus" onClick={() => router.push("/tickets/new")}>

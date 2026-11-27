@@ -2,15 +2,15 @@
 
 AI customer support in one workspace: a knowledge base (RAG), an embeddable chatbot and a ticketing system, with email built in. The full product plan is in [`docs/product-plan.md`](docs/product-plan.md).
 
-This repository holds **Phases 1 to 3**: accounts, workspaces, roles, plans, subscriptions and the AI token quota (Phase 1); the knowledge base, retrieval-augmented answers with citations, the embeddable chatbot with live handoff to people, and the Redis job queue (Phase 2); and ticket categories, tickets, the form builder, and chatbot forms that the AI offers and prefills and that open tickets (Phase 3).
+This repository holds **Phases 1 to 4**: accounts, workspaces, roles, plans, subscriptions and the AI token quota (Phase 1); the knowledge base, retrieval-augmented answers with citations, the embeddable chatbot with live handoff to people, and the Redis job queue (Phase 2); ticket categories, tickets, the form builder, and chatbot forms that the AI offers and prefills and that open tickets (Phase 3); and email: connected mailboxes, email tickets, spam review, automatic replies and threading (Phase 4).
 
 | Phase | Scope | State |
 |---|---|---|
 | 1 | Registration, email verification, auth, 2FA, workspaces, RBAC, plans, subscriptions, token quota, customer dashboard, system admin | **Done** |
 | 2 | Knowledge base, RAG, document processing, crawling, chatbot, live handoff, live token tracking | **Done** |
 | 3 | Form builder, chatbot forms that open tickets, ticket categories, ticket management | **Done** |
-| 4 | Email integration, spam detection, automatic replies, threading | Next |
-| 5 | External API tools, routing, analytics, real payments (Stripe) | |
+| 4 | Email integration, spam detection, automatic replies, threading | **Done** |
+| 5 | External API tools, routing, analytics, real payments (Stripe) | Next |
 
 ## Layout
 
@@ -22,10 +22,10 @@ docs/      product plan
 
 ### API (`apps/api`)
 
-- `app/routers/` — `auth`, `me`, `workspaces` (members, roles, invitations, audit), `billing`, `usage`, `admin`, `knowledge` (sources, retrieval settings, Test retrieval), `chatbots` (settings, conversations, replies, Ask, conversation → ticket), `widget` (the public chatbot API, including forms), `tickets` (categories, tickets, notes, replies), `forms` (the form builder)
-- `app/services/` — `quota` (token reserve/settle), `subscriptions` (periods, renewals), `payments` (provider interface + mock), `permissions` (role catalogue), `email`, `audit`, `ingest/` (parsers, chunker, pipeline), `crawler`, `ai/` (Voyage embeddings, Claude generation, the `Meter` every AI call goes through), `rag` (hybrid retrieval, cited answers), `conversations` (answers and the handoff), `tickets` (numbering, timeline, status, reopen on reply), `forms` (field definitions and value checks), `forms_ai` (form activation and prefill, and the handoff timeout), `storage`
+- `app/routers/` — `auth`, `me`, `workspaces` (members, roles, invitations, audit), `billing`, `usage`, `admin`, `knowledge` (sources, retrieval settings, Test retrieval), `chatbots` (settings, conversations, replies, Ask, conversation → ticket), `widget` (the public chatbot API, including forms), `tickets` (categories, tickets, notes, replies by chat or email), `forms` (the form builder), `email` (mailboxes, Settings → Email, the Spam section, attachments)
+- `app/services/` — `quota` (token reserve/settle), `subscriptions` (periods, renewals), `payments` (provider interface + mock), `permissions` (role catalogue), `email`, `audit`, `ingest/` (parsers, chunker, pipeline), `crawler`, `ai/` (Voyage embeddings, Claude generation, the `Meter` every AI call goes through), `rag` (hybrid retrieval, cited answers), `conversations` (answers and the handoff), `tickets` (numbering, timeline, status, reopen on reply), `forms` (field definitions and value checks), `forms_ai` (form activation and prefill, and the handoff timeout), `storage`, `mail/` (the mail transport interface with IMAP/SMTP and a fake, parsing and sanitizing, loop guard, threading, spam rules, AI classification, attachments, fetching, outbound mail and automatic replies)
 - `app/core/deps.py` — session auth, `workspace_context` (tenant resolution) and `require(...)` (permission and subscription checks)
-- `app/jobs/` + `app/worker.py` — the SAQ job queue on Redis: ingestion, crawls and deletions, the handoff check scheduled when a conversation is handed over, plus cron jobs for website re-sync (every 15 minutes), renewals, stale token holds and audit retention (every 5 minutes) and lost handoff checks (every minute)
+- `app/jobs/` + `app/worker.py` — the SAQ job queue on Redis: ingestion, crawls and deletions, the handoff check scheduled when a conversation is handed over, mailbox fetches and outgoing email, plus cron jobs for website re-sync (every 15 minutes), renewals, stale token holds and audit retention (every 5 minutes), lost handoff checks and mailbox polling (every minute)
 
 ### Web (`apps/web`)
 
@@ -33,7 +33,7 @@ docs/      product plan
 - `src/design/verity.css` is the design system's component stylesheet, unchanged. `src/components/ui.tsx` ports its components (Button, Badge, Field, Segmented, Switch, Icon…) to typed React with the same `vr-` classes.
 - `src/design/app.css` adds what the design system doesn't have yet (plan cards, usage meters, banners, tables, the app shell), built only from its tokens and rules: teal acts, lime marks evidence, no gradients, status always has a word.
 - `src/components/rag.tsx` ports the design system's Ask and Library components (QueryBar, AnswerCard, Citation, SourceCard, RelevanceMeter, PipelineTrace, DocumentRow, FileTag); the screens follow its AppLibrary, AppUpload, AppDocument, AppAsk, AppHistory and AppSettings layouts.
-- `src/components/chat-form.tsx` renders a chatbot form exactly as customers see it: the widget uses it, and so does the form builder's live preview. Tickets, the ticket detail, Forms and Settings → Tickets aren't in the design system yet, so they are built only from its tokens and rules (`app.css`, Phase 3 section).
+- `src/components/chat-form.tsx` renders a chatbot form exactly as customers see it: the widget uses it, and so does the form builder's live preview. Tickets, the ticket detail, Forms and Settings → Tickets aren't in the design system yet, so they are built only from its tokens and rules (`app.css`, Phase 3 section); so are Email (mailboxes and Spam), Settings → Email and email threads on tickets (`components/email.tsx`, `app.css` Phase 4 section).
 - `public/widget.js` is the one-line embed; `src/app/widget/[key]` is the chat that runs inside its iframe, and `src/middleware.ts` sets that page's `frame-ancestors` from the chatbot's authorized domains.
 - The browser only talks to Next; `/api/*` is proxied to FastAPI so the session cookie stays first-party.
 
@@ -71,7 +71,15 @@ docs/      product plan
 
 **Handoff and forms together.** "Talk to a person" goes through `escalate()` as before. When the chatbot's ticket fallback is on, the email is no longer required up front: while waiting, the visitor may leave it in an optional box ("Might you leave before someone replies?"). `escalate()` schedules a check on the job queue. If nobody from the team replies within the chatbot's wait (two minutes by default): when the visitor left an email, a ticket opens at once with it, in the category of the form that fits the conversation, so nothing is lost if they've gone; otherwise the chat offers that form, or the contact form, and sending it opens the ticket. Either way the assistant then takes the chat back with the ticket number. The check locks the conversation, so the job and the sweeper never open two tickets. `escalate()` is still the single path: live handoff, a ticket from a form, and an agent's "Create ticket" on a conversation all go through it. Agents reply to a ticket in its chat, and resolving the ticket hands the chat back to the assistant.
 
-**Token tracking.** Every embedding (documents and questions) and every generation goes through `Meter`: reserve an estimate, call the provider, settle the real usage (or release the hold on any error, cancellation or disconnect). Usage is recorded per operation (`embedding`, `chat_response`, `kb_ask`) and model, including the model that actually answered when a server-side fallback ran.
+**Email.** A workspace connects mailboxes over IMAP and SMTP with an app password (`integrations.manage`; the plan's `email_accounts` limit, 3 by default, is checked under a workspace lock). Verity signs in to both servers before saving anything, connects over TLS only, refuses hosts on private or internal networks and pins the connection to the checked address. The password is Fernet-encrypted at rest, never returned and erased on disconnect; connects, changes and disconnects are audit-logged. A new mailbox is read from its current end, so its history doesn't become tickets. The worker polls every mailbox each minute, keyed per mailbox and locked in Postgres, so one mailbox is never fetched twice at once; failures retry with backoff and show on the account ("Sign-in failed", "Can't reach the server"), and a failed sign-in notifies the people who manage integrations. Fetching needs an active subscription; it never needs AI tokens. The transport is an interface: `ImapSmtpTransport` in production, `FakeTransport` (mailboxes in Redis) in tests, CI and e2e.
+
+**Incoming mail.** Each message is claimed through a unique (mailbox, Message-ID) index, so it is processed once even when delivered twice or fetched by two workers. Bounces, out-of-office and other automatic messages (`Auto-Submitted`, `Precedence`, `X-Autoreply`), mailer daemons and our own mail coming back (signed Message-IDs, `X-Verity-Loop`, the workspace's own addresses) never become tickets or get answers; bulk mail, mailing lists, no-reply senders and `X-Auto-Response-Suppress` never get automatic replies; and new tickets and automatic replies are capped per sender. Replies thread by `In-Reply-To`, then `References`, against the Message-IDs Verity stored, and then by a `[#42]` in the subject, which counts only when the sender is that ticket's requester. They go through `tickets.customer_replied()`, so `reopen_on_reply` applies; replies to a chat's email go into the conversation and its ticket. New mail goes through spam rules first (block and allow lists, spam flags, failed SPF with DMARC or DKIM, newsletter and bulk-mail headers); what they don't settle gets one structured Claude call (`classification`, through the `Meter`) that returns spam, promotion or legitimate and a category chosen from the workspace's own categories. Legitimate mail becomes a ticket with source `email` through `tickets.create()`, in that category or the default one. Without tokens the rules decide alone and mail still becomes tickets. The email is passed as data, never instructions, and the answer is held to a schema, so text in an email can at most pick a category. HTML is sanitized on the server (nh3) and shown only in a sandboxed iframe that runs and loads nothing; attachments are checked by content like knowledge-base uploads, executables and scripts are refused, kept files count against the plan's storage and download only as attachments.
+
+**Spam review.** Spam, promotions and mail held by the per-sender cap wait in Email → Spam (`email.review`: Owner, Administrator, Support Agent), each with the reason in words. "Not spam" (optionally "always allow this sender") opens the ticket and sends the automatic reply; "Delete" erases the body and attachments. Both are audit-logged.
+
+**Outgoing mail.** Every email is stored, then sent by a job (keyed per message, retried with backoff), so the ticket shows "Sending…", "Sent" or "Not sent · Retry". Messages carry a signed Message-ID, `In-Reply-To` and `References`, and the ticket number in the subject; automatic ones also carry `Auto-Submitted` and ask other systems not to answer them. The automatic first reply is a template (placeholders, always with `{ticket_number}`) or written by Claude (`auto_reply`), set per workspace and overridable per mailbox. An AI reply only acknowledges the request in the customer's language: links and addresses are removed and the ticket number is added if missing, and the template stands in when AI isn't available. Agent replies on email tickets go out from the mailbox the ticket arrived on, in the original thread (`ticket_reply_unavailable` remains only for tickets with neither a chat nor an email address). When an agent answers a chat whose visitor left an email (in the chat or a submitted form), the reply is also emailed in the conversation's thread, and the visitor's email reply comes back into the same conversation and ticket. This is what makes the widget's "The team will get back to you at …" true. Tickets opened from the chat (a submitted form, or the handoff timeout) get a confirmation email. Chat and form email goes from the workspace's default sending account; with no mailbox connected, it goes from Verity's no-reply address and says that replies to it aren't read.
+
+**Token tracking.** Every embedding (documents and questions) and every generation goes through `Meter`: reserve an estimate, call the provider, settle the real usage (or release the hold on any error, cancellation or disconnect). Usage is recorded per operation (`embedding`, `chat_response`, `kb_ask`, `form_activation`, `form_prefill`, `classification`, `auto_reply`) and model, including the model that actually answered when a server-side fallback ran.
 
 **Job queue.** SAQ on Redis: jobs are keyed so the same source isn't processed twice at once, retried with backoff on transient failures (provider rate limits, outages) and recorded on the row they work on, so customers see a status, not a log line. Cron jobs are de-duplicated across workers, so you can run several.
 
@@ -103,20 +111,30 @@ AI providers are configured with `VERITY_ANTHROPIC_API_KEY` and `VERITY_VOYAGE_A
 
 `make api` uses the in-memory email backend: open the newest messages at http://localhost:8000/api/dev/outbox. Set `VERITY_EMAIL_BACKEND=smtp` to send through Mailpit or a real server.
 
+Connected mailboxes use real IMAP and SMTP by default. To try email without a real mailbox, set `VERITY_MAIL_TRANSPORT=fake` for the API and the worker: connect any address (the password `wrong-password` fails sign-in), `POST` a raw email to `/api/dev/mailbox/<address>/deliver` to make it arrive, and read what Verity sent at `/api/dev/mailbox/<address>/sent`. Mailpit only catches Verity's own system email; it doesn't serve IMAP. In production set a strong `VERITY_SECRET_KEY`: mailbox passwords are encrypted with it.
+
 In development, `POST /api/dev/simulate-usage` runs the real reserve → settle path without calling a model, so the usage pages have data.
 
 ## Tests
 
 ```bash
-make test-api   # 191 API tests: Phase 1, plus parsers, chunker, crawler and SSRF guard, every plan limit (with parallel uploads), metering,
+make test-api   # 264 API tests: Phase 1, plus parsers, chunker, crawler and SSRF guard, every plan limit (with parallel uploads), metering,
                 #   hybrid retrieval and citations, chatbot and widget, handoff, the Redis worker, roles and tenant isolation;
                 #   Phase 3: categories, every field type and rule, tickets and their workflow, search, reopen on reply, form
-                #   activation, prefill and confirmation, the handoff timeout (with a real worker), every role and tenant isolation
+                #   activation, prefill and confirmation, the handoff timeout (with a real worker), every role and tenant isolation;
+                #   Phase 4: mailbox connects (bad sign-in, TLS, private hosts, the limit under parallel connects, encrypted
+                #   secrets), dedup (also across concurrent fetches), threading, reopen on reply, every loop and bounce rule,
+                #   per-sender caps, spam rules and AI verdicts, categories, no-token fallbacks, AI replies that can't be steered,
+                #   HTML sanitizing, attachment guards, replies by email, chat replies by email and their way back, confirmations,
+                #   the fetch job (keyed, locked, retried, on a real worker), the IMAP client, every role and tenant isolation
 make test-web   # lint, typecheck, production build
 make e2e        # Playwright: Phase 1 flows, plus upload → indexed → Ask with citations → chatbot on a customer site → handoff →
                 #   agent reply reaches the visitor → widget refused on an unauthorized site; Phase 3: categories → form builder →
-                #   the chatbot offers and prefills a form → ticket → reopen on reply → the handoff fallback → chat to ticket
-                #   (needs `make worker` and fake providers)
+                #   the chatbot offers and prefills a form → ticket → reopen on reply → the handoff fallback → chat to ticket;
+                #   Phase 4: connect a mailbox → email ticket in the right category with an automatic reply → reply by email in
+                #   the thread → the customer's reply reopens it → Spam: not spam / delete → a chat visitor gets the agent's
+                #   reply by email and their email reply comes back (needs `make worker`, fake providers and
+                #   VERITY_MAIL_TRANSPORT=fake)
 ```
 
 ## Decisions worth knowing
@@ -131,4 +149,8 @@ make e2e        # Playwright: Phase 1 flows, plus upload → indexed → Ask wit
 - **Mock payments** until Phase 5, behind the provider interface.
 - **Forms use the chatbot's own model** for activation and prefill, so one setting decides cost and quality for each chatbot. Each AI answer from a chatbot with forms is followed by one short classification call (citations and structured outputs can't share a request).
 - **A scheduled job plus a sweeper for the handoff timeout**: the job fires on time, the every-minute sweeper catches checks lost while no worker ran, and each escalation gets at most one offer.
+- **IMAP/SMTP with app passwords for mailboxes** — works with Gmail, Microsoft 365 (where IMAP and SMTP AUTH are allowed), Fastmail and any host, with no app registration. Google and Microsoft OAuth (XOAUTH2) can be added behind the same `MailTransport` interface.
+- **Rules first, then one AI call for email** — cheap header rules settle obvious spam and newsletters; the same structured call returns the spam verdict and the category, so classifying an email costs one call (`claude-haiku-5-5` by default, changeable per workspace). A spam verdict needs at least medium confidence, because a lost customer request costs more than a spam email a person deletes.
+- **AI-written first replies only acknowledge** — they never answer from the knowledge base, so untrusted mail can't steer Verity into promising or linking anything.
+- **Outgoing email through the queue** — every message is a stored row sent by a retried job, so agents never wait on a mail server and every ticket shows what went out.
 - **Model weights are business settings.** The seeded weights and list prices for the Claude 5.5 models and `voyage-4` are placeholders for admins to set under Admin → Model weights.

@@ -162,6 +162,23 @@ async def create(db: AsyncSession, workspace_id: uuid.UUID, spec: TicketSpec, *,
     return t
 
 
+def notify_created(db: AsyncSession, t: Ticket, *, conversation_id: uuid.UUID | None = None) -> None:
+    """The in-app notification for a new ticket (everyone in the workspace who works tickets sees it)."""
+    data = {"ticket_id": str(t.id)}
+    if conversation_id:
+        data["conversation_id"] = str(conversation_id)
+    db.add(
+        Notification(
+            workspace_id=t.workspace_id,
+            kind="ticket_created",
+            title=f"New ticket #{t.number}",
+            body=t.subject[:300],
+            data=data,
+            created_at=utcnow(),
+        )
+    )
+
+
 def notify_assignee(db: AsyncSession, t: Ticket, user_id: uuid.UUID, *, title: str | None = None) -> None:
     db.add(
         Notification(
@@ -202,13 +219,13 @@ def set_status(db: AsyncSession, t: Ticket, status: str, *, actor_id=None) -> bo
     return True
 
 
-async def customer_replied(db: AsyncSession, t: Ticket, text_in: str) -> bool:
+async def customer_replied(db: AsyncSession, t: Ticket, text_in: str, **data) -> bool:
     """A customer wrote again. Adds the message to the timeline; reopens per the workspace's setting.
 
     Pending → Open always (the team was waiting for this). Resolved → Open only when the workspace reopens on
     reply. Closed tickets stay closed. Returns True if the ticket was reopened.
     """
-    add_event(db, t, "customer_message", text_in[:4000])
+    add_event(db, t, "customer_message", text_in[:4000], **data)
     if t.status == "pending":
         set_status(db, t, "open")
         return False

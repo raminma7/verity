@@ -241,7 +241,7 @@ test("forms, tickets and the handoff fallback", async ({ page, browser }) => {
     const v5 = await visitor(browser);
     await say(v5.w, "quantum zebra parking question");
     await v5.w.locator(".vr-widget-chip", { hasText: "Talk to a person" }).click();
-    await expect(v5.w.getByText("We’ve passed this to the team. You’ll get a reply here.")).toBeVisible();
+    await expect(v5.w.getByText("We’ve passed this to the team. You’ll get a reply here, and by email if you leave your address.")).toBeVisible();
     await expect(v5.w.getByText(/Might you leave before someone replies/)).toBeVisible();
     await v5.w.getByRole("textbox", { name: "Your email" }).fill("gone@example.com");
     await v5.w.getByRole("button", { name: "Send", exact: true }).first().click();

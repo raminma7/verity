@@ -20,6 +20,8 @@ from app.models import (
     TICKET_PRIORITIES,
     TICKET_STATUSES,
     Conversation,
+    EmailAttachment,
+    EmailMessage,
     Form,
     Membership,
     Message,
@@ -32,6 +34,9 @@ from app.models.base import utcnow
 from app.services import conversations as convs
 from app.services import tickets as svc
 from app.services.audit import audit
+from app.services.mail import accounts as mail_accounts
+from app.services.mail import outbound
+from app.services.mail.attachments import attachment_out
 
 router = APIRouter(tags=["tickets"])
 
@@ -448,9 +453,69 @@ async def get_ticket(ticket_id: uuid.UUID, db: Db, ctx: WorkspaceContext = READ)
         "events": [svc.event_out(e, name) for e, name in events],
         "conversation": conversation,
         "messages": messages,
+        "emails": await _emails(db, t),
+        "reply_channel": await _reply_channel(db, ctx, t, conversation),
         "can_manage": ctx.can("tickets.manage"),
-        "can_reply": ctx.can("tickets.manage") and conversation is not None and conversation["channel"] == "widget",
+        "can_reply": ctx.can("tickets.manage") and (await _reply_channel(db, ctx, t, conversation)) is not None,
     }
+
+
+async def _emails(db: AsyncSession, t: Ticket) -> list[dict]:
+    """The ticket's email thread: what the customer sent and what went out, with delivery state and attachments."""
+    rows = (
+        (
+            await db.execute(
+                select(EmailMessage)
+                .where(EmailMessage.ticket_id == t.id, EmailMessage.workspace_id == t.workspace_id, EmailMessage.status != "deleted")
+                .order_by(EmailMessage.created_at)
+                # Delivery state is written by the send job in its own session: always read it fresh.
+                .execution_options(populate_existing=True)
+            )
+        )
+        .scalars()
+        .all()
+    )
+    atts: dict = {}
+    if rows:
+        for a in (
+            (await db.execute(select(EmailAttachment).where(EmailAttachment.email_message_id.in_([r.id for r in rows])))).scalars().all()
+        ):
+            atts.setdefault(a.email_message_id, []).append(attachment_out(a))
+    return [
+        {
+            "id": r.id,
+            "direction": r.direction,
+            "status": r.status,
+            "kind": r.kind_out,
+            "from_addr": r.from_addr,
+            "from_name": r.from_name,
+            "to": r.to,
+            "cc": r.cc,
+            "subject": r.subject,
+            "text": r.text_body,
+            "html": r.html_body,
+            "error": r.error,
+            "event_id": r.ticket_event_id,
+            "attachments": atts.get(r.id, []),
+            "via_platform": r.direction == "out" and r.account_id is None,
+            "created_at": r.created_at,
+            "sent_at": r.sent_at,
+            "received_at": r.received_at,
+        }
+        for r in rows
+    ]
+
+
+async def _reply_channel(db: AsyncSession, ctx: WorkspaceContext, t: Ticket, conversation: dict | None) -> dict | None:
+    """Where an agent's reply goes: the ticket's chat, or email in the original thread."""
+    if conversation is not None and conversation["channel"] == "widget":
+        return {"kind": "chat", "email": conversation.get("visitor_email") or t.requester_email}
+    if t.source == "email" or t.email_account_id:
+        if not t.requester_email:
+            return None
+        acct = await mail_accounts.sending_account(db, ctx.workspace, t.email_account_id)
+        return {"kind": "email", "to": t.requester_email, "from": acct.address if acct else None}
+    return None
 
 
 @router.patch("/tickets/{ticket_id}")
@@ -526,16 +591,85 @@ async def add_note(ticket_id: uuid.UUID, body: NoteIn, request: Request, db: Db,
 
 @router.post("/tickets/{ticket_id}/reply", status_code=201)
 async def reply(ticket_id: uuid.UUID, body: ReplyIn, request: Request, db: Db, ctx: WorkspaceContext = MANAGE):
-    """Answers the customer in the ticket's chat. Email replies arrive with Phase 4."""
+    """Answers the customer: in the ticket's chat (and by email when they left one), or by email in the thread."""
     t = await _ticket(db, ctx, ticket_id)
     c = await db.get(Conversation, t.conversation_id) if t.conversation_id else None
-    if c is None or c.workspace_id != ctx.workspace.id or c.channel != "widget":
+    chat = c is not None and c.workspace_id == ctx.workspace.id and c.channel == "widget"
+    by_email = not chat and (t.source == "email" or t.email_account_id is not None) and bool(t.requester_email)
+    if not chat and not by_email:
         raise ApiError(
             422,
             "ticket_reply_unavailable",
-            "This ticket has no chat to reply in. Email replies arrive with the email integration; add an internal note for now.",
+            "This ticket has no chat or email address to reply to. Add an internal note instead.",
         )
     if t.status == "closed":
         raise ApiError(422, "ticket_closed", "This ticket is closed. Reopen it to reply.")
-    await convs.agent_reply(db, c, ctx.user, body.text.strip(), ip=client_ip(request), ticket=t)
+    text_out = body.text.strip()
+    if chat:
+        await convs.agent_reply(db, c, ctx.user, text_out, ip=client_ip(request), ticket=t)
+        return await get_ticket(ticket_id, db, ctx)
+    e = svc.add_event(db, t, "agent_reply", text_out, author_id=ctx.user.id, channel="email", to=t.requester_email)
+    if t.status == "new":
+        svc.set_status(db, t, "open", actor_id=ctx.user.id)
+    t.assignee_id = t.assignee_id or ctx.user.id
+    audit(
+        db,
+        "ticket.replied",
+        actor_id=ctx.user.id,
+        workspace_id=ctx.workspace.id,
+        target_type="ticket",
+        target_id=t.id,
+        ip=client_ip(request),
+    )
+    await db.flush()
+    parent = await outbound.thread_parent(db, ticket_id=t.id)
+    account = await mail_accounts.sending_account(db, ctx.workspace, t.email_account_id)
+    row = await outbound.queue(
+        db,
+        ctx.workspace,
+        account=account,
+        to=t.requester_email,
+        subject=outbound.ticket_subject(t.subject, t.number),
+        text=text_out,
+        kind="agent_reply",
+        parent=parent,
+        ticket=t,
+        author_id=ctx.user.id,
+        ticket_event_id=e.id,
+    )
+    await db.refresh(e)
+    e.data = {**e.data, "email_message_id": str(row.id)}
+    await db.commit()
+    return await get_ticket(ticket_id, db, ctx)
+
+
+@router.post("/tickets/{ticket_id}/emails/{email_id}/retry")
+async def retry_email(ticket_id: uuid.UUID, email_id: uuid.UUID, request: Request, db: Db, ctx: WorkspaceContext = MANAGE):
+    """Sends a failed email again."""
+    t = await _ticket(db, ctx, ticket_id)
+    row = (
+        await db.execute(
+            select(EmailMessage).where(
+                EmailMessage.id == email_id, EmailMessage.ticket_id == t.id, EmailMessage.workspace_id == ctx.workspace.id
+            )
+        )
+    ).scalar_one_or_none()
+    if row is None or row.direction != "out":
+        raise ApiError(404, "email_message_not_found", "This email isn't here any more.")
+    if row.status == "failed":
+        row.status, row.error = "queued", None
+        audit(
+            db,
+            "ticket.email_retried",
+            actor_id=ctx.user.id,
+            workspace_id=ctx.workspace.id,
+            target_type="ticket",
+            target_id=t.id,
+            ip=client_ip(request),
+            email_id=row.id,
+        )
+        await db.commit()
+        from app.jobs import enqueue
+
+        await enqueue("send_email_message", key=f"send:{row.id}:{row.attempts}", retries=4, email_id=str(row.id))
     return await get_ticket(ticket_id, db, ctx)

@@ -5,9 +5,10 @@ import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { EventLine } from "@/components/chat";
+import { EmailCard } from "@/components/email";
 import { PriorityBadge, StatusBadge } from "@/components/tickets";
 import { Banner, Button, Card, dateTime, Icon, Segmented, Select, Spinner } from "@/components/ui";
-import { api, errorText, type ChatMessage, type TicketCategory, type TicketDetail, type TicketEvent } from "@/lib/api";
+import { api, errorText, type ChatMessage, type TicketCategory, type TicketDetail, type TicketEmail, type TicketEvent } from "@/lib/api";
 import { PRIORITY, PRIORITY_ORDER, SOURCE, STATUS, STATUS_ORDER, showValue } from "@/lib/tickets";
 import { useData } from "@/lib/use-data";
 
@@ -41,7 +42,30 @@ export default function TicketPage() {
 
   if (data.loading && !data.data) return <Spinner />;
   if (data.error || !data.data) return <Banner tone="danger">{data.error?.message ?? "Not found."}</Banner>;
-  const { ticket: t, form, events, messages, can_manage, can_reply } = data.data;
+  const { ticket: t, form, events, messages, emails, reply_channel, can_manage, can_reply } = data.data;
+  const byEmail = reply_channel?.kind === "email";
+  const emailById = new Map(emails.map((m) => [m.id, m]));
+  const linked = new Set(events.map((e) => String(e.data.email_message_id ?? "")).filter(Boolean));
+  const firstIn = emails.find((m) => m.direction === "in");
+  // The timeline: events, with each email shown where its event is; emails without an event (the first
+  // message, automatic replies, confirmations) take their place by time.
+  type Item = { at: string; event?: TicketEvent; email?: TicketEmail };
+  const items: Item[] = [
+    ...events.map((e) => ({ at: e.created_at, event: e })),
+    ...emails.filter((m) => !linked.has(m.id)).map((m) => ({ at: m.created_at, email: m })),
+  ].sort((a, b) => a.at.localeCompare(b.at));
+  async function retry(emailId: string) {
+    setBusy(`retry-${emailId}`);
+    setErr(null);
+    try {
+      await api.post(`/tickets/${id}/emails/${emailId}/retry`);
+      await reload();
+    } catch (e) {
+      setErr(errorText(e));
+    } finally {
+      setBusy(null);
+    }
+  }
   const catName = (cid: string | number | null | undefined) => cats.data?.find((c) => c.id === cid)?.name ?? "No category";
   const personName = (pid: string | number | null | undefined) => (pid ? people.data?.find((p) => p.id === pid)?.name ?? "a former member" : "nobody");
 
@@ -96,7 +120,7 @@ export default function TicketPage() {
       {err ? <Banner tone="danger">{err}</Banner> : null}
       <div className="vr-ticket">
         <section className="vr-timeline" aria-label="Timeline">
-          {t.description ? (
+          {t.description && !(t.source === "email" && firstIn) ? (
             <div className="vr-tl-item">
               <span className="vr-tl-meta">
                 <b>Description</b>
@@ -104,33 +128,54 @@ export default function TicketPage() {
               <p>{t.description}</p>
             </div>
           ) : null}
-          {events.map((e) => (
-            <TimelineItem key={e.id} e={e} catName={catName} personName={personName} formName={form?.name ?? null} />
-          ))}
+          {items.map((it) => {
+            const em = it.email ?? (it.event?.data.email_message_id ? emailById.get(String(it.event.data.email_message_id)) : undefined);
+            if (em)
+              return (
+                <EmailCard
+                  key={it.event?.id ?? em.id}
+                  m={em}
+                  author={it.event?.author}
+                  onRetry={can_manage ? () => retry(em.id) : undefined}
+                  retrying={busy === `retry-${em.id}`}
+                />
+              );
+            return it.event ? <TimelineItem key={it.event.id} e={it.event} catName={catName} personName={personName} formName={form?.name ?? null} /> : null;
+          })}
           {can_manage ? (
             <form className="vr-card vr-panel-body vr-composer" onSubmit={send}>
               <Segmented
                 label="Write"
                 value={mode}
                 onChange={(v) => setMode(v as "reply" | "note")}
-                options={[...(can_reply ? [{ value: "reply", label: "Reply in the chat" }] : []), { value: "note", label: "Internal note" }]}
+                options={[...(can_reply ? [{ value: "reply", label: byEmail ? "Reply by email" : "Reply in the chat" }] : []), { value: "note", label: "Internal note" }]}
               />
               <span className="vr-input vr-textarea">
                 <textarea
                   rows={4}
                   value={text}
                   aria-label={mode === "reply" ? "Reply to the customer" : "Internal note"}
-                  placeholder={mode === "reply" ? "Write to the customer. It appears in their chat within a few seconds." : "Only your team sees internal notes."}
+                  placeholder={
+                    mode === "reply"
+                      ? byEmail
+                        ? "Write to the customer. It goes out by email, in their original thread."
+                        : "Write to the customer. It appears in their chat within a few seconds."
+                      : "Only your team sees internal notes."
+                  }
                   onChange={(e) => setText(e.target.value)}
                 />
               </span>
               <div className="vr-actions" style={{ justifyContent: "space-between" }}>
                 <span className="vr-help">
                   {mode === "reply"
-                    ? "Replying takes the chat over: the assistant stays quiet until the ticket is resolved."
+                    ? reply_channel?.kind === "email"
+                      ? `To ${reply_channel.to}${reply_channel.from ? `, from ${reply_channel.from}` : ", from Verity’s no-reply address (no mailbox connected)"}.`
+                      : reply_channel?.kind === "chat" && reply_channel.email
+                        ? `Replying takes the chat over: the assistant stays quiet until the ticket is resolved. Also emailed to ${reply_channel.email}.`
+                        : "Replying takes the chat over: the assistant stays quiet until the ticket is resolved."
                     : can_reply
                       ? "The customer never sees internal notes."
-                      : "This ticket has no chat to reply in. Email replies arrive with the email integration."}
+                      : "This ticket has no chat or email address to reply to."}
                 </span>
                 <Button type="submit" variant="primary" busy={busy === "send"} disabled={!text.trim() || (mode === "reply" && t.status === "closed")}>
                   {mode === "reply" ? "Send reply" : "Add note"}
@@ -246,7 +291,7 @@ function TimelineItem({
     return (
       <div className="vr-tl-item is-customer">
         <span className="vr-tl-meta">
-          <b>Customer</b> wrote in the chat · {when}
+          <b>Customer</b> {e.data.channel === "email" ? "replied by email" : "wrote in the chat"} · {when}
         </span>
         <p>{e.body}</p>
       </div>
@@ -276,6 +321,8 @@ function TimelineItem({
     e.kind === "created"
       ? e.data.source === "chatbot_form"
         ? `Opened from the chatbot form “${e.data.form ?? formName ?? "form"}”.`
+        : e.data.source === "email"
+          ? "Opened from an incoming email."
         : e.data.source === "conversation"
           ? `${who} turned a chat conversation into this ticket.`
           : `${who} opened this ticket.`
@@ -311,11 +358,20 @@ function ConvoLine({ m }: { m: ChatMessage }) {
         </span>
       </div>
     );
-  if (m.role === "visitor") return <div className="vr-bubble">{m.content}</div>;
+  if (m.role === "visitor")
+    return (
+      <div className="vr-bubble">
+        {m.data.channel === "email" ? <span className="vr-bubble-tag">By email</span> : null}
+        {m.content}
+      </div>
+    );
   if (m.role === "agent")
     return (
       <div className="vr-agent-msg">
-        <span className="vr-eyebrow">{m.author ?? "Team"}</span>
+        <span className="vr-eyebrow">
+          {m.author ?? "Team"}
+          {m.data.emailed_to ? ` · also emailed to ${m.data.emailed_to}` : ""}
+        </span>
         <p style={{ margin: 0, whiteSpace: "pre-line" }}>{m.content}</p>
       </div>
     );
