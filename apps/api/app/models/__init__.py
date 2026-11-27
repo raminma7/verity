@@ -14,6 +14,7 @@ from app.models.chat import Chatbot, Conversation, Message
 from app.models.email import EmailAccount, EmailAttachment, EmailMessage
 from app.models.integrations import ApiTool, ApiToolCall, chatbot_tools
 from app.models.knowledge import KnowledgeChunk, KnowledgePage, KnowledgeSource
+from app.models.privacy import DataExport, SpamFeature, SpamModelStats
 from app.models.ticketing import (
     FIELD_TYPES,
     TICKET_PRIORITIES,
@@ -31,7 +32,6 @@ from app.models.ticketing import (
     team_members,
 )
 from app.models.usage import AuditLog, ModelMultiplier, Notification, TokenGrant, TokenLedger, TokenReservation, UsageEvent
-from app.models.privacy import DataExport, SpamFeature, SpamModelStats
 from app.models.user import EmailToken, Session, User
 from app.models.workspace import Invitation, Membership, Role, Workspace
 
