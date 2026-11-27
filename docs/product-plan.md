@@ -153,7 +153,7 @@ Phase 5 is delivered in two parts so each can be built, tested and reviewed on i
 - **Intelligent routing.** New tickets from every source (email, chatbot forms, conversations, manual) are routed automatically: ordered rules (source, category, priority, keywords, requester domain) or the category pick a team; inside the team, the least busy available member gets the ticket (fewest open tickets, ties to whoever was assigned longest ago). Members can mark themselves away, have a cap on open tickets and skills (categories they handle, preferred first). Routing uses no AI, so it keeps working when the token allowance is used up.
 - **Prepared for 5B.** Tickets record when they were assigned and when the team first responded; every API tool call is logged with its outcome and latency; tool-deciding model rounds are metered as their own operation (`tool_call`).
 
-### Phase 5B: Payments and analytics (decisions already made)
+### Phase 5B: Payments and analytics
 
 - **Stripe** replaces the mock `PaymentProvider` behind the same interface, without touching the activation logic (`start_period`, renewals, the token ledger). The mock provider stays for tests, CI and e2e; Stripe is never called in CI.
   - **Stripe Checkout** (hosted) for subscription purchases and additional token packages, plus the **Stripe Customer Portal** for payment methods and invoice PDFs. Plan changes, cancellation and billing history stay on Verity's own screens.
@@ -165,3 +165,9 @@ Phase 5 is delivered in two parts so each can be built, tested and reviewed on i
   - For workspace owners and admins: ticket volume by source and category, first-response and resolution times, reopen rate, SLA-style breaches (targets per priority), agent workload, chatbot deflection and handoff rate, API tool calls, spam volume, AI token usage by feature and model.
   - For system administrators: workspace usage, actual AI provider costs, subscriptions, MRR and revenue, failed payments.
   - Time ranges: 7, 30 and 90 days, or a custom range up to one year, in the viewer's time zone, with daily buckets (weekly above 90 days). Charts work in light and dark themes and status always carries a word.
+- **Decided while building 5B:**
+  - Token packages are defined by system administrators (tokens, price, currency). Bought tokens roll over: they are used after the period's allowance and expire 12 months after purchase.
+  - SLA targets are set per workspace in Settings → Tickets, with defaults (first response / resolution): urgent 1 h / 8 h, high 4 h / 24 h, normal 8 h / 3 days, low 24 h / 7 days, around the clock.
+  - Stripe keys and the webhook secret are environment variables (`VERITY_STRIPE_SECRET_KEY`, `VERITY_STRIPE_WEBHOOK_SECRET`).
+  - A failed renewal leaves the workspace past due for 14 days: AI pauses, manual ticketing, email and forms keep working, payment is retried, then the subscription ends.
+  - Client IPs: `X-Forwarded-For` is trusted only from configured proxies.

@@ -2,7 +2,7 @@
 
 AI customer support in one workspace: a knowledge base (RAG), an embeddable chatbot and a ticketing system, with email built in. The full product plan is in [`docs/product-plan.md`](docs/product-plan.md).
 
-This repository holds **Phases 1 to 4 and 5A**: accounts, workspaces, roles, plans, subscriptions and the AI token quota (Phase 1); the knowledge base, retrieval-augmented answers with citations, the embeddable chatbot with live handoff to people, and the Redis job queue (Phase 2); ticket categories, tickets, the form builder, and chatbot forms that the AI offers and prefills and that open tickets (Phase 3); and email: connected mailboxes, email tickets, spam review, automatic replies and threading (Phase 4); and external API tools the chatbot calls, and automatic ticket routing (Phase 5A). Phase 5 is split in two; what Phase 5B (Stripe and analytics) will build, and the decisions already made for it, are in the product plan, section 8.
+This repository holds **Phases 1 to 5**: accounts, workspaces, roles, plans, subscriptions and the AI token quota (Phase 1); the knowledge base, retrieval-augmented answers with citations, the embeddable chatbot with live handoff to people, and the Redis job queue (Phase 2); ticket categories, tickets, the form builder, and chatbot forms that the AI offers and prefills and that open tickets (Phase 3); and email: connected mailboxes, email tickets, spam review, automatic replies and threading (Phase 4); external API tools the chatbot calls, and automatic ticket routing (Phase 5A); and payments through Stripe, token packages, and support analytics with platform reports (Phase 5B).
 
 | Phase | Scope | State |
 |---|---|---|
@@ -11,7 +11,7 @@ This repository holds **Phases 1 to 4 and 5A**: accounts, workspaces, roles, pla
 | 3 | Form builder, chatbot forms that open tickets, ticket categories, ticket management | **Done** |
 | 4 | Email integration, spam detection, automatic replies, threading | **Done** |
 | 5A | External API tools (tool calling), intelligent ticket routing | **Done** |
-| 5B | Real payments (Stripe), token packages, advanced analytics | Next |
+| 5B | Payments (Stripe), token packages, advanced analytics | **Done** |
 
 ## Layout
 
@@ -23,11 +23,11 @@ docs/      product plan
 
 ### API (`apps/api`)
 
-- `app/routers/` — `auth`, `me`, `workspaces` (members, roles, invitations, audit), `billing`, `usage`, `admin`, `knowledge` (sources, retrieval settings, Test retrieval), `chatbots` (settings, conversations, replies, Ask, conversation → ticket), `widget` (the public chatbot API, including forms), `tickets` (categories, tickets, notes, replies by chat or email), `forms` (the form builder), `email` (mailboxes, Settings → Email, the Spam section, attachments), `tools` (API tools, their test run and call log, chatbot links), `routing` (teams, rules, routing settings, availability, auto-assign)
-- `app/services/` — `quota` (token reserve/settle), `subscriptions` (periods, renewals), `payments` (provider interface + mock), `permissions` (role catalogue), `email`, `audit`, `ingest/` (parsers, chunker, pipeline), `crawler`, `ai/` (Voyage embeddings, Claude generation, the `Meter` every AI call goes through), `rag` (hybrid retrieval, cited answers), `conversations` (answers and the handoff), `tickets` (numbering, timeline, status, reopen on reply), `forms` (field definitions and value checks), `forms_ai` (form activation and prefill, and the handoff timeout), `storage`, `mail/` (the mail transport interface with IMAP/SMTP and a fake, parsing and sanitizing, loop guard, threading, spam rules, AI classification, attachments, fetching, outbound mail and automatic replies), `tools/` (tool definitions, the guarded transport with a fake, running a call), `routing` (who a new ticket goes to)
+- `app/routers/` — `auth`, `me`, `workspaces` (members, roles, invitations, audit), `billing`, `usage`, `admin`, `knowledge` (sources, retrieval settings, Test retrieval), `chatbots` (settings, conversations, replies, Ask, conversation → ticket), `widget` (the public chatbot API, including forms), `tickets` (categories, tickets, notes, replies by chat or email), `forms` (the form builder), `email` (mailboxes, Settings → Email, the Spam section, attachments), `tools` (API tools, their test run and call log, chatbot links), `routing` (teams, rules, routing settings, availability, auto-assign), `analytics` (workspace analytics, SLA targets, platform reports)
+- `app/services/` — `quota` (token reserve/settle), `subscriptions` (periods, renewals, past due), `payments` (provider interface + mock), `stripe_provider`, `billing` (invoices, upgrades, dunning, token packages), `billing_events` (provider events applied once), `analytics`, `permissions` (role catalogue), `email`, `audit`, `ingest/` (parsers, chunker, pipeline), `crawler`, `ai/` (Voyage embeddings, Claude generation, the `Meter` every AI call goes through), `rag` (hybrid retrieval, cited answers), `conversations` (answers and the handoff), `tickets` (numbering, timeline, status, reopen on reply), `forms` (field definitions and value checks), `forms_ai` (form activation and prefill, and the handoff timeout), `storage`, `mail/` (the mail transport interface with IMAP/SMTP and a fake, parsing and sanitizing, loop guard, threading, spam rules, AI classification, attachments, fetching, outbound mail and automatic replies), `tools/` (tool definitions, the guarded transport with a fake, running a call), `routing` (who a new ticket goes to)
 - `app/core/ssrf.py` — the SSRF guard shared by the crawler, the mail transport and API tools, and `GuardedClient` (one checked, pinned HTTPS request with no redirects, a timeout and a byte cap)
 - `app/core/deps.py` — session auth, `workspace_context` (tenant resolution) and `require(...)` (permission and subscription checks)
-- `app/jobs/` + `app/worker.py` — the SAQ job queue on Redis: ingestion, crawls and deletions, the handoff check scheduled when a conversation is handed over, mailbox fetches and outgoing email, plus cron jobs for website re-sync (every 15 minutes), renewals, stale token holds and audit retention (every 5 minutes), lost handoff checks and mailbox polling (every minute)
+- `app/jobs/` + `app/worker.py` — the SAQ job queue on Redis: ingestion, crawls and deletions, the handoff check scheduled when a conversation is handed over, mailbox fetches and outgoing email, plus cron jobs for website re-sync (every 15 minutes), renewals and payment retries, stale token holds, expired token packages and audit retention (every 5 minutes), Stripe price sync (hourly), lost handoff checks and mailbox polling (every minute)
 
 ### Web (`apps/web`)
 
@@ -35,7 +35,7 @@ docs/      product plan
 - `src/design/verity.css` is the design system's component stylesheet, unchanged. `src/components/ui.tsx` ports its components (Button, Badge, Field, Segmented, Switch, Icon…) to typed React with the same `vr-` classes.
 - `src/design/app.css` adds what the design system doesn't have yet (plan cards, usage meters, banners, tables, the app shell), built only from its tokens and rules: teal acts, lime marks evidence, no gradients, status always has a word.
 - `src/components/rag.tsx` ports the design system's Ask and Library components (QueryBar, AnswerCard, Citation, SourceCard, RelevanceMeter, PipelineTrace, DocumentRow, FileTag); the screens follow its AppLibrary, AppUpload, AppDocument, AppAsk, AppHistory and AppSettings layouts.
-- `src/components/chat-form.tsx` renders a chatbot form exactly as customers see it: the widget uses it, and so does the form builder's live preview. Tickets, the ticket detail, Forms and Settings → Tickets aren't in the design system yet, so they are built only from its tokens and rules (`app.css`, Phase 3 section); so are Email (mailboxes and Spam), Settings → Email and email threads on tickets (`components/email.tsx`, `app.css` Phase 4 section), and API tools, Settings → Routing and teams on tickets (`components/tools.tsx`, `app.css` Phase 5A section).
+- `src/components/chat-form.tsx` renders a chatbot form exactly as customers see it: the widget uses it, and so does the form builder's live preview. Tickets, the ticket detail, Forms and Settings → Tickets aren't in the design system yet, so they are built only from its tokens and rules (`app.css`, Phase 3 section); so are Email (mailboxes and Spam), Settings → Email and email threads on tickets (`components/email.tsx`, `app.css` Phase 4 section), and API tools, Settings → Routing and teams on tickets (`components/tools.tsx`, `app.css` Phase 5A section), and billing, token packages, analytics and admin reports (`components/charts.tsx`, `range.tsx`, `sla.tsx`, `admin-billing.tsx`, `app.css` Phase 5B section). Charts are plain HTML/SVG, no library: one teal ramp derived from `--brand` (validated in both themes), status colours only for status and always with a word, a legend, tooltips and a table view for every chart.
 - `public/widget.js` is the one-line embed; `src/app/widget/[key]` is the chat that runs inside its iframe, and `src/middleware.ts` sets that page's `frame-ancestors` from the chatbot's authorized domains.
 - The browser only talks to Next; `/api/*` is proxied to FastAPI so the session cookie stays first-party.
 
@@ -51,7 +51,17 @@ docs/      product plan
 
 **Plans and subscriptions.** Admins define price, cycle, token allowance and limits (documents, domains, crawled pages, chatbot domains, email accounts, members, storage). A subscription snapshots those terms each period, so plan edits reach existing customers at renewal. Upgrades start a new period at once; downgrades are scheduled for renewal. Without a plan, settings, plans and billing stay open and everything else is gated (`subscription_required`).
 
-**Payments.** `PaymentProvider` has a mock implementation: checkout → confirm → activation, idempotent like a webhook. Stripe replaces it in Phase 5 without touching the activation logic.
+**Payments.** `PaymentProvider` has two implementations: `StripeProvider` (production) and `MockPaymentProvider` (tests, CI, e2e and local development; Stripe is never called there). Both report what happened as the same provider-neutral events, and `billing_events.handle()` is the one path that applies them to the activation logic (`start_period`, `renew_one`, the token ledger): a Stripe webhook and the mock's "Pay" button run the same code. Each event is claimed by (provider, event id) in the transaction that applies it, so a duplicate or concurrent delivery waits and then finds it done; a failure is recorded and applied again when Stripe retries; objects are re-read from Stripe (API version pinned), so late or out-of-order events apply the current state. Only ids and types are stored, never payloads; Verity never receives card data.
+- **Purchases** go through Stripe Checkout (hosted), which collects the billing address and tax ID; Stripe Tax adds tax to tax-exclusive prices. Each plan and token package has its own Stripe Price in its own currency, created on first sale; a workspace stays in the currency it first paid in (`currency_mismatch`), and a plan with subscribers keeps its currency. A price change creates a new Price, and an hourly job moves subscribers to it from their next renewal.
+- **Plan changes** are on Verity's screens. Upgrades apply now and are prorated: the unused time is credited and a new period starts (`billing_cycle_anchor=now`, `always_invoice`, `pending_if_incomplete`, so nothing changes unless the payment succeeds; 3-D Secure sends the customer to Stripe's invoice page). Downgrades and cancellations take effect at the period end. Payment methods and invoice PDFs are in the Stripe Customer Portal, configured without plan changes or cancellation.
+- **Failed payments** make the subscription past due: AI pauses (the new token period isn't opened), manual tickets, email ingestion and forms stay open for `VERITY_PAST_DUE_GRACE_DAYS` (14) while payment is retried (Stripe Smart Retries; the mock retries after 1, 3 and 7 days), then the subscription ends. Billing contacts get a notice and an email for the failure, the recovery and the end; "Retry payment now" is on the Billing page.
+- **Invoices** record the kind (subscription, upgrade, renewal, package), subtotal, tax, number, attempts, the next retry and Stripe's PDF.
+
+**Token packages.** System admins define packages (tokens, price, currency). A subscribed workspace buys one through Checkout; it becomes a grant that rolls over, is used only after the period's allowance runs out, and expires 12 months after purchase (a refund revokes what's left). `reserve` takes what's left of the allowance and holds the rest on the grant that expires first, each with one conditional UPDATE on a locked row, so parallel requests can't overrun either pool (tested with 50 parallel reservations).
+
+**Analytics.** Owners and administrators (`analytics.read`, which custom roles can be given) see ticket volume by source and category, first-response and resolution times (median and 90th percentile), reopen rate, SLA breaches per priority with the open tickets breaching now, agent workload, chatbot deflection and handoff, API tool calls, spam volume, and AI tokens by feature and model. SLA targets are per priority in Settings → Tickets (`tickets.configure`; defaults 1 h / 8 h urgent, 4 h / 24 h high, 8 h / 3 days normal, 24 h / 7 days low, around the clock); breaches are computed when the report is read, so a new target recounts past tickets. System administrators get platform reports: workspace usage, actual AI provider costs, subscriptions, MRR and revenue (per currency, never added across currencies) and failed payments. Ranges are the last 7, 30 or 90 days or a custom range of up to a year, in local days of the viewer's time zone, with daily buckets (ISO weeks above 90 days), and a comparison with the period before.
+
+**Client IPs.** Per-IP rate limits and audit logs use the connection's address. `X-Forwarded-For` is only believed when the connection comes from a trusted proxy (`VERITY_TRUSTED_PROXIES`, loopback by default for the Next.js server; docker-compose adds its network), and then the right-most address that isn't a trusted proxy is the client.
 
 **Token quota.** Each AI call will `reserve` an estimate, call the model, then `settle` the real cost (or `release` on failure). `reserve` is one conditional `UPDATE … WHERE allowance + bonus − reserved − consumed ≥ n`, so concurrent requests can't overrun the allowance (tested with 50 parallel reservations). Weighted tokens = input × weight + output × weight, per model and optionally per operation; customers see the weights. Alerts go out once each at 80%, 90% and 100%. Allowances reset each period with no rollover. Admins can add or remove tokens, and every adjustment is audit-logged.
 
@@ -123,12 +133,14 @@ Connected mailboxes use real IMAP and SMTP by default. To try email without a re
 
 API tools call real APIs by default. With `VERITY_TOOL_TRANSPORT=fake` they call in-process fake APIs instead (the address checks and pinning still run): `https://shop.example.com/orders/{id}` answers an order status (and 401 without a key), `/stock/{sku}` a stock level, `/slow` times out, `/big` is too large, `/redirect` redirects to a private host; `*.internal.example` resolves to a private address and is refused.
 
-In development, `POST /api/dev/simulate-usage` runs the real reserve → settle path without calling a model, so the usage pages have data.
+In development, `POST /api/dev/simulate-usage` runs the real reserve → settle path without calling a model, so the usage pages have data, and `POST /api/dev/billing/renew` runs the renewal for your workspace now (with the test provider; the test portal at Billing → "Payment methods and invoices" switches to a card that declines).
+
+Payments use the test provider unless `VERITY_PAYMENT_PROVIDER=stripe`. For Stripe, set `VERITY_STRIPE_SECRET_KEY` and `VERITY_STRIPE_WEBHOOK_SECRET` (the API refuses to start with only one), add the webhook endpoint `{VERITY_APP_URL}/api/billing/webhooks/stripe` for `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.expired`, `invoice.paid`, `invoice.payment_failed`, `customer.subscription.updated`, `customer.subscription.deleted` and `charge.refunded` (not `invoice.created`, so renewals are charged at once), and turn on Stripe Tax and Smart Retries in the Stripe Dashboard. Products, prices and the portal configuration are created by Verity.
 
 ## Tests
 
 ```bash
-make test-api   # 329 API tests: Phase 1, plus parsers, chunker, crawler and SSRF guard, every plan limit (with parallel uploads), metering,
+make test-api   # 392 API tests: Phase 1, plus parsers, chunker, crawler and SSRF guard, every plan limit (with parallel uploads), metering,
                 #   hybrid retrieval and citations, chatbot and widget, handoff, the Redis worker, roles and tenant isolation;
                 #   Phase 3: categories, every field type and rule, tickets and their workflow, search, reopen on reply, form
                 #   activation, prefill and confirmation, the handoff timeout (with a real worker), every role and tenant isolation;
@@ -140,7 +152,13 @@ make test-api   # 329 API tests: Phase 1, plus parsers, chunker, crawler and SSR
                 #   Phase 5A: tool definitions, encrypted keys never returned, the limit under parallel creates, the SSRF guard
                 #   (private, metadata, IPv6, mixed DNS, redirects, pinning), timeouts, size caps, rate limits, argument checks,
                 #   the tool-calling loop and its metering, framed results, the Anthropic request shape, routing rules, teams,
-                #   least busy, away, caps and skills, every ticket source, parallel balancing, every role and tenant isolation
+                #   least busy, away, caps and skills, every ticket source, parallel balancing, every role and tenant isolation;
+                #   Phase 5B: purchase, prorated upgrades, downgrades, cancellation, failed renewals (past due, retries, grace,
+                #   recovery), the currency lock; Stripe against an in-memory Stripe on httpx.MockTransport (request shapes for
+                #   tax, address, tax ID and prorations, signatures, duplicate, concurrent, failed and out-of-order events,
+                #   renewals, the portal, refunds, price changes); token packages (spent after the allowance, rollover, expiry,
+                #   refunds, 50 parallel reservations, no-token fallbacks); every analytics metric, time-zone buckets, weekly
+                #   buckets, SLA targets, platform reports per currency; trusted proxies; every role and tenant isolation
 make test-web   # lint, typecheck, production build
 make e2e        # Playwright: Phase 1 flows, plus upload → indexed → Ask with citations → chatbot on a customer site → handoff →
                 #   agent reply reaches the visitor → widget refused on an unauthorized site; Phase 3: categories → form builder →
@@ -151,6 +169,8 @@ make e2e        # Playwright: Phase 1 flows, plus upload → indexed → Ask wit
                 #   VERITY_MAIL_TRANSPORT=fake); Phase 5A: an API tool with a token → test →
                 #   a private host refused → the chatbot answers an order question from the API, with the call in the trace →
                 #   a team and a rule route manual and email tickets to the least busy available member (VERITY_TOOL_TRANSPORT=fake;
+                #   Phase 5B: buy a plan → prorated upgrade → a token package → a declined renewal (past due) and its recovery →
+                #   a scheduled downgrade, cancel and resume → analytics in both themes → the admin's packages and reports;
                 #   all specs from one address need VERITY_RL_REGISTER=30/600 and VERITY_RL_WIDGET_IP=600/60, as in CI)
 ```
 
@@ -163,7 +183,12 @@ make e2e        # Playwright: Phase 1 flows, plus upload → indexed → Ask wit
 - **Claude's native citations** instead of asking the model to write `[1]` markers: the API ties each cited span to a passage, so citations can't be invented.
 - **An iframe for the widget** — the customer's CSS and scripts can't touch it, it reuses the design system, and the browser itself enforces the authorized domains.
 - **Fake AI providers for tests, CI and e2e** — deterministic, free and offline, while the quota, queue, retrieval and citation code paths stay real.
-- **Mock payments** until Phase 5B, behind the provider interface.
+- **Stripe behind the provider interface, with a mock for tests, CI and e2e** — both produce the same events, so the activation path tested in CI is the one Stripe drives in production.
+- **Stripe over httpx instead of the SDK** — a pinned API version, an injectable transport for tests, and no new runtime dependency; signatures are verified by hand (HMAC-SHA256, constant time).
+- **Upgrades restart the period** (`billing_cycle_anchor=now` with proration), matching how Verity already opened a new token period on upgrade.
+- **Token packages roll over for 12 months** in their own pool, so a renewal never wipes tokens a customer paid for.
+- **Analytics computed at read time** from what the product records (the ticket timeline, messages, tool calls, email verdicts, metered usage, invoices), with indexes on each range; no second copy of the data to keep in sync.
+- **Charts without a library** — a few HTML/SVG components on the design system's tokens; nothing new ships at runtime.
 - **Forms use the chatbot's own model** for activation and prefill, so one setting decides cost and quality for each chatbot. Each AI answer from a chatbot with forms is followed by one short classification call (citations and structured outputs can't share a request).
 - **A scheduled job plus a sweeper for the handoff timeout**: the job fires on time, the every-minute sweeper catches checks lost while no worker ran, and each escalation gets at most one offer.
 - **IMAP/SMTP with app passwords for mailboxes** — works with Gmail, Microsoft 365 (where IMAP and SMTP AUTH are allowed), Fastmail and any host, with no app registration. Google and Microsoft OAuth (XOAUTH2) can be added behind the same `MailTransport` interface.
@@ -175,4 +200,4 @@ make e2e        # Playwright: Phase 1 flows, plus upload → indexed → Ask wit
 - **API results are untrusted data**: they come back framed in tags the system prompt calls data, are size-capped, and can't add tools or change where a call goes. Context values (the visitor's email) are filled by Verity, not by the model.
 - **No redirects for API tools** (the crawler follows them, checking each hop): an API that redirects is almost always misconfigured, and refusing is the safer default.
 - **Routing by rules, then least busy** — predictable, explainable in one line on the timeline, free of AI cost and working without tokens. Ties go to whoever was assigned longest ago, so equal load takes turns.
-- **Phase 5 in two parts.** 5A (this) builds tools and routing; 5B builds Stripe and analytics. The decisions already made for 5B are in the product plan, section 8.
+- **Phase 5 in two parts.** 5A built tools and routing and the data 5B reports on; 5B built Stripe, token packages and analytics.
