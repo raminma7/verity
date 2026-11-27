@@ -462,7 +462,7 @@ function Multipliers() {
         >
           <div className="vr-grid vr-grid-3">
             <Field label="Model" className="vr-mono" value={f.model} onChange={(e) => setF({ ...f, model: e.target.value })} placeholder="claude-sonnet-5-5" />
-            <Field label="Operation" value={f.operation} onChange={(e) => setF({ ...f, operation: e.target.value })} help="* for all, or chat_response, classification, summary, auto_reply, embedding" />
+            <Field label="Operation" value={f.operation} onChange={(e) => setF({ ...f, operation: e.target.value })} help="* for all, or chat_response, kb_ask, tool_call, form_activation, form_prefill, classification, auto_reply, embedding" />
             <Field label="Input weight" inputMode="decimal" value={f.input_multiplier} onChange={(e) => setF({ ...f, input_multiplier: e.target.value })} />
             <Field label="Output weight" inputMode="decimal" value={f.output_multiplier} onChange={(e) => setF({ ...f, output_multiplier: e.target.value })} />
             <Field label="Provider $ / 1M input" inputMode="decimal" value={f.input_cost_per_m} onChange={(e) => setF({ ...f, input_cost_per_m: e.target.value })} />

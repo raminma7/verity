@@ -47,12 +47,17 @@ class Meter:
         self.reservation_id = res.id
         return self
 
-    async def settle(self, input_tokens: int, output_tokens: int, *, model: str | None = None) -> UsageEvent | None:
+    async def settle(
+        self, input_tokens: int, output_tokens: int, *, model: str | None = None, operation: str | None = None
+    ) -> UsageEvent | None:
         if self.reservation_id is None or self.event is not None:
             return self.event
-        if model and model != self.model:
-            # A server-side fallback answered on another model; bill the model that actually ran.
-            await quota.retarget(self.db, self.reservation_id, model)
+        new_model = model if model and model != self.model else None
+        new_op = operation if operation and operation != self.operation else None
+        if new_model or new_op:
+            # A server-side fallback answered on another model, or the round turned out to be a tool decision:
+            # bill what actually ran.
+            await quota.retarget(self.db, self.reservation_id, new_model, operation=new_op)
         self.event = await quota.settle(
             self.db, self.reservation_id, input_tokens=input_tokens, output_tokens=output_tokens, kind=self.kind
         )

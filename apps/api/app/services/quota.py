@@ -157,11 +157,18 @@ async def settle(
     return event
 
 
-async def retarget(db: AsyncSession, reservation_id: uuid.UUID, model: str) -> None:
-    """Records the model that actually answered (a server-side fallback), so settle uses its weights."""
-    await db.execute(
-        text("UPDATE token_reservations SET model = :model WHERE id = :id AND status = 'held'"), {"id": reservation_id, "model": model}
-    )
+async def retarget(db: AsyncSession, reservation_id: uuid.UUID, model: str | None = None, *, operation: str | None = None) -> None:
+    """Records the model that actually answered (a server-side fallback), or the operation the call turned out
+    to be (a model round that asked for an API tool is billed as `tool_call`), so settle uses its weights."""
+    if model:
+        await db.execute(
+            text("UPDATE token_reservations SET model = :model WHERE id = :id AND status = 'held'"), {"id": reservation_id, "model": model}
+        )
+    if operation:
+        await db.execute(
+            text("UPDATE token_reservations SET operation = :op WHERE id = :id AND status = 'held'"),
+            {"id": reservation_id, "op": operation},
+        )
     await db.commit()
 
 

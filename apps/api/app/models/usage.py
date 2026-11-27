@@ -51,7 +51,8 @@ class UsageEvent(IdMixin, Base):
     workspace_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("workspaces.id", ondelete="CASCADE"), index=True)
     ledger_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("token_ledgers.id", ondelete="SET NULL"))
     kind: Mapped[str] = mapped_column(String(20), default="llm")  # llm | embedding
-    operation: Mapped[str] = mapped_column(String(40))  # chat_response | classification | summary | auto_reply | embedding
+    # embedding | chat_response | kb_ask | tool_call | form_activation | form_prefill | classification | auto_reply
+    operation: Mapped[str] = mapped_column(String(40))
     model: Mapped[str] = mapped_column(String(80))
     input_tokens: Mapped[int] = mapped_column(BigInteger, default=0)
     output_tokens: Mapped[int] = mapped_column(BigInteger, default=0)

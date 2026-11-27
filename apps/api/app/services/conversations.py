@@ -15,11 +15,13 @@ import uuid
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
 
+from sqlalchemy import inspect as sa_inspect
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models import Chatbot, Conversation, Membership, Message, Notification, User, Workspace
+from app.models import ApiTool, Chatbot, Conversation, Membership, Message, Notification, User, Workspace
 from app.models.base import utcnow
+from app.models.integrations import chatbot_tools
 from app.services import email as mail
 from app.services import rag
 from app.services.audit import audit
@@ -132,6 +134,24 @@ async def history_of(db: AsyncSession, conv: Conversation) -> list[tuple[str, st
     return [(r.role, r.content) for r in reversed(rows)]
 
 
+async def tools_for(db: AsyncSession, bot: Chatbot | None, conv: Conversation) -> list[ApiTool]:
+    """The chatbot's active API tools that this conversation can use (context values like the visitor's
+    email must be known)."""
+    if bot is None:
+        return []
+    from app.services.tools.runner import available_for
+
+    rows = (
+        await db.execute(
+            select(ApiTool)
+            .join(chatbot_tools, chatbot_tools.c.tool_id == ApiTool.id)
+            .where(chatbot_tools.c.chatbot_id == bot.id, ApiTool.workspace_id == conv.workspace_id, ApiTool.status == "active")
+            .order_by(ApiTool.name)
+        )
+    ).scalars()
+    return [t for t in rows if available_for(t, conv)]
+
+
 async def ask(db: AsyncSession, conv: Conversation, text: str, *, role: str, operation: str) -> AsyncIterator[dict]:
     """Saves the question and, unless people have the conversation, streams and saves the AI's answer.
 
@@ -158,11 +178,18 @@ async def ask(db: AsyncSession, conv: Conversation, text: str, *, role: str, ope
         return
 
     final = None
-    async for ev in rag.answer(db, ws, text, persona=persona_for(bot, ws), history=history, operation=operation):
+    tools = await tools_for(db, bot, conv)
+    async for ev in rag.answer(
+        db, ws, text, persona=persona_for(bot, ws), history=history, operation=operation, tools=tools, conversation=conv
+    ):
         if ev["type"] == "delta":
             yield ev
         else:
             final = ev
+    # A failed metered call rolls the session back, which expires loaded rows; reload the ones still in use.
+    for o in (conv, bot):
+        if o is not None and sa_inspect(o).expired_attributes:
+            await db.refresh(o)
     escalation_on = bot is None or bot.escalation.get("enabled", True)
     offer = final["outcome"] in ("no_answer", "fallback") and escalation_on and conv.channel == "widget"
     reply = add_message(
@@ -176,6 +203,8 @@ async def ask(db: AsyncSession, conv: Conversation, text: str, *, role: str, ope
             "sources": final["sources"],
             "offer_escalation": offer,
             "usage_event_id": str(final["usage_event_id"]) if final.get("usage_event_id") else None,
+            # API tools the answer called (members only; never in PUBLIC_DATA).
+            "tools": final.get("tools", []),
         },
         citations=final["citations"],
         confidence=final["confidence"],
