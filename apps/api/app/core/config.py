@@ -74,6 +74,22 @@ class Settings(BaseSettings):
     # Tests and local development may crawl a server on localhost. Never enable in production.
     crawl_allow_private: bool = False
 
+    # Email integration (Phase 4). "imap" connects to real IMAP/SMTP servers; "fake" keeps mailboxes in Redis
+    # (tests, CI and e2e; the dev endpoints under /api/dev/mailbox put mail in and read what was sent).
+    mail_transport: str = "imap"
+    mail_timeout_seconds: float = 30.0
+    mail_fetch_batch: int = 50
+    mail_max_message_mb: int = 25
+    mail_max_attachment_mb: int = 10
+    mail_max_attachments: int = 20
+    # Model for spam verdicts, ticket categories and AI-written first replies, unless a workspace picks another.
+    mail_default_model: str = "claude-haiku-5-5"
+    # Loop and flood protection, per sender and mailbox: "<count>/<seconds>".
+    rl_mail_tickets_per_sender: str = "20/3600"
+    rl_mail_auto_reply_short: str = "1/600"
+    rl_mail_auto_reply_day: str = "5/86400"
+    rl_mail_outbound_per_account: str = "300/3600"
+
     # Public chatbot widget rate limits
     rl_widget_message: str = "20/60"  # per visitor
     rl_widget_ip: str = "60/60"  # per IP

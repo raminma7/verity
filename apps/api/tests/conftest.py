@@ -6,6 +6,7 @@ os.environ["VERITY_EMAIL_BACKEND"] = "memory"
 os.environ["VERITY_QUEUE"] = "inline"
 os.environ["VERITY_LLM_PROVIDER"] = "fake"
 os.environ["VERITY_EMBEDDING_PROVIDER"] = "fake"
+os.environ["VERITY_MAIL_TRANSPORT"] = "fake"
 os.environ.setdefault("VERITY_STORAGE_DIR", "/tmp/verity-test-storage")
 os.environ["VERITY_CRAWL_ALLOW_PRIVATE"] = "true"
 os.environ["VERITY_ADMIN_EMAIL"] = "root@example.org"
