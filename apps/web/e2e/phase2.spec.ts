@@ -119,9 +119,8 @@ test("knowledge base, Ask, chatbot widget and live handoff", async ({ page, brow
   await w.getByRole("textbox").fill("Can I pay with zebra xylophones?");
   await w.getByRole("button", { name: "Send" }).click();
   await expect(w.getByText("I couldn't find this in our documentation.")).toBeVisible({ timeout: 20_000 });
-  await w.locator(".vr-widget-chip").click();
-  await w.getByRole("textbox", { name: "Your email" }).fill("visitor@example.com");
-  await w.getByRole("button", { name: "Send", exact: true }).first().click();
+  // No email up front: if nobody replies in time, the chat offers a form that asks for it (Phase 3).
+  await w.locator(".vr-widget-chip", { hasText: "Talk to a person" }).click();
   await expect(w.getByText(/passed this to the team/)).toBeVisible();
   await shot(visitor, "p2-09-widget-handoff");
 

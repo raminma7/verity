@@ -18,6 +18,7 @@ import httpx  # noqa: E402
 import pytest  # noqa: E402
 from sqlalchemy import text  # noqa: E402
 
+from app import jobs  # noqa: E402
 from app.core import ratelimit  # noqa: E402
 from app.core.db import SessionLocal, engine  # noqa: E402
 from app.main import app  # noqa: E402
@@ -44,6 +45,7 @@ async def database():
 async def clean(database):
     ratelimit.set_redis(fakeredis.FakeAsyncRedis(decode_responses=True))
     mail.OUTBOX.clear()
+    jobs.DELAYED.clear()
     yield
     tables = [t.name for t in Base.metadata.sorted_tables if t.name not in KEEP]
     async with engine.begin() as conn:

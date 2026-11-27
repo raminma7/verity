@@ -145,6 +145,10 @@ async def test_handoff_silences_ai_until_resolved(client):
         base, conv = await start(v, bot["public_key"])
         evs = await say(v, base, conv, "zebra xylophone quantum")
         assert evs[-2][1]["data"]["offer_escalation"] is True
+        # Without the ticket fallback, the email is asked before handing over (with it, the offered form asks).
+        await client.patch(
+            f"/api/chatbots/{bot['id']}", json={"escalation": {"enabled": True, "ask_email": True, "ticket_fallback": False}}
+        )
         r = await v.post(f"{base}/conversations/{conv}/escalate", json={})
         assert r.status_code == 422 and r.json()["detail"]["code"] == "email_required"
         mail.OUTBOX.clear()

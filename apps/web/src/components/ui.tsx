@@ -148,6 +148,7 @@ export function Select({
   options,
   name,
   disabled,
+  ariaLabel,
 }: {
   label?: ReactNode;
   help?: ReactNode;
@@ -156,12 +157,14 @@ export function Select({
   options: { value: string; label: string }[];
   name?: string;
   disabled?: boolean;
+  /** For a select without a visible label. */
+  ariaLabel?: string;
 }) {
   return (
     <label className="vr-field">
       {label ? <span className="vr-field-top">{label}</span> : null}
       <span className="vr-input vr-select">
-        <select name={name} value={value} disabled={disabled} onChange={(e) => onChange(e.target.value)}>
+        <select name={name} value={value} disabled={disabled} aria-label={ariaLabel} onChange={(e) => onChange(e.target.value)}>
           {options.map((o) => (
             <option key={o.value} value={o.value}>
               {o.label}

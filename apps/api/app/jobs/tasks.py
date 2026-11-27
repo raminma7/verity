@@ -2,6 +2,7 @@
 
 import logging
 import uuid
+from datetime import datetime, timedelta
 
 from app.core.db import SessionLocal
 from app.services import quota
@@ -56,5 +57,46 @@ async def sync_websites(ctx) -> int:
     return len(due)
 
 
-FUNCTIONS = [maintenance, ingest_source, crawl_source, remove_source, sync_websites]
-CRON = [("maintenance", "*/5 * * * *"), ("sync_websites", "*/15 * * * *")]
+async def handoff_check(ctx, *, conversation_id: str, escalated_at: str) -> str:
+    """Nobody replied to a handoff in time: offer the matching form, or the contact form."""
+    from app.services.forms_ai import handoff_timeout
+
+    async with SessionLocal() as db:
+        return await handoff_timeout(db, uuid.UUID(conversation_id), datetime.fromisoformat(escalated_at))
+
+
+async def sweep_handoffs(ctx) -> int:
+    """Every minute: runs handoff checks that were lost (for example, while no worker was running)."""
+    from sqlalchemy import select
+
+    from app.models import Chatbot, Conversation
+    from app.models.base import utcnow
+    from app.services.forms_ai import handoff_timeout
+
+    now = utcnow()
+    async with SessionLocal() as db:
+        rows = (
+            await db.execute(
+                select(Conversation.id, Conversation.escalated_at, Chatbot.escalation)
+                .join(Chatbot, Chatbot.id == Conversation.chatbot_id)
+                .where(
+                    Conversation.status == "escalated",
+                    Conversation.channel == "widget",
+                    Conversation.escalated_at > now - timedelta(days=2),
+                    Conversation.escalated_at < now - timedelta(seconds=60),
+                )
+                .limit(500)
+            )
+        ).all()
+    offered = 0
+    for conv_id, escalated_at, esc in rows:
+        esc = esc or {}
+        if not esc.get("ticket_fallback", True) or escalated_at > now - timedelta(seconds=int(esc.get("wait_seconds", 120)) + 30):
+            continue
+        async with SessionLocal() as db:
+            offered += (await handoff_timeout(db, conv_id, escalated_at)) == "offered"
+    return offered
+
+
+FUNCTIONS = [maintenance, ingest_source, crawl_source, remove_source, sync_websites, handoff_check, sweep_handoffs]
+CRON = [("maintenance", "*/5 * * * *"), ("sync_websites", "*/15 * * * *"), ("sweep_handoffs", "* * * * *")]

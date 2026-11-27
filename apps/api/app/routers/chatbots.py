@@ -22,8 +22,9 @@ from app.core.config import get_settings
 from app.core.db import SessionLocal
 from app.core.deps import Db, WorkspaceContext, client_ip, require
 from app.core.errors import ApiError, not_found
-from app.models import Chatbot, Conversation, Message, User
+from app.models import TICKET_PRIORITIES, Chatbot, Conversation, Form, Message, Ticket, User
 from app.services import conversations as convs
+from app.services import tickets as tk
 from app.services.audit import audit
 from app.services.storage import get_storage
 from app.services.subscriptions import effective_limits
@@ -92,6 +93,10 @@ class AppearanceIn(BaseModel):
 class EscalationIn(BaseModel):
     enabled: bool = True
     ask_email: bool = True
+    # Offer a form that opens a ticket when nobody replies within wait_seconds.
+    ticket_fallback: bool = True
+    wait_seconds: int = Field(default=120, ge=10, le=3600)
+    fallback_form_id: uuid.UUID | None = None
 
 
 class ChatbotIn(BaseModel):
@@ -224,6 +229,18 @@ async def get_bot(bot_id: uuid.UUID, db: Db, ctx: WorkspaceContext = READ):
 async def update_bot(bot_id: uuid.UUID, body: ChatbotUpdateIn, request: Request, db: Db, ctx: WorkspaceContext = MANAGE):
     b = await _bot(db, ctx, bot_id)
     changes = body.model_dump(exclude_none=True)
+    if body.escalation is not None:
+        esc = body.escalation.model_dump()
+        if esc["fallback_form_id"] is not None:
+            f = (
+                await db.execute(select(Form).where(Form.id == esc["fallback_form_id"], Form.workspace_id == ctx.workspace.id))
+            ).scalar_one_or_none()
+            if f is None:
+                raise ApiError(404, "form_not_found", "Form not found.", field="fallback_form_id")
+            if f.status != "active":
+                raise ApiError(422, "form_inactive", "Activate this form before using it as the fallback.", field="fallback_form_id")
+            esc["fallback_form_id"] = str(f.id)
+        changes["escalation"] = esc
     if "allowed_domains" in changes:
         await db.execute(text("SELECT pg_advisory_xact_lock(hashtextextended(:k, 0))"), {"k": f"chatbots:{ctx.workspace.id}"})
         others = (
@@ -375,7 +392,18 @@ async def list_conversations(
                 )
             ).all()
         )
-    return {"items": [{**convs.conversation_out(c), "confidence": last_conf.get(c.id)} for c in rows], "waiting": waiting}
+    tickets: dict = {}
+    if ids:
+        for cid, number in (
+            await db.execute(
+                select(Ticket.conversation_id, Ticket.number).where(Ticket.conversation_id.in_(ids)).order_by(Ticket.created_at)
+            )
+        ).all():
+            tickets[cid] = number
+    return {
+        "items": [{**convs.conversation_out(c), "confidence": last_conf.get(c.id), "ticket_number": tickets.get(c.id)} for c in rows],
+        "waiting": waiting,
+    }
 
 
 @router.get("/conversations/{conv_id}")
@@ -389,10 +417,15 @@ async def get_conversation(conv_id: uuid.UUID, db: Db, ctx: WorkspaceContext = R
             .order_by(Message.created_at)
         )
     ).all()
+    linked = (
+        await db.execute(select(Ticket.id, Ticket.number, Ticket.status).where(Ticket.conversation_id == c.id).order_by(Ticket.created_at))
+    ).all()
     return {
         "conversation": convs.conversation_out(c),
         "messages": [{**convs.message_out(m), "author": name} for m, name in rows],
+        "tickets": [{"id": i, "number": n, "status": st} for i, n, st in linked],
         "can_reply": ctx.can("conversations.reply"),
+        "can_create_ticket": ctx.can("tickets.manage") and c.channel == "widget",
     }
 
 
@@ -414,6 +447,37 @@ async def resolve(conv_id: uuid.UUID, request: Request, db: Db, ctx: WorkspaceCo
     c = await _conv(db, ctx, conv_id)
     await convs.resolve(db, c, ctx.user, ip=client_ip(request))
     return convs.conversation_out(c)
+
+
+class ConvertIn(BaseModel):
+    subject: str | None = Field(default=None, max_length=200)
+    category_id: uuid.UUID | None = None
+    priority: str = Field(default="normal", pattern="^(" + "|".join(TICKET_PRIORITIES) + ")$")
+    assignee_id: uuid.UUID | None = None
+
+
+@router.post("/conversations/{conv_id}/ticket", status_code=201)
+async def create_ticket(
+    conv_id: uuid.UUID, body: ConvertIn, request: Request, db: Db, ctx: WorkspaceContext = require("tickets.manage", subscription=True)
+):
+    """An agent turns a customer conversation into a ticket, through the same escalate() path as the widget."""
+    c = await _conv(db, ctx, conv_id)
+    if c.channel != "widget":
+        raise ApiError(422, "not_a_customer_conversation", "Only customer conversations can become tickets.")
+    await tk.check_category(db, ctx.workspace.id, body.category_id)
+    await tk.check_assignee(db, ctx.workspace.id, body.assignee_id)
+    spec = tk.TicketSpec(
+        subject=(body.subject or "").strip() or c.title or "Chat conversation",
+        source="conversation",
+        category_id=body.category_id,
+        priority=body.priority,
+        assignee_id=body.assignee_id,
+        created_by=ctx.user.id,
+        description="Created from a chat conversation.",
+    )
+    result = await convs.escalate(db, c, reason="agent_conversion", actor_id=ctx.user.id, ip=client_ip(request), ticket=spec, live=False)
+    t = result.ticket
+    return {"id": t.id, "number": t.number, "status": t.status}
 
 
 # ---- Ask (members test the knowledge base) -------------------------------------------------------

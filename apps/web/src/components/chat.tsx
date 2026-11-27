@@ -11,6 +11,8 @@ export const EVENT_TEXT: Record<string, (m: ChatMessage) => string> = {
   escalated: (m) => `Handed to the team${m.data.reason === "no_answer" ? " (no answer found)" : m.data.reason === "ai_unavailable" ? " (AI unavailable)" : ""}. The assistant stays quiet until it’s resolved.`,
   agent_joined: (m) => `${m.data.name ?? "A team member"} joined the conversation.`,
   resolved: (m) => `${m.data.name ?? "The team"} resolved the conversation. The assistant answers new messages again.`,
+  ticket_created: (m) =>
+    m.data.reason === "agent_conversion" ? `Turned into ticket #${m.data.ticket_number}.` : `The customer sent a form: ticket #${m.data.ticket_number}. The assistant has the chat again.`,
 };
 
 /** An assistant answer: AnswerCard with cited text; clicking a citation selects its source. */

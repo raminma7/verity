@@ -5,6 +5,7 @@ text blocks whose citations point at the exact passages they rely on (`search_re
 back to chunks; we never parse citation markers out of free text.
 """
 
+import json
 import re
 from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
@@ -55,10 +56,23 @@ class Delta:
     text: str
 
 
+@dataclass
+class Structured:
+    """A JSON answer that matches the requested schema (structured outputs)."""
+
+    data: dict
+    input_tokens: int
+    output_tokens: int
+    model: str
+    refused: bool = False
+
+
 class LLM(Protocol):
     def stream(
         self, *, model: str, system: str, history: list[dict], question: str, passages: list[Passage], max_tokens: int
     ) -> AsyncIterator[Delta | Generation]: ...
+
+    async def structured(self, *, model: str, system: str, prompt: str, schema: dict, max_tokens: int) -> Structured: ...
 
 
 def _user_content(question: str, passages: list[Passage]) -> list[dict]:
@@ -140,6 +154,40 @@ class AnthropicLLM:
             refused=final.stop_reason == "refusal",
         )
 
+    async def structured(self, *, model: str, system: str, prompt: str, schema: dict, max_tokens: int) -> Structured:
+        """One request whose answer is JSON matching `schema` (output_config.format). Used for forms."""
+        a = self._anthropic
+        kwargs: dict = {
+            "model": model,
+            "max_tokens": max_tokens,
+            "system": [{"type": "text", "text": system, "cache_control": {"type": "ephemeral"}}],
+            "messages": [{"role": "user", "content": prompt}],
+            # Classification and extraction: low effort is enough and keeps it quick.
+            "output_config": {"effort": "low", "format": {"type": "json_schema", "schema": schema}},
+        }
+        if model in self.FALLBACK_MODELS:
+            kwargs["betas"] = ["server-side-fallback-2026-07-01"]
+            kwargs["fallbacks"] = "default"
+        try:
+            msg = await self.client.beta.messages.create(**kwargs)
+        except a.RateLimitError as e:
+            raise LLMError("llm_rate_limited", "The AI provider is rate limiting requests.", retryable=True) from e
+        except a.APIStatusError as e:
+            raise LLMError("llm_unavailable", f"The AI provider returned {e.status_code}.", retryable=e.status_code >= 500) from e
+        except a.APIConnectionError as e:
+            raise LLMError("llm_unavailable", "Couldn't reach the AI provider.", retryable=True) from e
+        usage = msg.usage
+        tokens_in = (usage.input_tokens or 0) + (usage.cache_creation_input_tokens or 0) + (usage.cache_read_input_tokens or 0)
+        if msg.stop_reason == "refusal":
+            return Structured({}, tokens_in, usage.output_tokens or 0, msg.model, refused=True)
+        text = next((b.text for b in msg.content if b.type == "text"), "")
+        try:
+            data = json.loads(text)
+        except ValueError as e:
+            # max_tokens can cut the JSON off; treat it like any other failed call (the hold is released).
+            raise LLMError("llm_bad_output", "The AI returned an incomplete answer.") from e
+        return Structured(data if isinstance(data, dict) else {}, tokens_in, usage.output_tokens or 0, msg.model)
+
 
 class FakeLLM:
     """Answers with the first sentence of the most relevant passages and cites them. No network."""
@@ -165,6 +213,66 @@ class FakeLLM:
         prompt = len(system) + len(question) + sum(len(p.text) for p in passages) + sum(len(str(m["content"])) for m in history)
         out = sum(len(s.text) for s in spans)
         yield Generation(spans, max(1, prompt // 4), max(1, out // 4), model, "end_turn")
+
+    async def structured(self, *, model: str, system: str, prompt: str, schema: dict, max_tokens: int) -> Structured:
+        """Deterministic stand-ins for the form calls, driven by the prompt's tagged sections."""
+        if "[[fail]]" in prompt:
+            raise LLMError("llm_unavailable", "Simulated provider outage.", retryable=True)
+        convo = _section(prompt, "conversation")
+        said = " ".join(line.split(":", 1)[1] for line in convo.splitlines() if line.lower().startswith("customer:"))
+        props = schema.get("properties", {})
+        if "form_id" in props:
+            data = {"form_id": "none", "confidence": "low"}
+            words = _stems(said)
+            for line in _section(prompt, "forms").splitlines():
+                key, _, condition = line.partition(":")
+                if key.strip() in props["form_id"]["enum"] and words & _stems(condition):
+                    data = {"form_id": key.strip(), "confidence": "high"}
+                    break
+        else:
+            data = {k: _fake_extract(k, p, said) for k, p in props.items()}
+        out = json.dumps(data)
+        return Structured(data, max(1, (len(system) + len(prompt)) // 4), max(1, len(out) // 4), model)
+
+
+# ---- Fake extraction helpers (tests, CI and e2e only) --------------------------------------------
+
+_FAKE_STOP = {"customer", "wants", "would", "their", "about", "something", "someone", "visitor", "seems", "should", "please"}
+
+
+def _section(text: str, tag: str) -> str:
+    m = re.search(rf"<{tag}>(.*?)</{tag}>", text, re.S)
+    return m.group(1) if m else ""
+
+
+def _stems(text: str) -> set[str]:
+    return {w[:5] for w in re.findall(r"[a-z]+", text.lower()) if len(w) >= 5 and w not in _FAKE_STOP}
+
+
+def _fake_extract(key: str, prop: dict, said: str):
+    desc = (prop.get("description") or "").lower()
+    options = next((o.get("enum") for o in prop.get("anyOf", []) if o.get("enum")), None) or prop.get("items", {}).get("enum")
+    low = said.lower()
+    if prop.get("type") == "array":
+        return [o for o in options or [] if o.lower() in low]
+    if options:
+        return next((o for o in options if o.lower() in low), None)
+    if "(email)" in desc:
+        m = re.search(r"[\w.+-]+@[\w-]+\.[\w.]+", said)
+        return m.group(0).rstrip(".") if m else None
+    if "(date)" in desc:
+        m = re.search(r"\d{4}-\d{2}-\d{2}", said)
+        return m.group(0) if m else None
+    if "(number)" in desc:
+        m = re.search(r"\b(\d{1,3})\b", said)
+        return int(m.group(1)) if m else None
+    if "order" in key or "order" in desc:
+        m = re.search(r"\b(\d{5,8})\b", said)
+        return m.group(1) if m else None
+    if "name" in key:
+        m = re.search(r"my name is ([A-Z][a-z]+(?: [A-Z][a-z]+)?)", said)
+        return m.group(1) if m else None
+    return None
 
 
 _llm: LLM | None = None

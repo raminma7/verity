@@ -5,13 +5,21 @@ import { useParams } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
 import { AssistantAnswer, EventLine, SourcesRail } from "@/components/chat";
-import { Badge, Banner, Button, dateTime, Spinner } from "@/components/ui";
-import { api, errorText, type ChatMessage, type Conversation } from "@/lib/api";
+import { Badge, Banner, Button, Card, dateTime, Field, Select, Spinner } from "@/components/ui";
+import { api, errorText, type ChatMessage, type Conversation, type TicketCategory, type TicketStatus } from "@/lib/api";
+import { PRIORITY, PRIORITY_ORDER, STATUS } from "@/lib/tickets";
 import { useData } from "@/lib/use-data";
 
 export default function ConversationPage() {
   const { id } = useParams<{ id: string }>();
-  const data = useData<{ conversation: Conversation; messages: ChatMessage[]; can_reply: boolean }>(`/conversations/${id}`);
+  const data = useData<{
+    conversation: Conversation;
+    messages: ChatMessage[];
+    can_reply: boolean;
+    can_create_ticket?: boolean;
+    tickets?: { id: string; number: number; status: TicketStatus }[];
+  }>(`/conversations/${id}`);
+  const [converting, setConverting] = useState(false);
   const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -31,7 +39,7 @@ export default function ConversationPage() {
 
   if (data.loading && !data.data) return <Spinner />;
   if (data.error || !data.data) return <Banner tone="danger">{data.error?.message ?? "Not found."}</Banner>;
-  const { conversation: c, messages, can_reply } = data.data;
+  const { conversation: c, messages, can_reply, can_create_ticket, tickets = [] } = data.data;
   const sel = messages.find((m) => m.id === selected) ?? [...messages].reverse().find((m) => m.role === "assistant") ?? null;
 
   async function reply(e: React.FormEvent) {
@@ -78,6 +86,12 @@ export default function ConversationPage() {
               With the assistant
             </Badge>
           )}
+          {tickets.map((t) => (
+            <Link key={t.id} href={`/tickets/${t.id}`} className="vr-link" style={{ fontSize: 13 }}>
+              Ticket <span className="vr-mono">#{t.number}</span> · {STATUS[t.status].label}
+            </Link>
+          ))}
+          {can_create_ticket && !converting ? <Button onClick={() => setConverting(true)}>Create ticket</Button> : null}
           {can_reply && c.status !== "resolved" ? (
             <Button
               onClick={async () => {
@@ -93,9 +107,34 @@ export default function ConversationPage() {
             </Button>
           ) : null}
         </header>
+        {converting ? (
+          <ConvertCard
+            conversation={c}
+            onDone={async (ticketId) => {
+              setConverting(false);
+              if (ticketId) await reload();
+            }}
+          />
+        ) : null}
         {messages.map((m) =>
           m.kind === "event" ? (
             <EventLine key={m.id} m={m} />
+          ) : m.kind === "form" ? (
+            <div key={m.id} className="vr-event" role="note">
+              <span>
+                Form “{m.data.form?.title}”{" "}
+                {m.data.state === "submitted"
+                  ? `sent by the customer: ticket #${m.data.ticket_number}`
+                  : m.data.state === "dismissed"
+                    ? "closed by the customer"
+                    : m.data.reason === "handoff_timeout"
+                      ? "offered because nobody replied in time"
+                      : m.data.reason === "visitor_choice"
+                        ? "opened by the customer"
+                        : "offered by the assistant"}
+              </span>
+              <span className="vr-mono">{dateTime(m.created_at)}</span>
+            </div>
           ) : m.role === "visitor" ? (
             <div key={m.id} className="vr-bubble">
               {m.content}
@@ -151,5 +190,51 @@ export default function ConversationPage() {
       </section>
       {sel ? <SourcesRail m={sel} active={active} onSelect={setActive} /> : null}
     </div>
+  );
+}
+
+function ConvertCard({ conversation, onDone }: { conversation: Conversation; onDone: (ticketId: string | null) => void }) {
+  const cats = useData<TicketCategory[]>("/ticket-categories");
+  const [subject, setSubject] = useState(conversation.title || "");
+  const [category, setCategory] = useState("");
+  const [priority, setPriority] = useState("normal");
+  const [busy, setBusy] = useState(false);
+  const [err, setErr] = useState<string | null>(null);
+  return (
+    <Card title="Turn this conversation into a ticket">
+      <form
+        className="vr-form"
+        onSubmit={async (e) => {
+          e.preventDefault();
+          setBusy(true);
+          setErr(null);
+          try {
+            const t = await api.post<{ id: string }>(`/conversations/${conversation.id}/ticket`, { subject, category_id: category || null, priority });
+            onDone(t.id);
+          } catch (e2) {
+            setErr(errorText(e2));
+            setBusy(false);
+          }
+        }}
+      >
+        <p className="vr-muted" style={{ margin: 0 }}>
+          The ticket keeps this whole conversation. The chat stays as it is; replies you write on the ticket appear in it.
+        </p>
+        <Field label="Subject" value={subject} onChange={(e) => setSubject(e.target.value)} maxLength={200} />
+        <div className="vr-form-row">
+          <Select label="Category" value={category} onChange={setCategory} options={[{ value: "", label: "No category" }, ...(cats.data ?? []).map((x) => ({ value: x.id, label: x.name }))]} />
+          <Select label="Priority" value={priority} onChange={setPriority} options={PRIORITY_ORDER.map((p) => ({ value: p, label: PRIORITY[p].label }))} />
+        </div>
+        {err ? <Banner tone="danger">{err}</Banner> : null}
+        <div className="vr-actions">
+          <Button type="submit" variant="primary" busy={busy}>
+            Create ticket
+          </Button>
+          <Button variant="ghost" onClick={() => onDone(null)}>
+            Cancel
+          </Button>
+        </div>
+      </form>
+    </Card>
   );
 }

@@ -1,9 +1,10 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 
-import { Banner, Button, Card, date, Field, Switch } from "@/components/ui";
+import { Banner, Button, Card, date, Field } from "@/components/ui";
 import { api, errorText } from "@/lib/api";
 import { useSession } from "@/lib/session";
 
@@ -12,7 +13,6 @@ function WorkspaceSettings() {
   const router = useRouter();
   const showNew = useSearchParams().get("new");
   const [name, setName] = useState(current?.workspace.name ?? "");
-  const [reopen, setReopen] = useState(Boolean(current?.workspace.settings.reopen_on_reply ?? true));
   const [newName, setNewName] = useState("");
   const [busy, setBusy] = useState<string | null>(null);
   const [msg, setMsg] = useState<{ tone: "brand" | "danger"; text: string } | null>(null);
@@ -67,7 +67,7 @@ function WorkspaceSettings() {
             onSubmit={(e) => {
               e.preventDefault();
               act("save", async () => {
-                await api.patch("/workspace", { name, settings: { reopen_on_reply: reopen } });
+                await api.patch("/workspace", { name });
                 await refresh();
                 setMsg({ tone: "brand", text: "Workspace saved." });
               });
@@ -75,7 +75,13 @@ function WorkspaceSettings() {
           >
             <Field label="Name" value={name} onChange={(e) => setName(e.target.value)} disabled={!editable} />
             <Field label="Workspace ID" value={current.workspace.slug} disabled className="vr-mono" help={`Created ${date(current.workspace.created_at)}`} />
-            <Switch label="Reopen tickets when customers reply" help="A resolved or closed ticket goes back to Open when the customer writes again." checked={reopen} onChange={setReopen} disabled={!editable} />
+            <p className="vr-help">
+              Ticket settings, such as reopening tickets when customers reply, are under{" "}
+              <Link className="vr-link" href="/settings/tickets">
+                Tickets
+              </Link>
+              .
+            </p>
             {editable ? (
               <div className="vr-actions">
                 <Button type="submit" variant="primary" busy={busy === "save"}>
