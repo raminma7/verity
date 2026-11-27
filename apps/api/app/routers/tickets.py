@@ -470,6 +470,7 @@ async def get_ticket(ticket_id: uuid.UUID, db: Db, ctx: WorkspaceContext = READ)
     return {
         "ticket": await _out(db, t),
         "summary": {"text": t.summary, "at": t.summary_at} if t.summary else None,
+        "possible_spam": await _possible_spam(db, t),
         "form": {
             "name": form_name,
             "version": t.form_version,
@@ -492,6 +493,44 @@ async def get_ticket(ticket_id: uuid.UUID, db: Db, ctx: WorkspaceContext = READ)
     }
 
 
+@router.post("/tickets/{ticket_id}/move-to-spam")
+async def move_to_spam(ticket_id: uuid.UUID, request: Request, db: Db, ctx: WorkspaceContext = MANAGE):
+    """An email ticket that is really spam: closes it, moves its email to Spam and teaches the workspace's model."""
+    from app.services.mail import spam_model
+
+    t = await _ticket(db, ctx, ticket_id)
+    m = (
+        await db.execute(
+            select(EmailMessage)
+            .where(EmailMessage.ticket_id == t.id, EmailMessage.direction == "in", EmailMessage.workspace_id == ctx.workspace.id)
+            .order_by(EmailMessage.created_at)
+            .limit(1)
+            .with_for_update()
+        )
+    ).scalar_one_or_none()
+    if m is None:
+        raise ApiError(409, "not_email", "Only tickets that came by email can be moved to Spam.")
+    if m.status != "spam":
+        await spam_model.learn(
+            db, ctx.workspace.id, spam=True, subject=m.subject, text_body=m.text_body, html=m.html_body, from_addr=m.from_addr
+        )
+        m.status = "spam"
+        m.verdict = {**(m.verdict or {}), "reviewed": "spam", "reviewed_by": str(ctx.user.id)}
+    if t.status != "closed":
+        svc.set_status(db, t, "closed", actor_id=ctx.user.id)
+    audit(
+        db,
+        "email.moved_to_spam",
+        actor_id=ctx.user.id,
+        workspace_id=ctx.workspace.id,
+        target_type="ticket",
+        target_id=t.id,
+        ip=client_ip(request),
+    )
+    await db.commit()
+    return {"status": t.status}
+
+
 @router.post("/tickets/{ticket_id}/summary")
 async def summarize(ticket_id: uuid.UUID, db: Db, ctx: WorkspaceContext = READ):
     """An AI summary for the team (operation "summary"). Needs tokens; rate limited per ticket."""
@@ -502,6 +541,21 @@ async def summarize(ticket_id: uuid.UUID, db: Db, ctx: WorkspaceContext = READ):
     await ratelimit.hit(f"summary:{t.id}", "10/600")
     t = await summarize_ticket(db, t, language=ctx.user.locale)
     return {"text": t.summary, "at": t.summary_at}
+
+
+async def _possible_spam(db: AsyncSession, t: Ticket) -> bool:
+    """The spam model wasn't sure about the email that opened this ticket."""
+    if t.source != "email":
+        return False
+    v = (
+        await db.execute(
+            select(EmailMessage.verdict)
+            .where(EmailMessage.ticket_id == t.id, EmailMessage.direction == "in", EmailMessage.status == "ticketed")
+            .order_by(EmailMessage.created_at)
+            .limit(1)
+        )
+    ).scalar_one_or_none()
+    return bool(v and v.get("possible_spam"))
 
 
 async def _emails(db: AsyncSession, t: Ticket) -> list[dict]:

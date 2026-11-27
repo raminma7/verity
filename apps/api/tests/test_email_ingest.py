@@ -239,13 +239,25 @@ async def test_rules_catch_obvious_spam_and_promotions_without_ai(client):
     assert await tickets(client) == [] and await usage_ops() == [] and await sent() == []
 
 
-async def test_the_ai_decides_when_the_rules_are_unsure(client):
+async def test_the_trained_model_decides_spam_without_an_ai_call(client):
+    import json
+    from pathlib import Path
+
+    examples = json.loads((Path(__file__).parent / "fixtures" / "spam_examples.json").read_text())
     a, *_ = await setup(client)
-    await deliver(client, a["id"], mail("Congratulations", "You have won the lottery! [[spam]]", sender="lucky@prize.example")[0])
-    await deliver(client, a["id"], mail("Weekly digest", "Read more. Unsubscribe here.", sender="digest@blog.example")[0])
+    lottery = examples["spam"][0]
+    await deliver(client, a["id"], mail(lottery["subject"], lottery["body"], sender=lottery["from"])[0])
+    digest = "Read more about this week's new features and tips. Unsubscribe here. Click here to manage your subscription."
+    await deliver(
+        client, a["id"], mail("Weekly digest", digest, sender="digest@blog.example", headers={"List-Id": "digest.blog.example"})[0]
+    )
     assert [r.status for r in await rows(direction="in")] == ["spam", "promotion"]
-    assert all(r.verdict["decided_by"] == "ai" for r in await rows(direction="in"))
-    assert await usage_ops() == ["classification", "classification"]
+    assert [r.verdict["decided_by"] for r in await rows(direction="in")] == ["model", "rules"]
+    assert (await rows(direction="in"))[0].verdict["model"]["p_spam"] >= 0.95
+    assert await usage_ops() == []  # spam and promotions cost no AI call
+    # Legitimate mail costs one call, for its category only.
+    await deliver(client, a["id"], mail("Order missing", "Hello, my order 12345 hasn't arrived yet. Can you check where it is?")[0])
+    assert (await rows(direction="in"))[-1].status == "ticketed" and await usage_ops() == ["classification"]
 
 
 async def test_allow_and_block_lists(client):
@@ -264,7 +276,7 @@ async def test_without_tokens_mail_still_becomes_tickets_in_the_default_category
     [t] = await tickets(client)
     assert t["category"] == "General"
     [row] = await rows(direction="in")
-    assert row.verdict["ai_used"] is False and row.verdict["ai_note"] == "quota_exhausted" and row.verdict["decided_by"] == "rules"
+    assert row.verdict["ai_used"] is False and row.verdict["ai_note"] == "quota_exhausted" and row.verdict["decided_by"] == "model"
     [out] = await sent()
     assert f"#{t['number']}" in text_of(out) and "Thanks for writing to" in text_of(out)  # the template stood in
     assert await usage_ops() == []
