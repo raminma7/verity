@@ -90,6 +90,14 @@ class Settings(BaseSettings):
     rl_mail_auto_reply_day: str = "5/86400"
     rl_mail_outbound_per_account: str = "300/3600"
 
+    # External API tools (Phase 5A). "http" calls the workspace's real APIs through the SSRF guard; "fake" serves
+    # canned APIs in-process (tests, CI and e2e: *.example.com is public, *.internal.example is private).
+    tool_transport: str = "http"
+    tool_max_rounds: int = 3  # model rounds per answer that may call tools
+    rl_tool_conversation: str = "10/600"  # tool calls per conversation
+    rl_tool_workspace: str = "300/60"  # tool calls per workspace
+    rl_tool_test: str = "20/60"  # dashboard test runs per member
+
     # Public chatbot widget rate limits
     rl_widget_message: str = "20/60"  # per visitor
     rl_widget_ip: str = "60/60"  # per IP
