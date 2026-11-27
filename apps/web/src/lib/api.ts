@@ -285,7 +285,8 @@ export type ChatMessage = {
     form?: FormBlock;
     state?: "offered" | "submitted" | "dismissed";
     ticket_number?: number;
-    notice?: "ticket_created";
+    notice?: "ticket_created" | "ticket_created_auto";
+    email?: string;
     custom?: boolean;
     values?: Record<string, FormValue>;
   };

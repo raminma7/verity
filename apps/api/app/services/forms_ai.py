@@ -17,7 +17,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
-from app.models import Chatbot, Conversation, Form, Message, Workspace, chatbot_forms
+from app.models import Chatbot, Conversation, Form, Message, TicketCategory, Workspace, chatbot_forms
 from app.services import forms as fsvc
 from app.services.ai.llm import LLMError, get_llm
 from app.services.ai.metered import Meter, estimate
@@ -280,12 +280,8 @@ async def prefill(db: AsyncSession, conv: Conversation, fields: list[dict], *, k
 # ---- Handoff timeout ----------------------------------------------------------------------------
 
 
-async def handoff_timeout(db: AsyncSession, conversation_id: uuid.UUID, escalated_at: datetime) -> str:
-    """Nobody answered the handoff in time: offer the form that fits, or the contact form.
-
-    Safe to run more than once (the job and the sweeper may both fire): an escalation gets one offer.
-    """
-    conv = await db.get(Conversation, conversation_id)
+async def _still_waiting(db: AsyncSession, conv: Conversation | None, escalated_at: datetime) -> str | None:
+    """None if this escalation still waits for its timeout action; otherwise why not."""
     if conv is None or conv.status != "escalated" or conv.escalated_at is None or conv.channel != "widget":
         return "not_waiting"
     if abs((conv.escalated_at - escalated_at).total_seconds()) > 1:
@@ -300,15 +296,53 @@ async def handoff_timeout(db: AsyncSession, conversation_id: uuid.UUID, escalate
     if answered:
         return "answered"
     msgs = await form_messages(db, conv)
-    marker = conv.escalated_at.isoformat()
-    if pending_offer(msgs) or any((m.data or {}).get("handoff_for") == marker for m in msgs):
+    if pending_offer(msgs) or any((m.data or {}).get("handoff_for") == conv.escalated_at.isoformat() for m in msgs):
         return "already_offered"
+    return None
+
+
+async def handoff_timeout(db: AsyncSession, conversation_id: uuid.UUID, escalated_at: datetime) -> str:
+    """Nobody answered the handoff in time.
+
+    If the visitor left their email while waiting, open a ticket at once (they may have gone), in the category
+    of the form that fits the conversation. Otherwise offer that form, or the contact form, in the chat.
+    Safe to run more than once (the job and the sweeper may both fire): the conversation row is locked and
+    checked again after the AI call (which commits), so an escalation gets one ticket or one offer.
+    """
+    conv = await db.get(Conversation, conversation_id, with_for_update=True)
+    if why := await _still_waiting(db, conv, escalated_at):
+        return why
     bot = await db.get(Chatbot, conv.chatbot_id) if conv.chatbot_id else None
     if bot is None or not (bot.escalation or {}).get("ticket_fallback", True):
         return "disabled"
     ws = await db.get(Workspace, conv.workspace_id)
     candidates = [f for f in await bot_forms(db, bot) if not f.is_contact]
     form = await choose_form(db, ws, bot, conv, candidates) or await fallback_form(db, bot)
-    offer(db, conv, form, reason="handoff_timeout", handoff_for=marker)
+    await db.refresh(conv, with_for_update=True)
+    if why := await _still_waiting(db, conv, escalated_at):
+        return why
+    if conv.visitor_email:
+        await _ticket_for_left_visitor(db, conv, bot, form)
+        return "ticket"
+    offer(db, conv, form, reason="handoff_timeout", handoff_for=conv.escalated_at.isoformat())
     await db.commit()
     return "offered"
+
+
+async def _ticket_for_left_visitor(db: AsyncSession, conv: Conversation, bot: Chatbot, form: Form) -> None:
+    """The visitor left an email while waiting: open the ticket now, so the request isn't lost if they've gone."""
+    from app.services import tickets as tk
+    from app.services.conversations import escalate
+
+    category = await db.get(TicketCategory, form.category_id)
+    if category is None or category.archived_at is not None:
+        category = await fsvc.default_category(db, conv.workspace_id)
+    wait = int((bot.escalation or {}).get("wait_seconds", 120))
+    spec = tk.TicketSpec(
+        subject=conv.title or "Chat conversation",
+        source="conversation",
+        category_id=category.id,
+        description=f"Opened automatically: the visitor asked for a person in the chat with {bot.name}, left their email, "
+        f"and nobody replied within {wait} seconds.",
+    )
+    await escalate(db, conv, reason="handoff_timeout", ticket=spec, live=False, hand_back=True)

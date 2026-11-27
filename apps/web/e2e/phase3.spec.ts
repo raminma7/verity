@@ -237,9 +237,26 @@ test("forms, tickets and the handoff fallback", async ({ page, browser }) => {
     await expect(v4.w.getByText("We’ve fixed the address on your invoice.")).toBeVisible({ timeout: 20_000 });
     await v4.close();
 
+    // ---- A visitor leaves their email while waiting and closes the page: the ticket opens on its own -----------
+    const v5 = await visitor(browser);
+    await say(v5.w, "quantum zebra parking question");
+    await v5.w.locator(".vr-widget-chip", { hasText: "Talk to a person" }).click();
+    await expect(v5.w.getByText("We’ve passed this to the team. You’ll get a reply here.")).toBeVisible();
+    await expect(v5.w.getByText(/Might you leave before someone replies/)).toBeVisible();
+    await v5.w.getByRole("textbox", { name: "Your email" }).fill("gone@example.com");
+    await v5.w.getByRole("button", { name: "Send", exact: true }).first().click();
+    await expect(v5.w.getByText(/get back to you at gone@example.com/)).toBeVisible();
+    await shot(v5.page, "p3-13-widget-email-while-waiting");
+    await v5.close(); // the visitor leaves
+    await nav(page, "Tickets");
+    await expect(page.getByRole("row").filter({ hasText: "gone@example.com" })).toBeVisible({ timeout: 45_000 });
+    await page.getByRole("row").filter({ hasText: "gone@example.com" }).getByRole("link").click();
+    await expect(page.getByText(/Opened automatically: the visitor asked for a person/)).toBeVisible();
+    await shot(page, "p3-14-ticket-after-visitor-left");
+
     await nav(page, "Tickets");
     await page.getByRole("tab", { name: /^All/ }).click();
-    await expect(page.getByRole("row")).toHaveCount(5);
+    await expect(page.getByRole("row")).toHaveCount(6);
     await page.getByRole("textbox", { name: "Search tickets" }).fill("zebras");
     await expect(page.getByRole("row")).toHaveCount(2);
   } finally {

@@ -198,7 +198,12 @@ async def poll(conv_id: uuid.UUID, w: W, db: Db, after: datetime | None = None, 
     """The widget polls this every few seconds while a person has the conversation."""
     c = await visitor_conversation(db, w, conv_id, x_visitor_token)
     open_ticket = await tk.open_ticket_for(db, c.id)
-    return {"status": c.status, "has_open_ticket": open_ticket is not None, "messages": await _public_messages(db, c, after)}
+    return {
+        "status": c.status,
+        "has_open_ticket": open_ticket is not None,
+        "has_email": bool(c.visitor_email),
+        "messages": await _public_messages(db, c, after),
+    }
 
 
 class MessageIn(BaseModel):
@@ -247,7 +252,7 @@ async def escalate(
     if esc.get("ask_email", True) and not esc.get("ticket_fallback", True) and not (body.email or c.visitor_email):
         raise ApiError(422, "email_required", "Leave your email so the team can reach you.", field="email")
     await convs.escalate(db, c, reason=body.reason, email=body.email, name=body.name, ip=client_ip(request))
-    return {"status": c.status, "messages": await _public_messages(db, c)}
+    return {"status": c.status, "has_email": bool(c.visitor_email), "messages": await _public_messages(db, c)}
 
 
 # ---- Forms ----------------------------------------------------------------------------------------

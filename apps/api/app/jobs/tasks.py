@@ -66,7 +66,10 @@ async def handoff_check(ctx, *, conversation_id: str, escalated_at: str) -> str:
 
 
 async def sweep_handoffs(ctx) -> int:
-    """Every minute: runs handoff checks that were lost (for example, while no worker was running)."""
+    """Every minute: runs handoff checks that were lost (for example, while no worker was running).
+
+    Returns how many conversations got their form offer or automatic ticket.
+    """
     from sqlalchemy import select
 
     from app.models import Chatbot, Conversation
@@ -94,7 +97,7 @@ async def sweep_handoffs(ctx) -> int:
         if not esc.get("ticket_fallback", True) or escalated_at > now - timedelta(seconds=int(esc.get("wait_seconds", 120)) + 30):
             continue
         async with SessionLocal() as db:
-            offered += (await handoff_timeout(db, conv_id, escalated_at)) == "offered"
+            offered += (await handoff_timeout(db, conv_id, escalated_at)) in ("offered", "ticket")
     return offered
 
 
