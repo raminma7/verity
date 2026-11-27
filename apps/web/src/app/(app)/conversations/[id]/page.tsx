@@ -137,11 +137,15 @@ export default function ConversationPage() {
             </div>
           ) : m.role === "visitor" ? (
             <div key={m.id} className="vr-bubble">
+              {m.data.channel === "email" ? <span className="vr-bubble-tag">By email</span> : null}
               {m.content}
             </div>
           ) : m.role === "agent" ? (
             <div key={m.id} className="vr-agent-msg">
-              <span className="vr-eyebrow">{m.author ?? "Team"} · {dateTime(m.created_at)}</span>
+              <span className="vr-eyebrow">
+                {m.author ?? "Team"} · {dateTime(m.created_at)}
+                {m.data.emailed_to ? ` · also emailed to ${m.data.emailed_to}` : ""}
+              </span>
               <p style={{ margin: 0, whiteSpace: "pre-line" }}>{m.content}</p>
             </div>
           ) : m.role === "assistant" ? (
