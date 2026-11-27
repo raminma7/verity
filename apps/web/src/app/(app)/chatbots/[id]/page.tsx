@@ -5,7 +5,7 @@ import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 
 import { Badge, Banner, Button, Card, Field, PageHeader, Segmented, Select, Spinner, Switch } from "@/components/ui";
-import { api, errorText, type Chatbot, type ChatForm } from "@/lib/api";
+import { api, errorText, type BotTool, type Chatbot, type ChatForm } from "@/lib/api";
 import { useSession } from "@/lib/session";
 import { useData } from "@/lib/use-data";
 
@@ -126,6 +126,7 @@ export default function ChatbotSettings() {
           { value: "appearance", label: "Appearance" },
           { value: "install", label: "Domains & install" },
           { value: "handoff", label: "Handoff" },
+          { value: "tools", label: "API tools" },
         ]}
       />
       <div className="vr-bot-layout">
@@ -340,6 +341,7 @@ export default function ChatbotSettings() {
               </p>
             </Card>
           ) : null}
+          {tab === "tools" ? <BotTools botId={bot.id} manage={manage} /> : null}
           {manage ? (
             <Card title="Danger zone">
               <Button
@@ -390,5 +392,49 @@ function WidgetPreview({ bot }: { bot: Chatbot }) {
         </span>
       </div>
     </aside>
+  );
+}
+
+function BotTools({ botId, manage }: { botId: string; manage: boolean }) {
+  const { can } = useSession();
+  const data = useData<{ items: BotTool[] }>(`/chatbots/${botId}/tools`);
+  const [busy, setBusy] = useState<string | null>(null);
+  const [err, setErr] = useState<string | null>(null);
+  if (data.loading && !data.data) return <Spinner />;
+  const items = data.data?.items ?? [];
+  async function toggle(id: string, on: boolean) {
+    setBusy(id);
+    setErr(null);
+    try {
+      const ids = items.filter((t) => (t.id === id ? on : t.enabled)).map((t) => t.id);
+      data.setData(await api.put<{ items: BotTool[] }>(`/chatbots/${botId}/tools`, { tool_ids: ids }));
+    } catch (e) {
+      setErr(errorText(e));
+    } finally {
+      setBusy(null);
+    }
+  }
+  return (
+    <Card title="API tools">
+      <p className="vr-help" style={{ marginTop: 0 }}>
+        The assistant calls a tool only when a question needs it, such as “where is my order?”. Every call shows in the conversation’s “How it was answered”, and the
+        visitor never sees the tool or its key. Calls use AI tokens for the decision, shown as “API tool decisions” on the usage page.
+      </p>
+      {err ? <Banner tone="danger">{err}</Banner> : null}
+      {items.length ? (
+        items.map((t) => (
+          <Switch key={t.id} label={t.display_name} help={t.description} checked={t.enabled} disabled={!manage || busy === t.id} onChange={(on) => toggle(t.id, on)} />
+        ))
+      ) : (
+        <span className="vr-help">No API tool is turned on yet.</span>
+      )}
+      {can("integrations.manage") ? (
+        <p className="vr-help">
+          <Link className="vr-link" href="/tools">
+            Manage API tools →
+          </Link>
+        </p>
+      ) : null}
+    </Card>
   );
 }

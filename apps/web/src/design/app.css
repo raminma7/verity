@@ -428,3 +428,59 @@ a.vr-att:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 .vr-mailpreview b { font-weight: 600; }
 .vr-mailpreview p { margin: 0; white-space: pre-line; }
 .vr-bubble-tag { display: block; font-size: 11px; line-height: 16px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; opacity: .8; }
+
+/* ---- Phase 5A: API tools and routing ---------------------------------------------------------------
+   Not in the design system yet: built only from its tokens and rules. Teal acts, lime stays for evidence
+   (never used here), status always has a word, cards sit on a line border, nothing is raised. */
+
+.vr-bullets { margin: 0 0 var(--space-3); padding-left: 18px; display: flex; flex-direction: column; gap: 6px; color: var(--ink); }
+.vr-bullets li::marker { color: var(--ink-muted); }
+
+/* Tools list */
+.vr-tools { display: flex; flex-direction: column; margin-top: var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-md); }
+.vr-tool-row { display: flex; gap: var(--space-4); align-items: flex-start; justify-content: space-between; flex-wrap: wrap; padding: var(--space-4); border-top: 1px solid var(--line); }
+.vr-tool-row:first-child { border-top: 0; }
+.vr-tool-main { flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.vr-tool-url { font-size: 13px; overflow-wrap: anywhere; }
+.vr-row-link { color: var(--ink); font-weight: 600; text-decoration: none; }
+.vr-row-link:hover { color: var(--brand); text-decoration: underline; }
+
+/* Tool editor: form + test rail */
+.vr-tool-edit { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: var(--space-6); align-items: start; }
+.vr-tool-edit > .vr-stack { padding: 0; gap: var(--space-6); }
+.vr-tool-edit .vr-mono input { font-family: var(--font-mono); }
+.vr-tool-url-row { display: flex; gap: var(--space-3); align-items: flex-start; flex-wrap: wrap; }
+.vr-tool-url-row .vr-seg { margin-top: 24px; }
+.vr-tool-url-row .vr-grow { flex: 1 1 320px; }
+.vr-params { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: var(--radius-md); }
+.vr-param { display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-4); border-top: 1px solid var(--line); }
+.vr-param:first-child { border-top: 0; }
+.vr-param .vr-setting { padding: 0; border: 0; gap: 12px; }
+.vr-tool-result { display: flex; flex-direction: column; gap: 8px; padding: var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface-sunken); }
+.vr-tool-preview { margin: 0; max-height: 280px; overflow: auto; padding: 10px 12px; border-radius: var(--radius-sm); background: var(--surface); border: 1px solid var(--line); font: 12px/18px var(--font-mono); color: var(--ink); white-space: pre-wrap; overflow-wrap: anywhere; }
+@media (max-width: 1100px) { .vr-tool-edit { grid-template-columns: 1fr; } }
+
+/* A tool call in "How it was answered" */
+.vr-trace-step.is-tool .vr-trace-name { display: inline-flex; align-items: center; gap: 6px; }
+.vr-trace-kind { color: var(--brand); }
+.vr-trace-step.is-tool.is-error .vr-trace-kind { color: var(--danger); }
+.vr-trace-word { color: var(--danger); font-weight: 500; }
+
+/* Routing */
+.vr-rules { display: flex; flex-direction: column; border: 1px solid var(--line); border-radius: var(--radius-md); }
+.vr-rule { display: flex; gap: var(--space-4); align-items: flex-start; flex-wrap: wrap; padding: var(--space-4); border-top: 1px solid var(--line); }
+.vr-rule:first-child { border-top: 0; }
+.vr-rule.is-off { color: var(--ink-muted); }
+.vr-rule-pos { flex: 0 0 auto; width: 28px; height: 28px; display: inline-flex; align-items: center; justify-content: center; border-radius: var(--radius-pill); border: 1px solid var(--line-strong); font: 500 12px/1 var(--font-mono); color: var(--ink-muted); }
+.vr-rule-main { flex: 1 1 280px; min-width: 0; display: flex; flex-direction: column; gap: 4px; }
+.vr-rule-main b { font-weight: 600; }
+.vr-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.vr-chip { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border: 1px solid var(--line-strong); border-radius: var(--radius-pill); background: var(--surface); color: var(--ink); font: 500 12px/16px var(--font-sans); cursor: pointer; }
+.vr-chip.is-on { border-color: var(--brand); background: var(--brand-soft); color: var(--ink); }
+.vr-chip:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; }
+.vr-chip[aria-pressed="true"]::before { content: "✓"; color: var(--brand); }
+.vr-avail { display: inline-flex; align-items: center; gap: 8px; }
+.vr-avail-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--brand); }
+.vr-avail-dot.is-away { background: var(--ink-muted); }
+.vr-team { display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-4); border-top: 1px solid var(--line); }
+.vr-team:first-child { border-top: 0; }

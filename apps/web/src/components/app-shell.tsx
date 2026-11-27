@@ -20,6 +20,7 @@ const PRODUCT: NavItem[] = [
   { href: "/tickets", label: "Tickets", icon: "tag", perm: "tickets.read" },
   { href: "/forms", label: "Forms", icon: "file", perm: "chatbots.read" },
   { href: "/email", label: "Email", icon: "mail", perm: ["integrations.manage", "email.review"] },
+  { href: "/tools", label: "API tools", icon: "link", perm: "integrations.manage" },
 ];
 
 const MANAGE: NavItem[] = [

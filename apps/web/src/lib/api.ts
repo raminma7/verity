@@ -217,7 +217,7 @@ export type UsageSummary =
 
 // ---- Knowledge base ------------------------------------------------------------------------------
 
-export type TraceStep = { name: string; detail?: string; ms?: number | null; state?: "done" | "running" | "pending" | "error" };
+export type TraceStep = { name: string; detail?: string; ms?: number | null; state?: "done" | "running" | "pending" | "error"; kind?: "tool" };
 
 export type Source = {
   id: string;
@@ -397,6 +397,10 @@ export type Ticket = {
   category: string | null;
   assignee_id: string | null;
   assignee: string | null;
+  team_id: string | null;
+  team: string | null;
+  assigned_at: string | null;
+  first_response_at: string | null;
   source: "chatbot_form" | "conversation" | "manual" | "email";
   form_id: string | null;
   conversation_id: string | null;
@@ -411,7 +415,7 @@ export type Ticket = {
 
 export type TicketEvent = {
   id: string;
-  kind: "created" | "customer_message" | "agent_reply" | "note" | "status" | "assignment" | "priority" | "category" | "reopened";
+  kind: "created" | "customer_message" | "agent_reply" | "note" | "status" | "assignment" | "priority" | "category" | "reopened" | "routed" | "team";
   /** data.channel is "email" for messages that came or went by email; data.email_message_id links the email. */
   body: string;
   data: Record<string, string | number | null | undefined>;
@@ -513,4 +517,93 @@ export type TicketEmail = {
   created_at: string;
   sent_at: string | null;
   received_at: string | null;
+};
+
+// ---- Phase 5A: API tools and routing ----------------------------------------------------------
+
+export type ToolParamType = "string" | "integer" | "number" | "boolean";
+export type ToolParam = {
+  key: string;
+  label: string;
+  type: ToolParamType;
+  description: string;
+  required: boolean;
+  location: "path" | "query" | "body";
+  source: "ai" | "visitor_email" | "visitor_name";
+  enum: (string | number)[];
+  pattern: string | null;
+  max_length: number | null;
+};
+export type ToolCallStatus = "ok" | "http_error" | "timeout" | "blocked" | "rate_limited" | "invalid_args" | "too_large" | "failed";
+export type ApiTool = {
+  id: string;
+  name: string;
+  display_name: string;
+  description: string;
+  method: "GET" | "POST";
+  url_template: string;
+  host: string | null;
+  headers: Record<string, string>;
+  parameters: ToolParam[];
+  auth_type: "none" | "api_key" | "bearer";
+  auth_header: string | null;
+  has_secret: boolean;
+  timeout_seconds: number;
+  max_response_kb: number;
+  rate_limit_per_minute: number;
+  status: "draft" | "active" | "disabled";
+  last_test_at: string | null;
+  last_test_status: ToolCallStatus | null;
+  last_test_word: string | null;
+  chatbots: { id: string; name: string }[] | null;
+  created_at: string;
+};
+export type ApiTools = { items: ApiTool[]; limit: number; used: number };
+export type ToolTestResult = {
+  status: ToolCallStatus;
+  status_word: string;
+  http_status: number | null;
+  latency_ms: number;
+  response_bytes: number;
+  error_code: string | null;
+  error: string | null;
+  request: string;
+  preview: string;
+  truncated: boolean;
+};
+export type ToolCall = {
+  id: string;
+  origin: "chat" | "test";
+  status: ToolCallStatus;
+  status_word: string;
+  http_status: number | null;
+  latency_ms: number;
+  response_bytes: number;
+  error_code: string | null;
+  args: Record<string, unknown>;
+  conversation_id: string | null;
+  created_at: string;
+};
+export type BotTool = { id: string; name: string; display_name: string; description: string; enabled: boolean };
+
+export type Team = { id: string; name: string; description: string; category_ids: string[]; members: { id: string; name: string; email: string }[] };
+export type RoutingRule = {
+  id: string;
+  name: string;
+  position: number;
+  enabled: boolean;
+  conditions: { sources?: string[]; category_ids?: string[]; priorities?: string[]; keywords?: string[]; requester_domains?: string[] };
+  action: { team_id?: string; assignee_id?: string };
+};
+export type RoutingSettings = { enabled: boolean; default_team_id: string | null };
+export type MemberRouting = {
+  user_id: string;
+  name: string;
+  email: string;
+  availability: "available" | "away";
+  max_open: number | null;
+  skills: string[];
+  open_tickets: number;
+  teams: { id: string; name: string }[];
+  last_assigned_at: string | null;
 };
