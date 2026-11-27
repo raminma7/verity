@@ -9,7 +9,7 @@ import { useSession } from "@/lib/session";
 
 import { Avatar, Button, compact, cx, Icon, type IconName } from "./ui";
 
-type NavItem = { href: string; label: string; icon: IconName; perm?: string; soon?: string };
+type NavItem = { href: string; label: string; icon: IconName; perm?: string | string[]; soon?: string };
 
 const PRODUCT: NavItem[] = [
   { href: "/dashboard", label: "Dashboard", icon: "home" },
@@ -19,7 +19,7 @@ const PRODUCT: NavItem[] = [
   { href: "/conversations", label: "Conversations", icon: "clock", perm: "chatbots.read" },
   { href: "/tickets", label: "Tickets", icon: "tag", perm: "tickets.read" },
   { href: "/forms", label: "Forms", icon: "file", perm: "chatbots.read" },
-  { href: "/inbox", label: "Email", icon: "mail", soon: "Phase 4" },
+  { href: "/email", label: "Email", icon: "mail", perm: ["integrations.manage", "email.review"] },
 ];
 
 const MANAGE: NavItem[] = [
@@ -181,7 +181,7 @@ function NavList({ items, pathname, onNavigate }: { items: NavItem[]; pathname: 
   return (
     <>
       {items
-        .filter((i) => !i.perm || can(i.perm))
+        .filter((i) => !i.perm || (Array.isArray(i.perm) ? i.perm.some(can) : can(i.perm)))
         .map((i) =>
           i.soon ? (
             <a key={i.href} className="is-disabled" aria-disabled="true" title={`Arrives in ${i.soon}`}>

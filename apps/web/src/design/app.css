@@ -369,3 +369,62 @@ textarea.vr-winput { resize: vertical; }
 .vr-preview-frame { position: sticky; top: var(--space-6); }
 .vr-preview-frame .vr-wpreview { height: auto; min-height: 420px; }
 @media (max-width: 1100px) { .vr-builder { grid-template-columns: 1fr; } .vr-preview-frame { position: static; } }
+
+/* ---- Phase 4: email -------------------------------------------------------------------------------
+   Built from the same tokens and rules: teal acts, lime stays for evidence (never used here), status always
+   has a word, cards sit on a line border. Email bodies are untrusted and shown in a sandboxed frame. */
+
+.vr-grid2 { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: var(--space-4); }
+.vr-grid3 { display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-4); }
+@media (max-width: 720px) { .vr-grid2, .vr-grid3 { grid-template-columns: 1fr; } }
+
+/* Mailboxes */
+.vr-mailboxes { display: flex; flex-direction: column; margin-top: var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-md); }
+.vr-mailbox { display: flex; gap: var(--space-4); align-items: flex-start; justify-content: space-between; flex-wrap: wrap; padding: var(--space-4); border-top: 1px solid var(--line); }
+.vr-mailbox:first-child { border-top: 0; }
+.vr-mailbox-main { flex: 1 1 320px; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+.vr-mailbox-name { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; }
+.vr-mailbox-name b { font-weight: 600; }
+.vr-mailbox-name .vr-mono { font-size: 13px; overflow-wrap: anywhere; }
+.vr-mailbox-actions { justify-content: flex-end; }
+
+/* Spam review: list + preview */
+.vr-spam { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); gap: var(--space-6); align-items: start; }
+.vr-spam-list { list-style: none; margin: 0; padding: 0; }
+.vr-spam-list li { display: flex; gap: 10px; align-items: flex-start; padding: 12px var(--space-4); border-top: 1px solid var(--line); }
+.vr-spam-list li:first-child { border-top: 0; }
+.vr-spam-list li.is-on { background: var(--brand-soft); }
+.vr-spam-list input { margin-top: 4px; accent-color: var(--brand); }
+.vr-spam-row { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; padding: 0; border: 0; background: transparent; color: var(--ink); text-align: left; font: inherit; cursor: pointer; }
+.vr-spam-row:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; border-radius: var(--radius-sm); }
+.vr-spam-top { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; }
+.vr-spam-top b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vr-spam-subject { font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.vr-spam-meta { display: flex; gap: 8px; align-items: center; min-width: 0; }
+.vr-spam-meta .vr-help { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 1100px) { .vr-spam { grid-template-columns: 1fr; } }
+
+/* An email: addresses, body, attachments */
+.vr-mail-head { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; color: var(--ink-muted); }
+.vr-mail-head .vr-tl-meta { flex: 1; min-width: 0; }
+.vr-mail-addr { display: grid; grid-template-columns: 64px minmax(0, 1fr); gap: 2px var(--space-3); margin: 0; font-size: 13px; line-height: 19px; }
+.vr-mail-addr dt { color: var(--ink-muted); }
+.vr-mail-addr dd { margin: 0; overflow-wrap: anywhere; }
+.vr-mailbody { display: flex; flex-direction: column; gap: 6px; align-items: flex-start; }
+.vr-mailbody > p { margin: 0; white-space: pre-line; overflow-wrap: anywhere; width: 100%; }
+.vr-mailframe { width: 100%; min-height: 280px; border: 1px solid var(--line); border-radius: var(--radius-md); background: #fff; }
+.vr-atts { display: flex; flex-wrap: wrap; gap: 8px; }
+.vr-att { display: inline-flex; align-items: center; gap: 8px; max-width: 100%; padding: 6px 10px; border: 1px solid var(--line-strong); border-radius: var(--radius-md); background: var(--surface); color: var(--ink); text-decoration: none; font-size: 13px; }
+a.vr-att:hover { border-color: var(--brand); color: var(--brand); }
+a.vr-att:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
+.vr-att.is-blocked { border-style: dashed; color: var(--ink-muted); flex-wrap: wrap; }
+.vr-att-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; max-width: 220px; }
+.vr-att-dl { transform: rotate(180deg); }
+.vr-tl-item.vr-mail { gap: 10px; }
+.vr-tl-tag { display: inline-flex; align-items: center; gap: 4px; }
+
+/* Automatic reply preview */
+.vr-mailpreview { display: flex; flex-direction: column; gap: 6px; padding: var(--space-4); background: var(--surface-sunken); border-radius: var(--radius-md); }
+.vr-mailpreview b { font-weight: 600; }
+.vr-mailpreview p { margin: 0; white-space: pre-line; }
+.vr-bubble-tag { display: block; font-size: 11px; line-height: 16px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; opacity: .8; }

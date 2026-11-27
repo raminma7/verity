@@ -289,6 +289,10 @@ export type ChatMessage = {
     email?: string;
     custom?: boolean;
     values?: Record<string, FormValue>;
+    /** "email": a visitor's reply that arrived by email. */
+    channel?: "email";
+    /** An agent reply that was also sent to the visitor by email. */
+    emailed_to?: string;
   };
   citations: Citation[];
   confidence?: "high" | "medium" | "low" | "none" | null;
@@ -408,6 +412,7 @@ export type Ticket = {
 export type TicketEvent = {
   id: string;
   kind: "created" | "customer_message" | "agent_reply" | "note" | "status" | "assignment" | "priority" | "category" | "reopened";
+  /** data.channel is "email" for messages that came or went by email; data.email_message_id links the email. */
   body: string;
   data: Record<string, string | number | null | undefined>;
   internal: boolean;
@@ -421,6 +426,91 @@ export type TicketDetail = {
   events: TicketEvent[];
   conversation: Conversation | null;
   messages: ChatMessage[];
+  emails: TicketEmail[];
+  /** Where a reply goes: the ticket's chat (also emailed when the visitor left an address) or email in the thread. */
+  reply_channel: { kind: "chat"; email: string | null } | { kind: "email"; to: string; from: string | null } | null;
   can_manage: boolean;
   can_reply: boolean;
+};
+
+// ---- Email (Phase 4) ---------------------------------------------------------------------------
+
+export type MailSecurity = "ssl" | "starttls";
+
+export type EmailAccount = {
+  id: string;
+  name: string;
+  address: string;
+  display_name: string;
+  kind: "personal" | "organization";
+  imap_host: string;
+  imap_port: number;
+  imap_security: MailSecurity;
+  smtp_host: string;
+  smtp_port: number;
+  smtp_security: MailSecurity;
+  username: string;
+  has_password: boolean;
+  status: "active" | "paused" | "error" | "disconnected";
+  fetch_status: "idle" | "queued" | "fetching" | "ok" | "error";
+  last_fetch_at: string | null;
+  last_success_at: string | null;
+  last_error_code: string | null;
+  last_error: string | null;
+  auto_reply: AutoReply | null;
+  created_at: string;
+};
+
+export type EmailAccounts = { items: EmailAccount[]; limit: number; used: number; default_account_id: string | null };
+
+export type AutoReply = { mode: "off" | "template" | "ai"; subject: string; body: string };
+
+export type EmailSettings = {
+  auto_reply: AutoReply;
+  form_confirmation: boolean;
+  default_account_id: string | null;
+  spam_filter: boolean;
+  allow_senders: string[];
+  block_senders: string[];
+  model: string;
+  models: string[];
+};
+
+export type EmailAttachmentInfo = { id: string; filename: string; mime: string; size: number; available: boolean; blocked_reason: string | null };
+
+export type HeldEmail = {
+  id: string;
+  status: "spam" | "promotion" | "rate_limited" | "ticketed" | "deleted" | string;
+  from_addr: string;
+  from_name: string;
+  to: string[];
+  subject: string;
+  snippet: string;
+  verdict: { rules?: string[]; decided_by?: "rules" | "ai"; ai_used?: boolean; confidence?: string; ai_note?: string; loop?: string[] };
+  ticket_id: string | null;
+  received_at: string | null;
+  text?: string;
+  html?: string | null;
+  attachments?: EmailAttachmentInfo[];
+};
+
+export type TicketEmail = {
+  id: string;
+  direction: "in" | "out";
+  status: string;
+  kind: "auto_reply" | "agent_reply" | "chat_reply" | "form_confirmation" | null;
+  from_addr: string;
+  from_name: string;
+  to: string[];
+  cc: string[];
+  subject: string;
+  text: string;
+  html: string | null;
+  error: string | null;
+  event_id: string | null;
+  attachments: EmailAttachmentInfo[];
+  via_platform: boolean;
+  created_at: string;
+  sent_at: string | null;
+  received_at: string | null;
 };
