@@ -182,3 +182,80 @@ async def test_handoff_check_runs_on_a_real_worker_at_its_time(real_queue, clien
             await worker.stop()
             task.cancel()
         assert len(forms_in((await v.get(f"{base}/conversations/{conv}")).json()["messages"])) == 1
+
+
+async def email_left(v, base, conv, email="left@example.com"):
+    """The visitor leaves their email while waiting (the widget's optional box re-sends escalate with it)."""
+    r = await v.post(f"{base}/conversations/{conv}/escalate", json={"email": email})
+    assert r.status_code == 200 and r.json()["status"] == "escalated"
+
+
+async def test_visitor_who_left_an_email_gets_a_ticket_without_filling_anything(client):
+    bot = await setup_bot(client)
+    async with new_client() as v:
+        base, conv = await start(v, bot["public_key"])
+        await say(v, base, conv, "zebra xylophone quantum")
+        await v.post(f"{base}/conversations/{conv}/escalate", json={})
+        await email_left(v, base, conv)
+        assert len(jobs.DELAYED) == 1  # leaving the email doesn't schedule a second check
+        await run_delayed()
+        polled = (await v.get(f"{base}/conversations/{conv}")).json()
+        assert polled["status"] == "open" and polled["has_open_ticket"] is True
+        assert forms_in(polled["messages"]) == []
+        notice = polled["messages"][-1]
+        assert notice["data"]["notice"] == "ticket_created_auto" and notice["data"]["email"] == "left@example.com"
+        assert "#1" in notice["content"] and "left@example.com" in notice["content"]
+    t = (await client.get("/api/tickets")).json()["items"][0]
+    assert t["source"] == "conversation" and t["requester_email"] == "left@example.com" and t["category"] == "General"
+    assert "nobody replied within 120 seconds" in t["description"]
+    detail = (await client.get(f"/api/tickets/{t['id']}")).json()
+    assert detail["conversation"]["id"] == conv
+    events = [m["data"] for m in detail["messages"] if m["kind"] == "event"]
+    assert events[-1]["event"] == "ticket_created" and events[-1]["reason"] == "handoff_timeout"
+
+
+async def test_the_ticket_goes_to_the_category_of_the_form_that_fits(client):
+    bot = await setup_bot(client)
+    cat = await category(client, "Returns")
+    await form(client, cat["id"], chatbot_ids=[bot["id"]])
+    async with new_client() as v:
+        base, conv = await start(v, bot["public_key"])
+        await v.post(f"{base}/conversations/{conv}/escalate", json={})
+        await say(v, base, conv, "I want to return order 12345")  # waits for the team: no AI answer, no offer
+        await email_left(v, base, conv)
+        await run_delayed()
+    t = (await client.get("/api/tickets")).json()["items"][0]
+    assert t["category"] == "Returns" and t["requester_email"] == "left@example.com"
+
+
+async def test_with_an_email_an_agent_reply_in_time_still_means_nothing_happens(client):
+    bot = await setup_bot(client)
+    async with new_client() as v, new_client() as agent:
+        await add_member(client, agent, "agent@example.com", "agent")
+        base, conv = await start(v, bot["public_key"])
+        await say(v, base, conv, "zebra")
+        await v.post(f"{base}/conversations/{conv}/escalate", json={"email": "left@example.com"})
+        await agent.post(f"/api/conversations/{conv}/reply", json={"text": "I'm here."})
+        await run_delayed()
+        assert (await v.get(f"{base}/conversations/{conv}")).json()["status"] == "escalated"
+    assert (await client.get("/api/tickets")).json()["items"] == []
+
+
+async def test_job_and_sweeper_together_open_one_ticket(client):
+    bot = await setup_bot(client)
+    async with new_client() as v:
+        base, conv = await start(v, bot["public_key"])
+        await say(v, base, conv, "zebra")
+        await v.post(f"{base}/conversations/{conv}/escalate", json={"email": "left@example.com"})
+    async with SessionLocal() as db:
+        c = await db.get(Conversation, conv)
+        c.escalated_at = c.escalated_at - timedelta(minutes=5)
+        await db.commit()
+        escalated_at = c.escalated_at
+    from app.jobs.tasks import handoff_check
+
+    jobs.DELAYED.clear()
+    results = await asyncio.gather(sweep_handoffs({}), handoff_check({}, conversation_id=conv, escalated_at=escalated_at.isoformat()))
+    # Exactly one of them opens the ticket; the other finds the conversation no longer waiting.
+    assert list(results) in ([1, "not_waiting"], [0, "ticket"])
+    assert len((await client.get("/api/tickets")).json()["items"]) == 1

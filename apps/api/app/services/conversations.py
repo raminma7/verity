@@ -60,7 +60,7 @@ def message_out(m: Message) -> dict:
 
 
 # What the widget may see of a message's data. Never prefill values, usage ids or ticket ids.
-PUBLIC_DATA = ("blocks", "event", "offer_escalation", "form", "state", "reason", "ticket_number", "notice", "custom")
+PUBLIC_DATA = ("blocks", "event", "offer_escalation", "form", "state", "reason", "ticket_number", "notice", "custom", "email")
 
 
 def public_message_out(m: Message, author: str | None = None) -> dict:
@@ -266,14 +266,25 @@ async def escalate(
                 conv.status = "open"
                 conv.resolved_at = None
             form = ticket.form
-            add_message(
-                db,
-                conv,
-                "assistant",
-                (getattr(form, "success_message", "") or "").strip()
-                or f"Your request is registered as ticket #{t.number}. Someone from our support team will contact you soon.",
-                data={"notice": "ticket_created", "ticket_number": t.number, "custom": bool(getattr(form, "success_message", ""))},
-            )
+            if reason == "handoff_timeout":
+                # Opened for a visitor who may have left: say where the team will reply.
+                add_message(
+                    db,
+                    conv,
+                    "assistant",
+                    f"Nobody from the team was free in time, so we opened ticket #{t.number}. "
+                    f"The team will get back to you at {conv.visitor_email}.",
+                    data={"notice": "ticket_created_auto", "ticket_number": t.number, "email": conv.visitor_email},
+                )
+            else:
+                add_message(
+                    db,
+                    conv,
+                    "assistant",
+                    (getattr(form, "success_message", "") or "").strip()
+                    or f"Your request is registered as ticket #{t.number}. Someone from our support team will contact you soon.",
+                    data={"notice": "ticket_created", "ticket_number": t.number, "custom": bool(getattr(form, "success_message", ""))},
+                )
 
     if live:
         if conv.status == "escalated":
