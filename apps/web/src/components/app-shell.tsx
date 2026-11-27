@@ -24,7 +24,8 @@ const PRODUCT: NavItem[] = [
 ];
 
 const MANAGE: NavItem[] = [
-  { href: "/usage", label: "AI usage", icon: "chart", perm: "usage.read" },
+  { href: "/analytics", label: "Analytics", icon: "chart", perm: "analytics.read" },
+  { href: "/usage", label: "AI usage", icon: "spark", perm: "usage.read" },
   { href: "/members", label: "Members", icon: "users", perm: "members.read" },
   { href: "/billing", label: "Billing", icon: "card", perm: "billing.read" },
   { href: "/plans", label: "Plans", icon: "sliders" },

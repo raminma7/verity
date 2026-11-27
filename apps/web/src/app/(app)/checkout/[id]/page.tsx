@@ -8,8 +8,18 @@ import { api, errorText, type Plan } from "@/lib/api";
 import { useSession } from "@/lib/session";
 import { useData } from "@/lib/use-data";
 
-type Checkout = { id: string; status: string; amount_cents: number; currency: string; provider: string; plan: Plan };
+type Checkout = {
+  id: string;
+  kind: "subscription" | "package";
+  status: string;
+  amount_cents: number;
+  currency: string;
+  provider: string;
+  plan: Plan | null;
+  package: { name: string; tokens: number } | null;
+};
 
+/** The test provider's hosted checkout. With Stripe, customers pay on Stripe's own page instead. */
 export default function CheckoutPage() {
   const { id } = useParams<{ id: string }>();
   const router = useRouter();
@@ -21,28 +31,45 @@ export default function CheckoutPage() {
   if (c.loading && !c.data) return <Spinner />;
   if (c.error) return <Banner tone="danger">{c.error.message}</Banner>;
   const co = c.data!;
+  const isPackage = co.kind === "package";
+  const done = isPackage ? "/billing/tokens?paid=1" : "/billing?paid=1";
 
   return (
     <>
-      <PageHeader eyebrow="Checkout" title={`Verity ${co.plan.name}`} />
+      <PageHeader eyebrow="Checkout" title={isPackage ? `Token package: ${co.package?.name}` : `Verity ${co.plan?.name}`} />
       <Card className="vr-checkout" title="Order summary" actions={<Badge tone="warn" dot>Test mode</Badge>}>
         <div className="vr-form">
           <dl className="vr-kv">
-            <dt>Plan</dt>
-            <dd>{co.plan.name}, billed every {co.plan.billing_cycle}</dd>
-            <dt>AI tokens</dt>
-            <dd className="vr-mono">{compact(co.plan.token_allowance)} per {co.plan.billing_cycle}</dd>
+            {isPackage ? (
+              <>
+                <dt>Package</dt>
+                <dd>{co.package?.name}, paid once</dd>
+                <dt>AI tokens</dt>
+                <dd className="vr-mono">{compact(co.package?.tokens ?? 0)}, used after the plan’s allowance, expiring in 12 months</dd>
+              </>
+            ) : (
+              <>
+                <dt>Plan</dt>
+                <dd>
+                  {co.plan?.name}, billed every {co.plan?.billing_cycle}
+                </dd>
+                <dt>AI tokens</dt>
+                <dd className="vr-mono">
+                  {compact(co.plan?.token_allowance ?? 0)} per {co.plan?.billing_cycle}
+                </dd>
+              </>
+            )}
             <dt>Due today</dt>
             <dd>
-              <b>{money(co.amount_cents, co.currency)}</b>
+              <b>{money(co.amount_cents, co.currency)}</b> <span className="vr-muted">plus tax where it applies</span>
             </dd>
           </dl>
           <Banner tone="neutral" title="No card is charged.">
-            Payments run on a test provider until live billing is connected. Confirming activates the plan exactly as a real payment would.
+            Payments run on a test provider until live billing is connected. Confirming reports the payment exactly as the payment provider would.
           </Banner>
           {error ? <Banner tone="danger">{error}</Banner> : null}
           {co.status === "paid" ? (
-            <Banner title="Paid. Your plan is active." />
+            <Banner title={isPackage ? "Paid. The tokens are in your balance." : "Paid. Your plan is active."} />
           ) : (
             <div className="vr-actions">
               <Button
@@ -55,7 +82,7 @@ export default function CheckoutPage() {
                   try {
                     await api.post(`/billing/checkout/${id}/confirm`);
                     await refresh();
-                    router.push("/billing?paid=1");
+                    router.push(done);
                   } catch (e) {
                     setError(errorText(e));
                     setBusy(false);
@@ -64,7 +91,7 @@ export default function CheckoutPage() {
               >
                 Pay {money(co.amount_cents, co.currency)}
               </Button>
-              <Button variant="ghost" onClick={() => router.push("/plans")}>
+              <Button variant="ghost" onClick={() => router.push(isPackage ? "/billing/tokens" : "/plans")}>
                 Cancel
               </Button>
             </div>

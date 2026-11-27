@@ -151,8 +151,9 @@ def _b(col: str) -> str:
     return BUCKET.format(col=col)
 
 
-def _series(rng: Range, rows, keys: list[str] | None = None) -> list[dict]:
-    """rows: (bucket date, key, value) → one point per bucket with a value per key (0 when missing)."""
+def _series(rng: Range, rows, keys: list[str] | None = None, *, missing=0) -> list[dict]:
+    """rows: (bucket date, key, value) → one point per bucket with a value per key (`missing` when there is none:
+    0 for counts, None for medians, where an empty bucket has no value rather than a zero)."""
     by: dict[date, dict] = {d: {} for d in rng.labels()}
     found = []
     for d, k, v in rows:
@@ -161,7 +162,7 @@ def _series(rng: Range, rows, keys: list[str] | None = None) -> list[dict]:
             if k not in found:
                 found.append(k)
     keys = keys or found
-    return [{"date": d.isoformat(), **{k: _num(vals.get(k, 0)) for k in keys}} for d, vals in by.items()]
+    return [{"date": d.isoformat(), **{k: _num(vals[k]) if k in vals else missing for k in keys}} for d, vals in by.items()]
 
 
 def _num(v):
@@ -286,7 +287,7 @@ async def tickets(db: AsyncSession, ws: uuid.UUID, rng: Range) -> dict:
         "source_totals": {s: sum(n for _, k, n in by_source if k == s) for s in sources},
         "by_category": _series(rng, by_category, top + (["Other"] if len(cats) > 6 else [])),
         "category_totals": [{"name": c, "count": int(n)} for c, n in cats],
-        "response_times": _series(rng, times, ["first_response", "resolution"]),
+        "response_times": _series(rng, times, ["first_response", "resolution"], missing=None),
         "reopens": _series(rng, reopen_series, ["resolved", "reopened"]),
     }
 

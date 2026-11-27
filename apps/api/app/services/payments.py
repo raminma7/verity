@@ -297,6 +297,8 @@ class MockPaymentProvider:
             plan_id=plan.id,
             status="open" if declined else "paid",
             failure_message="Your card was declined." if declined else None,
+            period_start=sub.current_period_end,
+            period_end=_next_period_end(sub.current_period_end, plan.billing_cycle),
         )
         if invoice_ref:
             inv.ref = invoice_ref
@@ -319,6 +321,12 @@ class MockPaymentProvider:
 
     async def parse_webhook(self, body: bytes, headers: dict[str, str]) -> ProviderEvent:
         raise ProviderError("The test provider doesn't send webhooks.", code="no_webhooks")
+
+
+def _next_period_end(start: datetime, cycle: str) -> datetime:
+    from app.services.subscriptions import period_end
+
+    return period_end(start, cycle)
 
 
 _PROVIDERS: dict[str, PaymentProvider] = {}

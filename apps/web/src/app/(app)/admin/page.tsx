@@ -3,15 +3,16 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 
+import { PaymentsAdmin, PlatformReports, TokenPackagesAdmin } from "@/components/admin-billing";
 import { Badge, Banner, Button, Card, compact, date, dateTime, EmptyState, Field, fmt, money, PageHeader, Spinner, Stat, Switch } from "@/components/ui";
 import { api, errorText, type Limits, type Plan } from "@/lib/api";
 import { LIMIT_KEYS, LIMIT_LABELS } from "@/lib/limits";
 import { useSession } from "@/lib/session";
 import { useData } from "@/lib/use-data";
 
-const TABS = ["overview", "users", "workspaces", "plans", "multipliers", "settings", "audit"] as const;
+const TABS = ["overview", "reports", "users", "workspaces", "plans", "packages", "payments", "multipliers", "settings", "audit"] as const;
 type Tab = (typeof TABS)[number];
-const TAB_LABEL: Record<Tab, string> = { overview: "Overview", users: "Users", workspaces: "Workspaces", plans: "Plans", multipliers: "Model weights", settings: "Defaults", audit: "Audit log" };
+const TAB_LABEL: Record<Tab, string> = { overview: "Overview", reports: "Reports", packages: "Token packages", payments: "Payments", users: "Users", workspaces: "Workspaces", plans: "Plans", multipliers: "Model weights", settings: "Defaults", audit: "Audit log" };
 
 function useAction() {
   const [busy, setBusy] = useState<string | null>(null);
@@ -592,7 +593,7 @@ function Admin() {
           </button>
         ))}
       </nav>
-      {tab === "overview" ? <Overview /> : tab === "users" ? <Users /> : tab === "workspaces" ? <Workspaces /> : tab === "plans" ? <Plans /> : tab === "multipliers" ? <Multipliers /> : tab === "settings" ? <Defaults /> : <Audit />}
+      {tab === "overview" ? <Overview /> : tab === "reports" ? <PlatformReports /> : tab === "packages" ? <TokenPackagesAdmin /> : tab === "payments" ? <PaymentsAdmin /> : tab === "users" ? <Users /> : tab === "workspaces" ? <Workspaces /> : tab === "plans" ? <Plans /> : tab === "multipliers" ? <Multipliers /> : tab === "settings" ? <Defaults /> : <Audit />}
     </>
   );
 }

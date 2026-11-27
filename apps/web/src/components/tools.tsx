@@ -20,7 +20,7 @@ export function ToolStatusBadge({ status }: { status: ApiTool["status"] }) {
   );
 }
 
-const CALL_WORD: Record<ToolCallStatus, string> = {
+export const CALL_WORD: Record<ToolCallStatus, string> = {
   ok: "Succeeded",
   http_error: "API error",
   timeout: "Timed out",

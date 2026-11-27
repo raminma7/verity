@@ -212,6 +212,8 @@ export type UsageSummary =
       actual_input_tokens: number;
       actual_output_tokens: number;
       embedding_weighted: number;
+      package_remaining: number;
+      package_next_expiry: string | null;
       ai_available: boolean;
     };
 

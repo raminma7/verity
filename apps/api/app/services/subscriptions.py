@@ -266,6 +266,8 @@ async def renew_due(db: AsyncSession, now: datetime | None = None, *, workspace_
                 inv = await provider.charge_renewal(
                     sub, account, plan, invoice_ref=failed.provider_invoice_ref if failed else None, now=now
                 )
+                if failed is not None:  # a retry of the failed invoice
+                    inv.attempt_count = (failed.attempt_count or 1) + 1
                 if inv.status == "paid":
                     was_past_due = sub.status == "past_due"
                     await renew_one(db, ws, sub, plan, now=now)
