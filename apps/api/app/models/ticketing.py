@@ -77,6 +77,8 @@ class Ticket(IdMixin, TimestampMixin, Base):
     __table_args__ = (
         UniqueConstraint("workspace_id", "number"),
         Index("ix_tickets_ws_status_activity", "workspace_id", "status", "last_activity_at"),
+        Index("ix_tickets_ws_created", "workspace_id", "created_at"),
+        Index("ix_tickets_ws_resolved", "workspace_id", "resolved_at"),
         Index("ix_tickets_search", "search_vector", postgresql_using="gin"),
     )
 
@@ -118,7 +120,10 @@ class TicketEvent(IdMixin, Base):
     """The ticket timeline: messages, internal notes and every change."""
 
     __tablename__ = "ticket_events"
-    __table_args__ = (Index("ix_ticket_events_ticket_created", "ticket_id", "created_at"),)
+    __table_args__ = (
+        Index("ix_ticket_events_ticket_created", "ticket_id", "created_at"),
+        Index("ix_ticket_events_ws_kind_created", "workspace_id", "kind", "created_at"),
+    )
 
     workspace_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("workspaces.id", ondelete="CASCADE"), index=True)
     ticket_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("tickets.id", ondelete="CASCADE"))

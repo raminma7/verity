@@ -1,5 +1,15 @@
 from app.models.base import Base
-from app.models.billing import LIMIT_KEYS, Checkout, Payment, Plan, Subscription, SystemSetting
+from app.models.billing import (
+    LIMIT_KEYS,
+    BillingAccount,
+    BillingEvent,
+    Checkout,
+    Payment,
+    Plan,
+    Subscription,
+    SystemSetting,
+    TokenPackage,
+)
 from app.models.chat import Chatbot, Conversation, Message
 from app.models.email import EmailAccount, EmailAttachment, EmailMessage
 from app.models.integrations import ApiTool, ApiToolCall, chatbot_tools
@@ -20,7 +30,7 @@ from app.models.ticketing import (
     chatbot_forms,
     team_members,
 )
-from app.models.usage import AuditLog, ModelMultiplier, Notification, TokenLedger, TokenReservation, UsageEvent
+from app.models.usage import AuditLog, ModelMultiplier, Notification, TokenGrant, TokenLedger, TokenReservation, UsageEvent
 from app.models.user import EmailToken, Session, User
 from app.models.workspace import Invitation, Membership, Role, Workspace
 
@@ -47,6 +57,10 @@ __all__ = [
     "chatbot_forms",
     "LIMIT_KEYS",
     "AuditLog",
+    "BillingAccount",
+    "BillingEvent",
+    "TokenGrant",
+    "TokenPackage",
     "Base",
     "Chatbot",
     "Checkout",

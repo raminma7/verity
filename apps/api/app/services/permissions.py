@@ -12,6 +12,7 @@ PERMISSIONS: dict[str, str] = {
     "billing.read": "See the subscription, invoices and billing history",
     "billing.manage": "Buy, change or cancel the subscription",
     "usage.read": "See AI usage and limits",
+    "analytics.read": "See support analytics: ticket volume, response times, SLA, workload, chatbot and AI reports",
     "knowledge.read": "Browse knowledge sources",
     "knowledge.manage": "Add, sync and remove knowledge sources",
     "chatbots.read": "See chatbots and conversations",
