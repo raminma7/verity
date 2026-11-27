@@ -16,6 +16,7 @@ LIMIT_KEYS = (
     "email_accounts",
     "members",
     "storage_mb",
+    "api_tools",
 )
 
 

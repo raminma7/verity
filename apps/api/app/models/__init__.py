@@ -2,6 +2,7 @@ from app.models.base import Base
 from app.models.billing import LIMIT_KEYS, Checkout, Payment, Plan, Subscription, SystemSetting
 from app.models.chat import Chatbot, Conversation, Message
 from app.models.email import EmailAccount, EmailAttachment, EmailMessage
+from app.models.integrations import ApiTool, ApiToolCall, chatbot_tools
 from app.models.knowledge import KnowledgeChunk, KnowledgePage, KnowledgeSource
 from app.models.ticketing import (
     FIELD_TYPES,
@@ -9,17 +10,28 @@ from app.models.ticketing import (
     TICKET_SOURCES,
     TICKET_STATUSES,
     Form,
+    MemberRouting,
+    RoutingRule,
+    Team,
     Ticket,
     TicketCategory,
     TicketCounter,
     TicketEvent,
     chatbot_forms,
+    team_members,
 )
 from app.models.usage import AuditLog, ModelMultiplier, Notification, TokenLedger, TokenReservation, UsageEvent
 from app.models.user import EmailToken, Session, User
 from app.models.workspace import Invitation, Membership, Role, Workspace
 
 __all__ = [
+    "ApiTool",
+    "ApiToolCall",
+    "chatbot_tools",
+    "MemberRouting",
+    "RoutingRule",
+    "Team",
+    "team_members",
     "EmailAccount",
     "EmailAttachment",
     "EmailMessage",

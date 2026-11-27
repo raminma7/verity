@@ -19,7 +19,7 @@ PERMISSIONS: dict[str, str] = {
     "conversations.reply": "Reply to escalated chatbot conversations",
     "tickets.read": "See tickets",
     "tickets.manage": "Reply to, assign and update tickets",
-    "tickets.configure": "Manage ticket categories",
+    "tickets.configure": "Manage ticket categories, teams and routing",
     "integrations.manage": "Connect email accounts and external APIs",
     "email.review": "Review spam and promotional email, mark it not spam or delete it",
     "audit.read": "See the workspace audit log",
