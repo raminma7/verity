@@ -55,6 +55,12 @@ jobs:
       VERITY_EMBEDDING_PROVIDER: fake
       # Mailboxes live in Redis (the fake mail transport); /api/dev/mailbox puts mail in and reads what was sent.
       VERITY_MAIL_TRANSPORT: fake
+      # API tools call in-process fake APIs (shop.example.com, *.internal.example); no real API is called.
+      VERITY_TOOL_TRANSPORT: fake
+      # All specs run from one address within minutes: more sign-ups (5 per 10 minutes in production) and
+      # widget requests (60 a minute) than the per-IP limits allow.
+      VERITY_RL_REGISTER: "30/600"
+      VERITY_RL_WIDGET_IP: "600/60"
       VERITY_STORAGE_DIR: /tmp/verity-storage
       VERITY_ADMIN_EMAIL: admin@example.com
       VERITY_ADMIN_PASSWORD: Admin-pass-123
