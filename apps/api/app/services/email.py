@@ -18,6 +18,7 @@ class Sent:
     subject: str
     text: str
     links: list[str] = field(default_factory=list)
+    headers: dict = field(default_factory=dict)
 
 
 # The "memory" backend keeps messages here (tests and local runs without Mailpit).
@@ -73,6 +74,32 @@ async def send_email(to: str, subject: str, text: str, links: list[str] | None =
         await asyncio.to_thread(_send_smtp, msg)
     except OSError:
         log.exception("Could not send email to %s", to)
+
+
+async def send_prepared(msg: EmailMessage) -> None:
+    """Sends a fully built message (customer mail with thread headers) through the platform's own sender.
+
+    Unlike send_email, a failure raises OSError so the caller (a queued job) can retry and record it.
+    """
+    s = get_settings()
+    if not msg["From"]:
+        msg["From"] = s.email_from
+    if s.email_backend == "memory":
+        body = msg.get_body(("plain",))
+        OUTBOX.append(
+            Sent(
+                str(msg["To"]).lower(),
+                str(msg["Subject"]),
+                body.get_content() if body is not None else "",
+                [],
+                {k.lower(): str(v) for k, v in msg.items()},
+            )
+        )
+        return
+    if s.email_backend == "console":
+        log.warning("EMAIL to=%s subject=%s", msg["To"], msg["Subject"])
+        return
+    await asyncio.to_thread(_send_smtp, msg)
 
 
 def link(path: str) -> str:

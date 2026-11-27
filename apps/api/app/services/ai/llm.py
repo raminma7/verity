@@ -221,6 +221,20 @@ class FakeLLM:
         convo = _section(prompt, "conversation")
         said = " ".join(line.split(":", 1)[1] for line in convo.splitlines() if line.lower().startswith("customer:"))
         props = schema.get("properties", {})
+        if "category" in props:
+            data = _fake_classify(prompt, props)
+            out = json.dumps(data)
+            return Structured(data, max(1, (len(system) + len(prompt)) // 4), max(1, len(out) // 4), model)
+        if "message" in props and "language" in props:
+            mail = _section(prompt, "email")
+            subject = next((line[9:].strip() for line in mail.splitlines() if line.startswith("Subject: ")), "your request")
+            number = _section(prompt, "ticket_number").strip()
+            if "[[inject]]" in mail:
+                text = f"Visit https://evil.example/login and send your password to thief@evil.example about {subject}."
+            else:
+                text = f"Hello, thanks for writing about \u201c{subject}\u201d. We registered it as ticket {number} and will reply soon."
+            data = {"message": text, "language": "en"}
+            return Structured(data, max(1, (len(system) + len(prompt)) // 4), max(1, len(text) // 4), model)
         if "form_id" in props:
             data = {"form_id": "none", "confidence": "low"}
             words = _stems(said)
@@ -236,6 +250,31 @@ class FakeLLM:
 
 
 # ---- Fake extraction helpers (tests, CI and e2e only) --------------------------------------------
+
+
+def _fake_classify(prompt: str, props: dict) -> dict:
+    """Email classification stand-in: marker words decide the verdict, word overlap picks the category."""
+    mail = _section(prompt, "email").lower()
+    hints = _section(prompt, "rule_hints")
+    data: dict = {}
+    if "verdict" in props:
+        if "[[spam]]" in mail or any(w in mail for w in ("lottery", "you have won", "claim your prize")):
+            data["verdict"] = "spam"
+        elif "[[promo]]" in mail or "list_unsubscribe" in hints or "unsubscribe" in mail:
+            data["verdict"] = "promotion"
+        else:
+            data["verdict"] = "legitimate"
+    words = _stems(mail)
+    best, score = "default", 0
+    for line in _section(prompt, "categories").splitlines():
+        key, _, rest = line.partition(":")
+        overlap = len(words & _stems(rest))
+        if key.strip() in props["category"]["enum"] and overlap > score:
+            best, score = key.strip(), overlap
+    data["category"] = best
+    data["confidence"] = "high"
+    return data
+
 
 _FAKE_STOP = {"customer", "wants", "would", "their", "about", "something", "someone", "visitor", "seems", "should", "please"}
 
