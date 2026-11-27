@@ -2,7 +2,7 @@
 
 AI customer support in one workspace: a knowledge base (RAG), an embeddable chatbot and a ticketing system, with email built in. The full product plan is in [`docs/product-plan.md`](docs/product-plan.md).
 
-This repository holds **Phases 1 to 4**: accounts, workspaces, roles, plans, subscriptions and the AI token quota (Phase 1); the knowledge base, retrieval-augmented answers with citations, the embeddable chatbot with live handoff to people, and the Redis job queue (Phase 2); ticket categories, tickets, the form builder, and chatbot forms that the AI offers and prefills and that open tickets (Phase 3); and email: connected mailboxes, email tickets, spam review, automatic replies and threading (Phase 4).
+This repository holds **Phases 1 to 4 and 5A**: accounts, workspaces, roles, plans, subscriptions and the AI token quota (Phase 1); the knowledge base, retrieval-augmented answers with citations, the embeddable chatbot with live handoff to people, and the Redis job queue (Phase 2); ticket categories, tickets, the form builder, and chatbot forms that the AI offers and prefills and that open tickets (Phase 3); and email: connected mailboxes, email tickets, spam review, automatic replies and threading (Phase 4); and external API tools the chatbot calls, and automatic ticket routing (Phase 5A). Phase 5 is split in two; what Phase 5B (Stripe and analytics) will build, and the decisions already made for it, are in the product plan, section 8.
 
 | Phase | Scope | State |
 |---|---|---|
@@ -10,7 +10,8 @@ This repository holds **Phases 1 to 4**: accounts, workspaces, roles, plans, sub
 | 2 | Knowledge base, RAG, document processing, crawling, chatbot, live handoff, live token tracking | **Done** |
 | 3 | Form builder, chatbot forms that open tickets, ticket categories, ticket management | **Done** |
 | 4 | Email integration, spam detection, automatic replies, threading | **Done** |
-| 5 | External API tools, routing, analytics, real payments (Stripe) | Next |
+| 5A | External API tools (tool calling), intelligent ticket routing | **Done** |
+| 5B | Real payments (Stripe), token packages, advanced analytics | Next |
 
 ## Layout
 

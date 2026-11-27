@@ -142,4 +142,26 @@ The chatbot has two ways to bring a person into a conversation. They solve diffe
 | Phase 2 | Knowledge base, RAG, document processing, website crawling, chatbot, live human handoff, and token tracking |
 | Phase 3 | Dynamic form builder, chatbot forms that create tickets, ticket categories, and ticket management |
 | Phase 4 | Email integration, spam detection, automatic responses, and email threading |
-| Phase 5 | External API integrations, intelligent routing, advanced analytics, payment processing, subscription purchases, automatic subscription activation, and subscription upgrades |
+| Phase 5A | External API integrations (tool calling) and intelligent ticket routing, plus the data Phase 5B reports on (ticket first-response times, a log of every API call) |
+| Phase 5B | Payment processing (Stripe), subscription purchases, automatic subscription activation, subscription upgrades, additional token packages, and advanced analytics |
+
+Phase 5 is delivered in two parts so each can be built, tested and reviewed on its own. Analytics comes last because it reports on what the other parts produce (tool calls, routing, revenue).
+
+### Phase 5A: External API tools and routing
+
+- **External API tools.** A workspace defines its own APIs (for example order status or product availability): method, an `https` URL template with path parameters, query or body parameters with types and validation, and authentication by **API key header** or **Bearer token**. The chatbot's own model decides when to call a tool (tool calling). Credentials are encrypted at rest, never returned to the browser, and every change is audit-logged. Every call is guarded against SSRF like the crawler and mail transport (private, loopback, link-local/metadata and reserved addresses refused, the connection pinned to the checked address, no redirects), with timeouts, response size limits and rate limits. API responses are treated as untrusted data, never instructions, and every call appears in the answer's trace ("How it was answered"). People who manage integrations (`integrations.manage`) can test a tool from the dashboard before turning it on; tests use no AI tokens. The plan limit `api_tools` caps how many tools a workspace keeps.
+- **Intelligent routing.** New tickets from every source (email, chatbot forms, conversations, manual) are routed automatically: ordered rules (source, category, priority, keywords, requester domain) or the category pick a team; inside the team, the least busy available member gets the ticket (fewest open tickets, ties to whoever was assigned longest ago). Members can mark themselves away, have a cap on open tickets and skills (categories they handle, preferred first). Routing uses no AI, so it keeps working when the token allowance is used up.
+- **Prepared for 5B.** Tickets record when they were assigned and when the team first responded; every API tool call is logged with its outcome and latency; tool-deciding model rounds are metered as their own operation (`tool_call`).
+
+### Phase 5B: Payments and analytics (decisions already made)
+
+- **Stripe** replaces the mock `PaymentProvider` behind the same interface, without touching the activation logic (`start_period`, renewals, the token ledger). The mock provider stays for tests, CI and e2e; Stripe is never called in CI.
+  - **Stripe Checkout** (hosted) for subscription purchases and additional token packages, plus the **Stripe Customer Portal** for payment methods and invoice PDFs. Plan changes, cancellation and billing history stay on Verity's own screens.
+  - Activation on payment confirmation through webhooks with verified signatures, processed idempotently. Upgrades are immediate and prorated; downgrades take effect at renewal; cancellation at period end; failed payments move the subscription to `past_due` with retries and notifications; invoices and billing history.
+  - **Currency:** each plan and token package keeps its own currency (one Stripe Price per plan); a workspace stays in the currency it first paid in.
+  - **Tax:** Stripe Tax, automatic; prices are tax-exclusive; Checkout collects the billing address and tax ID.
+  - Card data is never logged or stored by Verity.
+- **Advanced analytics**, all of it:
+  - For workspace owners and admins: ticket volume by source and category, first-response and resolution times, reopen rate, SLA-style breaches (targets per priority), agent workload, chatbot deflection and handoff rate, API tool calls, spam volume, AI token usage by feature and model.
+  - For system administrators: workspace usage, actual AI provider costs, subscriptions, MRR and revenue, failed payments.
+  - Time ranges: 7, 30 and 90 days, or a custom range up to one year, in the viewer's time zone, with daily buckets (weekly above 90 days). Charts work in light and dark themes and status always carries a word.
