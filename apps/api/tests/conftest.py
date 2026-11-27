@@ -7,6 +7,7 @@ os.environ["VERITY_QUEUE"] = "inline"
 os.environ["VERITY_LLM_PROVIDER"] = "fake"
 os.environ["VERITY_EMBEDDING_PROVIDER"] = "fake"
 os.environ["VERITY_MAIL_TRANSPORT"] = "fake"
+os.environ["VERITY_TOOL_TRANSPORT"] = "fake"
 os.environ.setdefault("VERITY_STORAGE_DIR", "/tmp/verity-test-storage")
 os.environ["VERITY_CRAWL_ALLOW_PRIVATE"] = "true"
 os.environ["VERITY_ADMIN_EMAIL"] = "root@example.org"
@@ -26,6 +27,7 @@ from app.main import app  # noqa: E402
 from app.models import Base  # noqa: E402
 from app.seed import seed  # noqa: E402
 from app.services import email as mail  # noqa: E402
+from app.services.tools import transport as tool_transport  # noqa: E402
 
 KEEP = {"roles", "plans", "model_multipliers"}
 PASSWORD = "Correct-horse-42"
@@ -47,6 +49,8 @@ async def clean(database):
     ratelimit.set_redis(fakeredis.FakeAsyncRedis(decode_responses=True))
     mail.OUTBOX.clear()
     jobs.DELAYED.clear()
+    tool_transport.FAKE_REQUESTS.clear()
+    tool_transport.set_client(None)
     yield
     tables = [t.name for t in Base.metadata.sorted_tables if t.name not in KEEP]
     async with engine.begin() as conn:
