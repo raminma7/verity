@@ -4,17 +4,21 @@ Every AI call goes: reserve(estimate) → call the model → settle(actual) (or 
 `reserve` is one conditional UPDATE, so concurrent requests can't take more than is available; `settle`
 swaps the hold for the real weighted cost. A request can only overshoot by the gap between its estimate
 and its actual use, never by the number of requests in flight.
+
+Tokens bought as packages are a second pool (`token_grants`) that rolls over: when the period's allowance
+can't cover an estimate, what's left of it is held on the ledger and the rest on the grant that expires
+first, each with a conditional UPDATE on a locked row. Settling charges the ledger part first.
 """
 
 import uuid
 from dataclasses import dataclass
 from datetime import timedelta
 
-from sqlalchemy import select, text
+from sqlalchemy import func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.errors import ApiError
-from app.models import ModelMultiplier, Notification, TokenLedger, TokenReservation, UsageEvent, Workspace
+from app.models import ModelMultiplier, Notification, TokenGrant, TokenLedger, TokenReservation, UsageEvent, Workspace
 from app.models.base import utcnow
 from app.services import email as mail
 from app.services.subscriptions import billing_contacts
@@ -64,9 +68,25 @@ def available(ledger: TokenLedger | None) -> int:
     return max(0, ledger.allowance + ledger.bonus - ledger.reserved - ledger.consumed)
 
 
+async def package_available(db: AsyncSession, workspace_id: uuid.UUID) -> int:
+    """Unspent tokens of the workspace's bought packages that haven't expired."""
+    q = select(func.coalesce(func.sum(func.greatest(0, TokenGrant.tokens - TokenGrant.reserved - TokenGrant.consumed)), 0)).where(
+        TokenGrant.workspace_id == workspace_id, TokenGrant.status == "active", TokenGrant.expires_at > utcnow()
+    )
+    return int(await db.scalar(q) or 0)
+
+
+async def total_available(db: AsyncSession, workspace_id: uuid.UUID, ledger: TokenLedger | None = None) -> int:
+    """Allowance left plus package tokens; packages are only usable during a paid period."""
+    ledger = ledger or await current_ledger(db, workspace_id)
+    if ledger is None:
+        return 0
+    return available(ledger) + await package_available(db, workspace_id)
+
+
 async def ai_available(db: AsyncSession, workspace_id: uuid.UUID) -> bool:
     ws = await db.get(Workspace, workspace_id)
-    return bool(ws and ws.status == "active" and available(await current_ledger(db, workspace_id)) > 0)
+    return bool(ws and ws.status == "active" and await total_available(db, workspace_id) > 0)
 
 
 async def reserve(
@@ -93,15 +113,55 @@ async def reserve(
             {"amount": amount, "ws": workspace_id},
         )
     ).first()
+    grant_id, grant_amount = None, 0
+    if row is None:
+        row, grant_id, grant_amount = await _reserve_with_package(db, workspace_id, amount)
     if row is None:
         await db.rollback()
         raise QuotaExhausted()
     res = TokenReservation(
-        ledger_id=row[0], workspace_id=workspace_id, amount=amount, operation=operation, model=model, created_at=utcnow()
+        ledger_id=row[0],
+        workspace_id=workspace_id,
+        amount=amount,
+        grant_id=grant_id,
+        grant_amount=grant_amount,
+        operation=operation,
+        model=model,
+        created_at=utcnow(),
     )
     db.add(res)
     await db.commit()
     return res
+
+
+async def _reserve_with_package(db: AsyncSession, workspace_id: uuid.UUID, amount: int):
+    """Holds what's left of the allowance plus the rest on one package grant (the one expiring first), or nothing."""
+    ledger = (
+        await db.execute(
+            text(
+                "WITH l AS (SELECT id, GREATEST(0, LEAST(:amount, allowance + bonus - reserved - consumed)) AS take "
+                "FROM token_ledgers WHERE workspace_id = :ws AND is_current AND period_end > now() FOR UPDATE) "
+                "UPDATE token_ledgers t SET reserved = t.reserved + l.take FROM l WHERE t.id = l.id RETURNING t.id, l.take"
+            ),
+            {"amount": amount, "ws": workspace_id},
+        )
+    ).first()
+    if ledger is None:
+        return None, None, 0
+    rest = amount - int(ledger[1])
+    grant = (
+        await db.execute(
+            text(
+                "WITH g AS (SELECT id FROM token_grants WHERE workspace_id = :ws AND status = 'active' AND expires_at > now() "
+                "AND tokens - reserved - consumed >= :rest ORDER BY expires_at, created_at LIMIT 1 FOR UPDATE) "
+                "UPDATE token_grants t SET reserved = t.reserved + :rest FROM g WHERE t.id = g.id RETURNING t.id"
+            ),
+            {"rest": rest, "ws": workspace_id},
+        )
+    ).first()
+    if grant is None:
+        return None, None, 0
+    return (ledger[0],), grant[0], rest
 
 
 async def _claim(db: AsyncSession, reservation_id: uuid.UUID, status: str) -> TokenReservation | None:
@@ -133,9 +193,18 @@ async def settle(
         return None
     w = await weights_for(db, res.model, res.operation)
     cost = weighted(w, input_tokens, output_tokens)
+    ledger_held = res.amount - res.grant_amount
+    grant_cost = 0
+    if res.grant_id and res.grant_amount:
+        # The allowance part is charged first; the rest (up to what was held there) goes to the package.
+        grant_cost = min(max(0, cost - ledger_held), res.grant_amount)
+        await db.execute(
+            text("UPDATE token_grants SET reserved = reserved - :held, consumed = consumed + :cost WHERE id = :id"),
+            {"held": res.grant_amount, "cost": grant_cost, "id": res.grant_id},
+        )
     await db.execute(
         text("UPDATE token_ledgers SET reserved = reserved - :held, consumed = consumed + :cost WHERE id = :id"),
-        {"held": res.amount, "cost": cost, "id": res.ledger_id},
+        {"held": ledger_held, "cost": cost - grant_cost, "id": res.ledger_id},
     )
     event = UsageEvent(
         workspace_id=res.workspace_id,
@@ -148,6 +217,8 @@ async def settle(
         input_multiplier=w.input,
         output_multiplier=w.output,
         weighted_tokens=cost,
+        grant_id=res.grant_id if grant_cost else None,
+        grant_tokens=grant_cost,
         provider_cost_usd=(input_tokens * w.input_cost_per_m + output_tokens * w.output_cost_per_m) / 1_000_000,
         created_at=utcnow(),
     )
@@ -177,9 +248,27 @@ async def release(db: AsyncSession, reservation_id: uuid.UUID) -> bool:
     if res is None:
         await db.rollback()
         return False
-    await db.execute(text("UPDATE token_ledgers SET reserved = reserved - :held WHERE id = :id"), {"held": res.amount, "id": res.ledger_id})
+    await db.execute(
+        text("UPDATE token_ledgers SET reserved = reserved - :held WHERE id = :id"),
+        {"held": res.amount - res.grant_amount, "id": res.ledger_id},
+    )
+    if res.grant_id and res.grant_amount:
+        await db.execute(
+            text("UPDATE token_grants SET reserved = reserved - :held WHERE id = :id"), {"held": res.grant_amount, "id": res.grant_id}
+        )
     await db.commit()
     return True
+
+
+async def expire_grants(db: AsyncSession) -> int:
+    """Marks package grants past their expiry (12 months after purchase) as expired, once nothing is held on them."""
+    rows = (
+        await db.execute(
+            text("UPDATE token_grants SET status = 'expired' WHERE status = 'active' AND expires_at <= now() AND reserved = 0 RETURNING id")
+        )
+    ).all()
+    await db.commit()
+    return len(rows)
 
 
 async def release_stale(db: AsyncSession, older_than: timedelta = timedelta(minutes=15)) -> int:

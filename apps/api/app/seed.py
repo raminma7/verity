@@ -10,7 +10,7 @@ from sqlalchemy import select
 from app.core.config import get_settings
 from app.core.db import SessionLocal
 from app.core.security import hash_password
-from app.models import ModelMultiplier, Plan, Role, User
+from app.models import ModelMultiplier, Plan, Role, TokenPackage, User
 from app.models.base import utcnow
 from app.services.permissions import DEFAULT_ROLES
 
@@ -81,6 +81,27 @@ PLANS = [
     },
 ]
 
+# Additional AI tokens for subscribed workspaces. They carry over and expire 12 months after purchase.
+# Admins change these under Admin → Token packages.
+TOKEN_PACKAGES = [
+    {
+        "key": "tokens-1m",
+        "name": "1M tokens",
+        "description": "One million weighted AI tokens.",
+        "tokens": 1_000_000,
+        "price_cents": 1200,
+        "sort_order": 10,
+    },
+    {
+        "key": "tokens-5m",
+        "name": "5M tokens",
+        "description": "Five million weighted AI tokens.",
+        "tokens": 5_000_000,
+        "price_cents": 5000,
+        "sort_order": 20,
+    },
+]
+
 MULTIPLIERS = [
     # model, operation, input weight, output weight, $ in /1M, $ out /1M
     # Weights are what customers are charged in weighted tokens; admins tune them (and the provider cost
@@ -106,6 +127,9 @@ async def seed() -> None:
         for p in PLANS:
             if not (await db.execute(select(Plan.id).where(Plan.key == p["key"]))).first():
                 db.add(Plan(currency="USD", billing_cycle="month", **p))
+        if not (await db.execute(select(TokenPackage.id).limit(1))).first():
+            for p in TOKEN_PACKAGES:
+                db.add(TokenPackage(currency="USD", **p))
         for model, op, wi, wo, ci, co in MULTIPLIERS:
             if not (
                 await db.execute(select(ModelMultiplier.id).where(ModelMultiplier.model == model, ModelMultiplier.operation == op))

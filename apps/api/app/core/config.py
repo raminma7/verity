@@ -46,7 +46,23 @@ class Settings(BaseSettings):
     admin_email: str | None = None
     admin_password: str | None = None
 
+    # Payments: "mock" (tests, CI, e2e and local development: a test checkout page, nothing is charged) or
+    # "stripe" (hosted Checkout, the Customer Portal and webhooks; needs both keys below).
     payment_provider: str = "mock"
+    stripe_secret_key: str | None = None  # sk_live_… or sk_test_… (a restricted key works too)
+    stripe_webhook_secret: str | None = None  # whsec_… of the endpoint {app_url}/api/billing/webhooks/stripe
+    stripe_api_base: str = "https://api.stripe.com"
+    # Every request pins this API version, and objects are re-read through the API, so the webhook endpoint's own
+    # API version doesn't matter.
+    stripe_api_version: str = "2024-06-20"
+    stripe_timeout_seconds: float = 20.0
+    # A failed renewal keeps manual ticketing, email and forms open (AI pauses) for this long while payment is
+    # retried; then the subscription ends. Align it with the retry schedule in Stripe's dashboard.
+    past_due_grace_days: int = 14
+    mock_retry_days: list[int] = [1, 3, 7]  # mock provider retry schedule, days after the first failure
+    # Stripe renews at the period end and reports it by webhook; the subscription stays active this long meanwhile.
+    renewal_leeway_hours: int = 48
+    token_package_months: int = 12  # bought tokens expire this many months after purchase
 
     # Background jobs: "saq" (Redis queue, run `python -m app.worker`) or "inline" (tests: run immediately).
     queue: str = "saq"
@@ -102,6 +118,10 @@ class Settings(BaseSettings):
     rl_widget_message: str = "20/60"  # per visitor
     rl_widget_ip: str = "60/60"  # per IP
     rl_widget_bot: str = "600/60"  # per chatbot
+
+    # Client IP for rate limits and audit logs: X-Forwarded-For is only believed when the connection comes from
+    # one of these proxies (the Next.js server proxies /api from the same host).
+    trusted_proxies: list[str] = ["127.0.0.1/32", "::1/128"]
 
     @property
     def is_dev(self) -> bool:

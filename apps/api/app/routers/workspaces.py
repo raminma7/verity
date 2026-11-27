@@ -14,7 +14,7 @@ from app.schemas import InviteIn, RoleChangeIn, RoleIn, WorkspaceIn, WorkspaceUp
 from app.services import email as mail
 from app.services.audit import audit
 from app.services.permissions import PERMISSIONS
-from app.services.quota import available, current_ledger
+from app.services.quota import current_ledger, total_available
 from app.services.subscriptions import effective_limits
 from app.services.workspaces import create_workspace, roles_for, seat_count, slugify
 
@@ -77,7 +77,7 @@ async def current_workspace(ctx: Ctx, db: Db):
         },
         "limits": await effective_limits(db, ctx.workspace.id),
         "usage": {"seats": await seat_count(db, ctx.workspace.id)},
-        "ai_available": available(ledger) > 0,
+        "ai_available": bool(ledger) and await total_available(db, ctx.workspace.id, ledger) > 0,
     }
 
 

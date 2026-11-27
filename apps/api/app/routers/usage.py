@@ -5,9 +5,9 @@ from sqlalchemy import cast, func, select
 from sqlalchemy.types import Date
 
 from app.core.deps import Db, WorkspaceContext, require
-from app.models import ModelMultiplier, UsageEvent
+from app.models import ModelMultiplier, TokenGrant, UsageEvent
 from app.models.base import utcnow
-from app.services.quota import available, current_ledger
+from app.services.quota import available, current_ledger, package_available
 
 router = APIRouter(prefix="/usage", tags=["usage"])
 
@@ -27,6 +27,15 @@ async def summary(db: Db, ctx: WorkspaceContext = require("usage.read")):
         )
     ).one()
     total = ledger.allowance + ledger.bonus
+    packages = await package_available(db, ctx.workspace.id)
+    next_expiry = await db.scalar(
+        select(func.min(TokenGrant.expires_at)).where(
+            TokenGrant.workspace_id == ctx.workspace.id,
+            TokenGrant.status == "active",
+            TokenGrant.expires_at > utcnow(),
+            TokenGrant.tokens > TokenGrant.consumed + TokenGrant.reserved,
+        )
+    )
     return {
         "active": True,
         "period_start": ledger.period_start,
@@ -41,7 +50,9 @@ async def summary(db: Db, ctx: WorkspaceContext = require("usage.read")):
         "actual_input_tokens": int(raw[0]),
         "actual_output_tokens": int(raw[1]),
         "embedding_weighted": int(raw[2]),
-        "ai_available": available(ledger) > 0 and ctx.workspace.status == "active",
+        "package_remaining": packages,
+        "package_next_expiry": next_expiry,
+        "ai_available": available(ledger) + packages > 0 and ctx.workspace.status == "active",
     }
 
 
