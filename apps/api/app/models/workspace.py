@@ -17,6 +17,9 @@ class Workspace(IdMixin, TimestampMixin, Base):
     owner_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id"), index=True)
     # Reopen a resolved ticket when the customer replies (used from Phase 3).
     settings: Mapped[dict] = mapped_column(JSONB, default=lambda: {"reopen_on_reply": True})
+    # Deleting a workspace: suspended at once, erased after a 30-day grace period unless the owner undoes it.
+    deletion_requested_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    deletion_requested_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
 
 
 class Role(IdMixin, TimestampMixin, Base):

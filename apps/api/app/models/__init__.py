@@ -31,6 +31,7 @@ from app.models.ticketing import (
     team_members,
 )
 from app.models.usage import AuditLog, ModelMultiplier, Notification, TokenGrant, TokenLedger, TokenReservation, UsageEvent
+from app.models.privacy import DataExport, SpamFeature, SpamModelStats
 from app.models.user import EmailToken, Session, User
 from app.models.workspace import Invitation, Membership, Role, Workspace
 
@@ -57,6 +58,9 @@ __all__ = [
     "chatbot_forms",
     "LIMIT_KEYS",
     "AuditLog",
+    "DataExport",
+    "SpamFeature",
+    "SpamModelStats",
     "BillingAccount",
     "BillingEvent",
     "TokenGrant",
