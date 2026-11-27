@@ -17,6 +17,9 @@ class Storage(Protocol):
     async def put(self, workspace_id: uuid.UUID, data: bytes, *, suffix: str = "") -> str: ...
     async def get(self, key: str) -> bytes: ...
     async def delete(self, key: str) -> None: ...
+    async def delete_workspace(self, workspace_id: uuid.UUID) -> None:
+        """Removes everything stored for a workspace (when it is erased)."""
+        ...
 
 
 class LocalStorage:
@@ -47,6 +50,12 @@ class LocalStorage:
 
     async def delete(self, key: str) -> None:
         await asyncio.to_thread(self._path(key).unlink, missing_ok=True)
+
+    async def delete_workspace(self, workspace_id: uuid.UUID) -> None:
+        import shutil
+
+        path = self._path(f"ws/{workspace_id}")
+        await asyncio.to_thread(shutil.rmtree, path, True)
 
 
 _storage: Storage | None = None

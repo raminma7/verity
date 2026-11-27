@@ -159,6 +159,8 @@ async def workspace_context(
     if m is None:
         raise ApiError(404, "workspace_not_found", "Workspace not found.")
     ws = await db.get(Workspace, ws_id)
+    if ws.deletion_requested_at is not None and not user.is_system_admin:
+        raise ApiError(403, "workspace_deleting", "This workspace is scheduled for deletion. Its owner can restore it from Workspaces.")
     if ws.status != "active" and not user.is_system_admin:
         raise ApiError(403, "workspace_suspended", "This workspace is suspended. Contact support.")
     return WorkspaceContext(user=user, workspace=ws, membership=m, subscription=await get_subscription(db, ws.id))

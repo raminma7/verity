@@ -15,6 +15,7 @@ from app.routers import (
     forms,
     knowledge,
     me,
+    privacy,
     routing,
     tickets,
     tools,
@@ -82,6 +83,7 @@ def create_app() -> FastAPI:
         email.router,
         tools.router,
         widget.router,
+        privacy.router,
     ):
         api.include_router(r)
 

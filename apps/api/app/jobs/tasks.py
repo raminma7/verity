@@ -144,7 +144,25 @@ async def billing_sync(ctx) -> int:
         return await sync_prices(db)
 
 
+async def build_export(ctx, *, export_id: str) -> str:
+    from app.services.privacy import build_export as build
+
+    async with SessionLocal() as db:
+        ex = await build(db, uuid.UUID(export_id))
+        return ex.status if ex else "missing"
+
+
+async def privacy_sweep(ctx) -> dict:
+    """Hourly: retention periods, erasure after the 30-day grace period, expired exports."""
+    from app.services.privacy import privacy_sweep as sweep
+
+    async with SessionLocal() as db:
+        return await sweep(db)
+
+
 FUNCTIONS.append(billing_sync)
+FUNCTIONS.append(build_export)
+FUNCTIONS.append(privacy_sweep)
 
 CRON = [
     ("maintenance", "*/5 * * * *"),
@@ -152,4 +170,5 @@ CRON = [
     ("sweep_handoffs", "* * * * *"),
     ("poll_mailboxes", "* * * * *"),
     ("billing_sync", "17 * * * *"),
+    ("privacy_sweep", "41 * * * *"),
 ]

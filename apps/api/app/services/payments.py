@@ -177,6 +177,10 @@ class PaymentProvider(Protocol):
 
     async def set_cancel_at_period_end(self, sub: Subscription, cancel: bool) -> None: ...
 
+    async def cancel_now(self, sub: Subscription) -> None:
+        """Ends the subscription at the provider immediately, without a refund (the workspace is being deleted)."""
+        ...
+
     async def charge_renewal(
         self, sub: Subscription, account: BillingAccount, plan: Plan, *, invoice_ref: str | None, now: datetime
     ) -> InvoiceInfo:
@@ -286,6 +290,9 @@ class MockPaymentProvider:
         return ChangeResult(status="applied", invoice=invoice)
 
     async def set_cancel_at_period_end(self, sub, cancel: bool) -> None:
+        return None
+
+    async def cancel_now(self, sub) -> None:
         return None
 
     async def charge_renewal(self, sub, account, plan, *, invoice_ref, now) -> InvoiceInfo:

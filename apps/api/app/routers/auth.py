@@ -168,13 +168,18 @@ async def login(body: LoginIn, request: Request, response: Response, db: Db):
     if user.status != "active":
         raise ApiError(403, "account_suspended", "This account is suspended. Contact support.")
     await ratelimit.clear_login_failures(email)
+    deletion_cancelled = user.deletion_requested_at is not None
+    if deletion_cancelled:  # signing in within the grace period keeps the account
+        from app.services.privacy import cancel_account_deletion
+
+        await cancel_account_deletion(db, user, ip=client_ip(request))
     if needs_rehash(user.password_hash):
         user.password_hash = hash_password(body.password)
     user.last_login_at = utcnow()
     await _start_session(db, request, response, user, mfa_pending=user.totp_enabled)
     audit(db, "user.login", actor_id=user.id, target_type="user", target_id=user.id, ip=client_ip(request))
     await db.commit()
-    return {"user": UserOut.model_validate(user), "mfa_required": user.totp_enabled}
+    return {"user": UserOut.model_validate(user), "mfa_required": user.totp_enabled, "deletion_cancelled": deletion_cancelled}
 
 
 @router.post("/2fa")

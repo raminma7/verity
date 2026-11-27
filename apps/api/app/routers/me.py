@@ -52,6 +52,8 @@ async def me(user: CurrentUser, db: Db):
                 "permissions": m.role.permissions,
                 "subscribed": is_active(sub),
                 "plan_name": sub.terms["plan_name"] if is_active(sub) else None,
+                "is_owner": ws.owner_id == user.id,
+                "deletion_requested_at": ws.deletion_requested_at,
             }
         )
     return {"user": UserOut.model_validate(user), "workspaces": workspaces}

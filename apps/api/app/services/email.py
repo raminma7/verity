@@ -212,6 +212,40 @@ async def send_package_receipt(to: str, workspace: str, package: str, tokens: in
     )
 
 
+async def send_export_ready(to: str, workspace: str | None, token: str, expires: str, *, locale: str = "en") -> None:
+    url = link(f"/exports/{token}")
+    what = f"the {workspace} workspace's data" if workspace else "your personal data"
+    await send_email(
+        to,
+        "Your Verity data export is ready",
+        f"The export of {what} is ready. Download it while signed in to Verity:\n\n{url}\n\nThe link works once and expires on {expires}.",
+        [url],
+    )
+
+
+async def send_workspace_deletion_scheduled(to: str, workspace: str, erase_on: str, owner: bool, *, locale: str = "en") -> None:
+    url = link("/workspaces")
+    undo = f"You can undo this until {erase_on} under Workspaces:\n\n{url}" if owner else "The workspace owner can undo this until then."
+    await send_email(
+        to,
+        f"The {workspace} workspace will be deleted",
+        f"The {workspace} workspace has been closed and will be permanently erased on {erase_on}, with its tickets, "
+        f"conversations, email, knowledge base and files.\n\n{undo}",
+        [url] if owner else [],
+    )
+
+
+async def send_account_deletion_scheduled(to: str, erase_on: str, *, locale: str = "en") -> None:
+    url = link("/sign-in")
+    await send_email(
+        to,
+        "Your Verity account will be deleted",
+        f"You asked to delete your Verity account. You've been signed out everywhere, and your account will be "
+        f"permanently anonymized on {erase_on}.\n\nChanged your mind? Sign in before then to keep it:\n\n{url}",
+        [url],
+    )
+
+
 async def send_escalation(to: str, workspace: str, chatbot: str, question: str, conversation_id: str) -> None:
     url = link(f"/conversations/{conversation_id}")
     snippet = " ".join(question.split())[:300]

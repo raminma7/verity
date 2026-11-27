@@ -175,6 +175,8 @@ class StripeProvider:
             async with httpx.AsyncClient(base_url=self._base, timeout=self._timeout, transport=self._transport) as c:
                 if method == "GET":
                     r = await c.get(path, params=data, headers=headers)
+                elif method == "DELETE":
+                    r = await c.delete(path, headers=headers)
                 else:
                     headers["Content-Type"] = "application/x-www-form-urlencoded"
                     r = await c.post(path, content=urlencode(data), headers=headers)
@@ -437,6 +439,10 @@ class StripeProvider:
         if inv is None or inv.status != "paid":
             return ChangeResult(status="failed", message="The payment didn't go through.")
         return ChangeResult(status="applied", invoice=inv, period_start=info.current_period_start, period_end=info.current_period_end)
+
+    async def cancel_now(self, sub) -> None:
+        if sub.provider_subscription_ref:
+            await self._call("DELETE", f"/v1/subscriptions/{sub.provider_subscription_ref}")
 
     async def set_cancel_at_period_end(self, sub, cancel: bool) -> None:
         if sub.provider_subscription_ref:
