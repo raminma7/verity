@@ -47,7 +47,10 @@ class Chatbot(IdMixin, TimestampMixin, Base):
 
 class Conversation(IdMixin, TimestampMixin, Base):
     __tablename__ = "conversations"
-    __table_args__ = (Index("ix_conversations_ws_status", "workspace_id", "status", "last_message_at"),)
+    __table_args__ = (
+        Index("ix_conversations_ws_status", "workspace_id", "status", "last_message_at"),
+        Index("ix_conversations_ws_created", "workspace_id", "created_at"),
+    )
 
     workspace_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("workspaces.id", ondelete="CASCADE"), index=True)
     chatbot_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("chatbots.id", ondelete="CASCADE"), index=True)

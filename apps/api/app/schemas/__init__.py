@@ -147,6 +147,42 @@ class PlanOut(Out):
     sort_order: int
 
 
+class TokenPackageIn(BaseModel):
+    key: str = Field(pattern=r"^[a-z0-9-]{2,50}$")
+    name: str = Field(min_length=1, max_length=80)
+    description: str = Field(default="", max_length=500)
+    tokens: int = Field(ge=1000, le=10_000_000_000)
+    price_cents: int = Field(ge=50, le=100_000_000)
+    currency: str = Field(default="USD", pattern=r"^[A-Z]{3}$")
+    is_public: bool = True
+    is_active: bool = True
+    sort_order: int = 0
+
+
+class TokenPackageUpdateIn(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=80)
+    description: str | None = Field(default=None, max_length=500)
+    tokens: int | None = Field(default=None, ge=1000, le=10_000_000_000)
+    price_cents: int | None = Field(default=None, ge=50, le=100_000_000)
+    currency: str | None = Field(default=None, pattern=r"^[A-Z]{3}$")
+    is_public: bool | None = None
+    is_active: bool | None = None
+    sort_order: int | None = None
+
+
+class TokenPackageOut(Out):
+    id: uuid.UUID
+    key: str
+    name: str
+    description: str
+    tokens: int
+    price_cents: int
+    currency: str
+    is_public: bool
+    is_active: bool
+    sort_order: int
+
+
 class MultiplierIn(BaseModel):
     model: str = Field(min_length=1, max_length=80)
     operation: str = Field(default="*", max_length=40)

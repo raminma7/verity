@@ -18,9 +18,10 @@ async def maintenance(ctx) -> dict:
     async with SessionLocal() as db:
         renewed = await renew_due(db)
         released = await quota.release_stale(db)
+        expired = await quota.expire_grants(db)
         purged = await purge_audit(db)
-    log.info("renewals=%s released=%s purged=%s", renewed, released, purged)
-    return {"renewed": renewed, "released": released, "purged": purged}
+    log.info("renewals=%s released=%s expired=%s purged=%s", renewed, released, expired, purged)
+    return {"renewed": renewed, "released": released, "expired_grants": expired, "purged": purged}
 
 
 def _final_attempt(ctx) -> bool:
@@ -133,9 +134,22 @@ FUNCTIONS = [
     fetch_mailbox,
     send_email_message,
 ]
+
+
+async def billing_sync(ctx) -> int:
+    """Hourly: provider-managed subscriptions follow their plan's current price from the next renewal."""
+    from app.services.billing import sync_prices
+
+    async with SessionLocal() as db:
+        return await sync_prices(db)
+
+
+FUNCTIONS.append(billing_sync)
+
 CRON = [
     ("maintenance", "*/5 * * * *"),
     ("sync_websites", "*/15 * * * *"),
     ("sweep_handoffs", "* * * * *"),
     ("poll_mailboxes", "* * * * *"),
+    ("billing_sync", "17 * * * *"),
 ]

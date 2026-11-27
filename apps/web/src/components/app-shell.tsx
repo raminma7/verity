@@ -20,10 +20,12 @@ const PRODUCT: NavItem[] = [
   { href: "/tickets", label: "Tickets", icon: "tag", perm: "tickets.read" },
   { href: "/forms", label: "Forms", icon: "file", perm: "chatbots.read" },
   { href: "/email", label: "Email", icon: "mail", perm: ["integrations.manage", "email.review"] },
+  { href: "/tools", label: "API tools", icon: "link", perm: "integrations.manage" },
 ];
 
 const MANAGE: NavItem[] = [
-  { href: "/usage", label: "AI usage", icon: "chart", perm: "usage.read" },
+  { href: "/analytics", label: "Analytics", icon: "chart", perm: "analytics.read" },
+  { href: "/usage", label: "AI usage", icon: "spark", perm: "usage.read" },
   { href: "/members", label: "Members", icon: "users", perm: "members.read" },
   { href: "/billing", label: "Billing", icon: "card", perm: "billing.read" },
   { href: "/plans", label: "Plans", icon: "sliders" },
@@ -105,11 +107,34 @@ function WorkspaceSwitcher() {
   );
 }
 
+function useAvailability(): ["available" | "away" | null, () => void] {
+  const { current, can } = useSession();
+  const [value, setValue] = useState<"available" | "away" | null>(null);
+  const works = can("tickets.manage") && current?.subscription?.active;
+  const ws = current?.workspace.id;
+  useEffect(() => {
+    if (!works) return setValue(null);
+    api
+      .get<{ availability: "available" | "away" }>("/routing/me")
+      .then((r) => setValue(r.availability))
+      .catch(() => setValue(null));
+  }, [works, ws]);
+  const toggle = () => {
+    const next = value === "away" ? "available" : "away";
+    api
+      .put<{ availability: "available" | "away" }>("/routing/me", { availability: next })
+      .then((r) => setValue(r.availability))
+      .catch(() => {});
+  };
+  return [value, toggle];
+}
+
 function UserMenu() {
   const { user, current } = useSession();
   const router = useRouter();
   const [open, setOpen] = useState(false);
   const [theme, toggleTheme] = useTheme();
+  const [availability, toggleAvailability] = useAvailability();
   const ref = useOutside(open, () => setOpen(false));
   return (
     <div className="vr-ws" ref={ref}>
@@ -118,6 +143,11 @@ function UserMenu() {
           <Link role="menuitem" href="/settings" onClick={() => setOpen(false)}>
             <Icon name="gear" /> Account settings
           </Link>
+          {availability ? (
+            <button role="menuitem" type="button" onClick={toggleAvailability}>
+              <Icon name="users" /> {availability === "away" ? "Set yourself available" : "Set yourself away"}
+            </button>
+          ) : null}
           <button role="menuitem" type="button" onClick={toggleTheme}>
             <Icon name={theme === "dark" ? "sun" : "moon"} /> {theme === "dark" ? "Light theme" : "Dark theme"}
           </button>
@@ -140,6 +170,15 @@ function UserMenu() {
           <span style={{ fontSize: 13, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.full_name}</span>
           <span className="vr-muted" style={{ fontSize: 12 }}>
             {current?.role.name ?? (user.is_system_admin ? "System administrator" : "No workspace")}
+            {availability ? (
+              <>
+                <br />
+                <span className="vr-avail" aria-label={availability === "away" ? "You are away" : "You are available"}>
+                  <span className={availability === "away" ? "vr-avail-dot is-away" : "vr-avail-dot"} aria-hidden="true" />
+                  {availability === "away" ? "Away" : "Available"}
+                </span>
+              </>
+            ) : null}
           </span>
         </span>
         <Button variant="ghost" size="sm" icon="dots" aria-label="Account menu" aria-expanded={open} onClick={() => setOpen(!open)} />

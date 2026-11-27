@@ -3,15 +3,16 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 
+import { PaymentsAdmin, PlatformReports, TokenPackagesAdmin } from "@/components/admin-billing";
 import { Badge, Banner, Button, Card, compact, date, dateTime, EmptyState, Field, fmt, money, PageHeader, Spinner, Stat, Switch } from "@/components/ui";
 import { api, errorText, type Limits, type Plan } from "@/lib/api";
 import { LIMIT_KEYS, LIMIT_LABELS } from "@/lib/limits";
 import { useSession } from "@/lib/session";
 import { useData } from "@/lib/use-data";
 
-const TABS = ["overview", "users", "workspaces", "plans", "multipliers", "settings", "audit"] as const;
+const TABS = ["overview", "reports", "users", "workspaces", "plans", "packages", "payments", "multipliers", "settings", "audit"] as const;
 type Tab = (typeof TABS)[number];
-const TAB_LABEL: Record<Tab, string> = { overview: "Overview", users: "Users", workspaces: "Workspaces", plans: "Plans", multipliers: "Model weights", settings: "Defaults", audit: "Audit log" };
+const TAB_LABEL: Record<Tab, string> = { overview: "Overview", reports: "Reports", packages: "Token packages", payments: "Payments", users: "Users", workspaces: "Workspaces", plans: "Plans", multipliers: "Model weights", settings: "Defaults", audit: "Audit log" };
 
 function useAction() {
   const [busy, setBusy] = useState<string | null>(null);
@@ -462,7 +463,7 @@ function Multipliers() {
         >
           <div className="vr-grid vr-grid-3">
             <Field label="Model" className="vr-mono" value={f.model} onChange={(e) => setF({ ...f, model: e.target.value })} placeholder="claude-sonnet-5-5" />
-            <Field label="Operation" value={f.operation} onChange={(e) => setF({ ...f, operation: e.target.value })} help="* for all, or chat_response, classification, summary, auto_reply, embedding" />
+            <Field label="Operation" value={f.operation} onChange={(e) => setF({ ...f, operation: e.target.value })} help="* for all, or chat_response, kb_ask, tool_call, form_activation, form_prefill, classification, auto_reply, embedding" />
             <Field label="Input weight" inputMode="decimal" value={f.input_multiplier} onChange={(e) => setF({ ...f, input_multiplier: e.target.value })} />
             <Field label="Output weight" inputMode="decimal" value={f.output_multiplier} onChange={(e) => setF({ ...f, output_multiplier: e.target.value })} />
             <Field label="Provider $ / 1M input" inputMode="decimal" value={f.input_cost_per_m} onChange={(e) => setF({ ...f, input_cost_per_m: e.target.value })} />
@@ -592,7 +593,7 @@ function Admin() {
           </button>
         ))}
       </nav>
-      {tab === "overview" ? <Overview /> : tab === "users" ? <Users /> : tab === "workspaces" ? <Workspaces /> : tab === "plans" ? <Plans /> : tab === "multipliers" ? <Multipliers /> : tab === "settings" ? <Defaults /> : <Audit />}
+      {tab === "overview" ? <Overview /> : tab === "reports" ? <PlatformReports /> : tab === "packages" ? <TokenPackagesAdmin /> : tab === "payments" ? <PaymentsAdmin /> : tab === "users" ? <Users /> : tab === "workspaces" ? <Workspaces /> : tab === "plans" ? <Plans /> : tab === "multipliers" ? <Multipliers /> : tab === "settings" ? <Defaults /> : <Audit />}
     </>
   );
 }

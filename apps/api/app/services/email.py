@@ -165,6 +165,53 @@ async def send_payment_receipt(to: str, workspace: str, plan: str, amount: str, 
     )
 
 
+async def send_payment_failed(to: str, workspace: str, plan: str, amount: str, reason: str | None, next_retry: str, grace_end: str) -> None:
+    url = link("/billing")
+    retry = f"We'll try again on {next_retry}." if next_retry else "There are no automatic retries left."
+    await send_email(
+        to,
+        f"Payment failed: Verity {plan}",
+        f"The {amount} renewal of {plan} for the {workspace} workspace didn't go through"
+        f"{': ' + reason if reason else '.'}\n\n{retry} Until it's paid, AI answers are paused. Tickets, email and "
+        f"forms keep working until {grace_end}; after that the subscription ends.\n\n"
+        f"Update the payment method or retry now:\n\n{url}",
+        [url],
+    )
+
+
+async def send_payment_recovered(to: str, workspace: str, plan: str) -> None:
+    url = link("/billing")
+    await send_email(
+        to,
+        f"Payment received: Verity {plan}",
+        f"The renewal of {plan} for the {workspace} workspace has been paid. AI answers are back on.\n\n{url}",
+        [url],
+    )
+
+
+async def send_subscription_ended(to: str, workspace: str, plan: str) -> None:
+    url = link("/plans")
+    await send_email(
+        to,
+        f"Your Verity {plan} subscription has ended",
+        f"The {plan} subscription of the {workspace} workspace ended because its renewal couldn't be charged. "
+        f"Your data is kept. Choose a plan to start again:\n\n{url}",
+        [url],
+    )
+
+
+async def send_package_receipt(to: str, workspace: str, package: str, tokens: int, amount: str) -> None:
+    url = link("/billing/tokens")
+    await send_email(
+        to,
+        f"Receipt: {package}",
+        f"Payment received for the {workspace} workspace.\n\nToken package: {package}\nTokens: {tokens:,}\n"
+        f"Amount: {amount}\n\nThese tokens are used after the plan's allowance, carry over from period to period "
+        f"and expire 12 months after purchase.\n\n{url}",
+        [url],
+    )
+
+
 async def send_escalation(to: str, workspace: str, chatbot: str, question: str, conversation_id: str) -> None:
     url = link(f"/conversations/{conversation_id}")
     snippet = " ".join(question.split())[:300]

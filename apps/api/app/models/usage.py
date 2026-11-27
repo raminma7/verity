@@ -1,7 +1,7 @@
 import uuid
 from datetime import datetime
 
-from sqlalchemy import BigInteger, Boolean, CheckConstraint, DateTime, Float, ForeignKey, String, UniqueConstraint
+from sqlalchemy import BigInteger, Boolean, CheckConstraint, DateTime, Float, ForeignKey, Index, String, UniqueConstraint
 from sqlalchemy.dialects.postgresql import JSONB, UUID
 from sqlalchemy.orm import Mapped, mapped_column
 
@@ -32,12 +32,39 @@ class TokenLedger(IdMixin, Base):
     notified: Mapped[list] = mapped_column(JSONB, default=list)  # thresholds already alerted, e.g. [80, 90]
 
 
+class TokenGrant(IdMixin, Base):
+    """Tokens bought as a package. Kept apart from the period ledger so they roll over; spent after the allowance.
+
+    available = tokens - reserved - consumed, while status is active and expires_at is in the future.
+    """
+
+    __tablename__ = "token_grants"
+    __table_args__ = (
+        CheckConstraint("reserved >= 0", name="grant_reserved_non_negative"),
+        Index("ix_token_grants_ws_expiry", "workspace_id", "status", "expires_at"),
+    )
+
+    workspace_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("workspaces.id", ondelete="CASCADE"))
+    package_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("token_packages.id", ondelete="SET NULL"))
+    payment_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("payments.id", ondelete="SET NULL"), unique=True)
+    name: Mapped[str] = mapped_column(String(80))
+    tokens: Mapped[int] = mapped_column(BigInteger)
+    reserved: Mapped[int] = mapped_column(BigInteger, default=0)
+    consumed: Mapped[int] = mapped_column(BigInteger, default=0)
+    status: Mapped[str] = mapped_column(String(20), default="active")  # active | expired | revoked
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
 class TokenReservation(IdMixin, Base):
     __tablename__ = "token_reservations"
 
     ledger_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("token_ledgers.id", ondelete="CASCADE"), index=True)
     workspace_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("workspaces.id", ondelete="CASCADE"), index=True)
     amount: Mapped[int] = mapped_column(BigInteger)
+    # When the period's allowance can't cover the whole estimate, the rest is held on a package grant.
+    grant_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("token_grants.id", ondelete="SET NULL"))
+    grant_amount: Mapped[int] = mapped_column(BigInteger, default=0)
     operation: Mapped[str] = mapped_column(String(40))
     model: Mapped[str] = mapped_column(String(80))
     status: Mapped[str] = mapped_column(String(20), default="held")  # held | settled | released
@@ -47,11 +74,13 @@ class TokenReservation(IdMixin, Base):
 
 class UsageEvent(IdMixin, Base):
     __tablename__ = "usage_events"
+    __table_args__ = (Index("ix_usage_events_ws_created", "workspace_id", "created_at"),)
 
     workspace_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("workspaces.id", ondelete="CASCADE"), index=True)
     ledger_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("token_ledgers.id", ondelete="SET NULL"))
     kind: Mapped[str] = mapped_column(String(20), default="llm")  # llm | embedding
-    operation: Mapped[str] = mapped_column(String(40))  # chat_response | classification | summary | auto_reply | embedding
+    # embedding | chat_response | kb_ask | tool_call | form_activation | form_prefill | classification | auto_reply
+    operation: Mapped[str] = mapped_column(String(40))
     model: Mapped[str] = mapped_column(String(80))
     input_tokens: Mapped[int] = mapped_column(BigInteger, default=0)
     output_tokens: Mapped[int] = mapped_column(BigInteger, default=0)
@@ -59,6 +88,8 @@ class UsageEvent(IdMixin, Base):
     output_multiplier: Mapped[float] = mapped_column(Float, default=1.0)
     weighted_tokens: Mapped[int] = mapped_column(BigInteger, default=0)
     provider_cost_usd: Mapped[float] = mapped_column(Float, default=0.0)
+    grant_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("token_grants.id", ondelete="SET NULL"))
+    grant_tokens: Mapped[int] = mapped_column(BigInteger, default=0)  # part of weighted_tokens paid from a package
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
 
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { useRouter } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { Badge, Banner, Button, compact, date, Icon, money, PageHeader, Spinner } from "@/components/ui";
 import { api, errorText, type Plan } from "@/lib/api";
@@ -13,36 +13,142 @@ function perMonth(p: Plan) {
   return p.billing_cycle === "year" ? p.price_cents / 12 : p.price_cents;
 }
 
+type Preview = {
+  kind: "upgrade" | "downgrade";
+  plan: Plan;
+  currency: string;
+  amount_due_cents: number;
+  credit_cents: number;
+  tax_cents: number | null;
+  effective_at: string | null;
+  tax_note: string | null;
+};
+
+function ChangeDialog({ preview, current, busy, error, onConfirm, onClose }: { preview: Preview; current: string; busy: boolean; error: string | null; onConfirm: () => void; onClose: () => void }) {
+  const ref = useRef<HTMLDivElement>(null);
+  useEffect(() => {
+    ref.current?.querySelector<HTMLButtonElement>("button.vr-btn-primary")?.focus();
+    const esc = (e: KeyboardEvent) => e.key === "Escape" && onClose();
+    window.addEventListener("keydown", esc);
+    return () => window.removeEventListener("keydown", esc);
+  }, [onClose]);
+  const p = preview.plan;
+  const up = preview.kind === "upgrade";
+  return (
+    <div className="vr-dialog-backdrop" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+      <div className="vr-dialog" role="dialog" aria-modal="true" aria-labelledby="change-title" ref={ref}>
+        <div className="vr-dialog-head">
+          <h2 className="vr-h" id="change-title">
+            {up ? `Upgrade to ${p.name}` : `Switch to ${p.name} at renewal`}
+          </h2>
+        </div>
+        <div className="vr-dialog-body">
+          {up ? (
+            <>
+              <p className="vr-muted">
+                {p.name} and its {compact(p.token_allowance)} tokens start today, with a new billing period. The unused part of {current} is credited.
+              </p>
+              <dl className="vr-kv">
+                <dt>{p.name}</dt>
+                <dd className="vr-mono">{money(p.price_cents, p.currency)}</dd>
+                <dt>Unused {current}</dt>
+                <dd className="vr-mono">−{money(preview.credit_cents, preview.currency)}</dd>
+                {preview.tax_cents !== null ? (
+                  <>
+                    <dt>Tax</dt>
+                    <dd className="vr-mono">{money(preview.tax_cents, preview.currency)}</dd>
+                  </>
+                ) : null}
+              </dl>
+              <div className="vr-total">
+                <span>Due today</span>
+                <span className="vr-mono">{money(preview.amount_due_cents + (preview.tax_cents ?? 0), preview.currency)}</span>
+              </div>
+              {preview.tax_note ? <span className="vr-help">{preview.tax_note}</span> : null}
+              <span className="vr-help">Charged to the payment method on file.</span>
+            </>
+          ) : (
+            <p className="vr-muted">
+              You keep {current} and everything it includes until {date(preview.effective_at)}. Then {p.name} starts at {money(p.price_cents, p.currency)} / {p.billing_cycle}. Nothing is charged now.
+            </p>
+          )}
+          {error ? <Banner tone="danger">{error}</Banner> : null}
+          <div className="vr-actions">
+            <Button variant="primary" busy={busy} onClick={onConfirm}>
+              {up ? `Pay and upgrade` : `Switch at renewal`}
+            </Button>
+            <Button variant="ghost" onClick={onClose}>
+              Keep {current}
+            </Button>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function Plans() {
   const router = useRouter();
   const { current, can, refresh } = useSession();
   const plans = useData<Plan[]>("/plans");
+  const billing = useData<{ account: { currency: string | null }; subscription: { status: string; terms: { currency: string } } | null }>(can("billing.read") ? "/billing" : null);
   const [busy, setBusy] = useState<string | null>(null);
   const [message, setMessage] = useState<{ tone: "brand" | "danger"; text: string } | null>(null);
+  const [preview, setPreview] = useState<Preview | null>(null);
+  const [dialogError, setDialogError] = useState<string | null>(null);
   const sub = current?.subscription?.active ? current.subscription : null;
   const currentPlan = plans.data?.find((p) => p.id === sub?.plan_id);
   const canBuy = can("billing.manage");
+  const currency = billing.data?.account.currency ?? null;
+  const pastDue = billing.data?.subscription?.status === "past_due";
 
   async function choose(p: Plan) {
     setBusy(p.id);
     setMessage(null);
     try {
-      const r = await api.post<{ scheduled: boolean; checkout_id?: string; effective_at?: string }>("/billing/checkout", { plan_id: p.id });
-      if (r.scheduled) {
-        setMessage({ tone: "brand", text: `${p.name} starts when the current period ends on ${date(r.effective_at)}. You keep your current plan until then.` });
-        await refresh();
-      } else router.push(`/checkout/${r.checkout_id}`);
+      if (sub) {
+        setDialogError(null);
+        setPreview(await api.get<Preview>(`/billing/change-preview?plan_id=${p.id}`));
+      } else {
+        const r = await api.post<{ url: string }>("/billing/checkout", { plan_id: p.id });
+        window.location.assign(r.url); // the provider's hosted checkout (the test page with the mock provider)
+        return;
+      }
     } catch (e) {
       setMessage({ tone: "danger", text: errorText(e) });
-    } finally {
-      setBusy(null);
     }
+    setBusy(null);
+  }
+
+  async function confirmChange() {
+    if (!preview) return;
+    setBusy("confirm");
+    setDialogError(null);
+    try {
+      const r = await api.post<{ status: string; url?: string; effective_at?: string }>("/billing/change", { plan_id: preview.plan.id });
+      if (r.status === "action_required" && r.url) {
+        window.location.assign(r.url); // the bank wants the customer to confirm the payment
+        return;
+      }
+      await refresh();
+      if (r.status === "upgraded") {
+        router.push(`/billing?upgraded=${encodeURIComponent(preview.plan.name)}`);
+        return;
+      }
+      setPreview(null);
+      setMessage({ tone: "brand", text: `${preview.plan.name} starts when the current period ends on ${date(r.effective_at)}. You keep your current plan until then.` });
+      plans.reload();
+    } catch (e) {
+      setDialogError(errorText(e));
+    }
+    setBusy(null);
   }
 
   return (
     <>
       <PageHeader eyebrow="Plans" title="Choose a plan" subtitle="Every plan includes the knowledge base, chatbot, ticketing and email. They differ in AI tokens and resource limits. Tokens are shared across the whole workspace." />
       {!canBuy ? <Banner tone="neutral" title="Only people who manage billing can change the plan.">Ask your workspace owner.</Banner> : null}
+      {pastDue ? <Banner tone="danger" title="A payment is overdue.">Settle it on the Billing page before changing plans.</Banner> : null}
       {message ? <Banner tone={message.tone}>{message.text}</Banner> : null}
       {plans.loading && !plans.data ? (
         <Spinner />
@@ -53,8 +159,9 @@ export default function Plans() {
           {plans.data!.map((p) => {
             const isCurrent = p.id === sub?.plan_id;
             const isDowngrade = currentPlan && perMonth(p) <= perMonth(currentPlan) && !isCurrent;
+            const otherCurrency = !!currency && p.currency !== currency;
             return (
-              <article key={p.id} className={isCurrent ? "vr-plan is-current" : "vr-plan"} aria-label={`${p.name} plan`}>
+              <article key={p.id} className={isCurrent ? "vr-plan is-current" : otherCurrency ? "vr-plan is-other-currency" : "vr-plan"} aria-label={`${p.name} plan`}>
                 <div className="vr-plan-head">
                   <h2 className="vr-h">{p.name}</h2>
                   {isCurrent ? <Badge tone="brand" dot>Current plan</Badge> : null}
@@ -81,8 +188,12 @@ export default function Plans() {
                     </li>
                   ))}
                 </ul>
-                {canBuy ? (
-                  <Button variant={isCurrent ? "secondary" : "primary"} disabled={isCurrent || !!busy} busy={busy === p.id} onClick={() => choose(p)}>
+                {otherCurrency ? (
+                  <span className="vr-help">
+                    Priced in {p.currency}; this workspace pays in {currency}.
+                  </span>
+                ) : canBuy ? (
+                  <Button variant={isCurrent ? "secondary" : "primary"} disabled={isCurrent || !!busy || pastDue} busy={busy === p.id} onClick={() => choose(p)}>
                     {isCurrent ? "Your plan" : !sub ? `Choose ${p.name}` : isDowngrade ? `Switch at renewal` : `Upgrade to ${p.name}`}
                   </Button>
                 ) : null}
@@ -92,8 +203,21 @@ export default function Plans() {
         </div>
       )}
       <p className="vr-muted vr-caption">
-        Prices exclude tax. Upgrades start a new billing period straight away; downgrades take effect at renewal. Unused tokens don’t roll over.
+        Prices exclude tax, which is added at checkout from your billing address. Upgrades apply straight away and are prorated: unused time on the current plan is credited and a new billing period starts. Downgrades take effect at renewal. Unused plan tokens don’t roll over; bought token packages do.
       </p>
+      {preview && currentPlan ? (
+        <ChangeDialog
+          preview={preview}
+          current={currentPlan.name}
+          busy={busy === "confirm"}
+          error={dialogError}
+          onConfirm={confirmChange}
+          onClose={() => {
+            setPreview(null);
+            setBusy(null);
+          }}
+        />
+      ) : null}
     </>
   );
 }

@@ -10,7 +10,7 @@ from sqlalchemy import select
 from app.core.config import get_settings
 from app.core.db import SessionLocal
 from app.core.security import hash_password
-from app.models import ModelMultiplier, Plan, Role, User
+from app.models import ModelMultiplier, Plan, Role, TokenPackage, User
 from app.models.base import utcnow
 from app.services.permissions import DEFAULT_ROLES
 
@@ -29,8 +29,9 @@ PLANS = [
             "email_accounts": 3,
             "members": 3,
             "storage_mb": 1024,
+            "api_tools": 3,
         },
-        "features": ["1 chatbot domain", "100 documents", "10 crawled domains", "3 email accounts", "3 members"],
+        "features": ["1 chatbot domain", "100 documents", "10 crawled domains", "3 email accounts", "3 members", "3 API tools"],
         "sort_order": 10,
     },
     {
@@ -47,8 +48,9 @@ PLANS = [
             "email_accounts": 10,
             "members": 15,
             "storage_mb": 10240,
+            "api_tools": 10,
         },
-        "features": ["3 chatbot domains", "500 documents", "25 crawled domains", "10 email accounts", "15 members"],
+        "features": ["3 chatbot domains", "500 documents", "25 crawled domains", "10 email accounts", "15 members", "10 API tools"],
         "sort_order": 20,
     },
     {
@@ -65,9 +67,38 @@ PLANS = [
             "email_accounts": 30,
             "members": -1,
             "storage_mb": 51200,
+            "api_tools": 25,
         },
-        "features": ["10 chatbot domains", "2,500 documents", "100 crawled domains", "30 email accounts", "Unlimited members"],
+        "features": [
+            "10 chatbot domains",
+            "2,500 documents",
+            "100 crawled domains",
+            "30 email accounts",
+            "Unlimited members",
+            "25 API tools",
+        ],
         "sort_order": 30,
+    },
+]
+
+# Additional AI tokens for subscribed workspaces. They carry over and expire 12 months after purchase.
+# Admins change these under Admin → Token packages.
+TOKEN_PACKAGES = [
+    {
+        "key": "tokens-1m",
+        "name": "1M tokens",
+        "description": "One million weighted AI tokens.",
+        "tokens": 1_000_000,
+        "price_cents": 1200,
+        "sort_order": 10,
+    },
+    {
+        "key": "tokens-5m",
+        "name": "5M tokens",
+        "description": "Five million weighted AI tokens.",
+        "tokens": 5_000_000,
+        "price_cents": 5000,
+        "sort_order": 20,
     },
 ]
 
@@ -96,6 +127,9 @@ async def seed() -> None:
         for p in PLANS:
             if not (await db.execute(select(Plan.id).where(Plan.key == p["key"]))).first():
                 db.add(Plan(currency="USD", billing_cycle="month", **p))
+        if not (await db.execute(select(TokenPackage.id).limit(1))).first():
+            for p in TOKEN_PACKAGES:
+                db.add(TokenPackage(currency="USD", **p))
         for model, op, wi, wo, ci, co in MULTIPLIERS:
             if not (
                 await db.execute(select(ModelMultiplier.id).where(ModelMultiplier.model == model, ModelMultiplier.operation == op))

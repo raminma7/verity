@@ -77,6 +77,8 @@ class Ticket(IdMixin, TimestampMixin, Base):
     __table_args__ = (
         UniqueConstraint("workspace_id", "number"),
         Index("ix_tickets_ws_status_activity", "workspace_id", "status", "last_activity_at"),
+        Index("ix_tickets_ws_created", "workspace_id", "created_at"),
+        Index("ix_tickets_ws_resolved", "workspace_id", "resolved_at"),
         Index("ix_tickets_search", "search_vector", postgresql_using="gin"),
     )
 
@@ -100,6 +102,11 @@ class Ticket(IdMixin, TimestampMixin, Base):
     requester_name: Mapped[str | None] = mapped_column(String(120))
     requester_email: Mapped[str | None] = mapped_column(String(320), index=True)
     created_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
+    # Routing (Phase 5A): the team the ticket belongs to and when it was last assigned.
+    team_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("teams.id", ondelete="SET NULL"), index=True)
+    assigned_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    # The team's first reply to the customer (for first-response times).
+    first_response_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     reopened_count: Mapped[int] = mapped_column(Integer, default=0)
@@ -113,14 +120,70 @@ class TicketEvent(IdMixin, Base):
     """The ticket timeline: messages, internal notes and every change."""
 
     __tablename__ = "ticket_events"
-    __table_args__ = (Index("ix_ticket_events_ticket_created", "ticket_id", "created_at"),)
+    __table_args__ = (
+        Index("ix_ticket_events_ticket_created", "ticket_id", "created_at"),
+        Index("ix_ticket_events_ws_kind_created", "workspace_id", "kind", "created_at"),
+    )
 
     workspace_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("workspaces.id", ondelete="CASCADE"), index=True)
     ticket_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("tickets.id", ondelete="CASCADE"))
-    # created | customer_message | agent_reply | note | status | assignment | priority | category | reopened
+    # created | customer_message | agent_reply | note | status | assignment | priority | category | reopened | routed | team
     kind: Mapped[str] = mapped_column(String(30))
     body: Mapped[str] = mapped_column(Text, default="")
     data: Mapped[dict] = mapped_column(JSONB, default=dict)
     internal: Mapped[bool] = mapped_column(Boolean, default=False)
     author_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+# ---- Routing (Phase 5A) -------------------------------------------------------------------------
+
+team_members = Table(
+    "team_members",
+    Base.metadata,
+    Column("team_id", ForeignKey("teams.id", ondelete="CASCADE"), primary_key=True),
+    Column("user_id", ForeignKey("users.id", ondelete="CASCADE"), primary_key=True, index=True),
+)
+
+
+class Team(IdMixin, TimestampMixin, Base):
+    """A group of people who work the same tickets. `category_ids` are the categories it handles."""
+
+    __tablename__ = "teams"
+    __table_args__ = (UniqueConstraint("workspace_id", "name"),)
+
+    workspace_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("workspaces.id", ondelete="CASCADE"), index=True)
+    name: Mapped[str] = mapped_column(String(80))
+    description: Mapped[str] = mapped_column(String(300), default="")
+    category_ids: Mapped[list] = mapped_column(JSONB, default=list)
+
+
+class RoutingRule(IdMixin, TimestampMixin, Base):
+    """Checked in `position` order; the first enabled rule whose conditions all match decides.
+
+    conditions: {sources, category_ids, priorities, keywords, requester_domains} (each a list; empty = any)
+    action: {"team_id": …} or {"assignee_id": …}
+    """
+
+    __tablename__ = "routing_rules"
+
+    workspace_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("workspaces.id", ondelete="CASCADE"), index=True)
+    name: Mapped[str] = mapped_column(String(80))
+    position: Mapped[int] = mapped_column(Integer, default=0)
+    enabled: Mapped[bool] = mapped_column(Boolean, default=True)
+    conditions: Mapped[dict] = mapped_column(JSONB, default=dict)
+    action: Mapped[dict] = mapped_column(JSONB, default=dict)
+
+
+class MemberRouting(IdMixin, Base):
+    """A member's routing profile in one workspace: availability, a cap on open tickets, and skills."""
+
+    __tablename__ = "member_routing"
+    __table_args__ = (UniqueConstraint("workspace_id", "user_id"),)
+
+    workspace_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("workspaces.id", ondelete="CASCADE"), index=True)
+    user_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
+    availability: Mapped[str] = mapped_column(String(20), default="available")  # available | away
+    max_open: Mapped[int | None] = mapped_column(Integer)
+    skills: Mapped[list] = mapped_column(JSONB, default=list)  # category ids, preferred for those tickets
+    last_assigned_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))

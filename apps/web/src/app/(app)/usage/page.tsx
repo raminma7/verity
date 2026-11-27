@@ -5,18 +5,12 @@ import Link from "next/link";
 import { Banner, Card, compact, date, EmptyState, fmt, PageHeader, Spinner, Stat, UsageMeter } from "@/components/ui";
 import type { UsageSummary } from "@/lib/api";
 import { useSession } from "@/lib/session";
+import { OPS } from "@/lib/usage";
 import { useData } from "@/lib/use-data";
 
 type Row = { key: string; input_tokens: number; output_tokens: number; weighted: number; requests: number };
 type Mult = { model: string; operation: string; input_multiplier: number; output_multiplier: number };
 
-const OPS: Record<string, string> = {
-  chat_response: "Chatbot answers",
-  classification: "Email classification",
-  summary: "Summaries",
-  auto_reply: "Automatic replies",
-  embedding: "Embeddings",
-};
 
 function Breakdown({ title, rows, label }: { title: string; rows: Row[]; label: (k: string) => string }) {
   return (
@@ -109,7 +103,7 @@ export default function Usage() {
         subtitle={`Period ${date(s.period_start)} – ${date(s.period_end)}. Shared by every member and chatbot in ${current?.workspace.name}.`}
       />
       {!s.ai_available ? (
-        <Banner tone="danger" title="Allowance used up. AI features are paused." action={<Link className="vr-btn vr-btn-secondary vr-btn-sm" href="/plans">Upgrade</Link>}>
+        <Banner tone="danger" title="Allowance used up. AI features are paused." action={<div className="vr-actions"><Link className="vr-btn vr-btn-secondary vr-btn-sm" href="/billing/tokens">Buy tokens</Link><Link className="vr-btn vr-btn-secondary vr-btn-sm" href="/plans">Upgrade</Link></div>}>
           The chatbot shows its fallback message. Manual ticketing, email ingestion and forms keep working. The allowance resets on {date(s.period_end)}.
         </Banner>
       ) : s.percent_used >= 80 ? (
@@ -120,7 +114,7 @@ export default function Usage() {
         <Stat label="Remaining" value={compact(s.remaining)} note="weighted tokens" />
         <Stat label="Used" value={`${s.percent_used}%`} note={`${fmt(s.consumed_weighted)} of ${fmt(s.total_allowance)}`} />
         <Stat label="Actual tokens" value={compact(s.actual_input_tokens + s.actual_output_tokens)} note={`${compact(s.actual_input_tokens)} in · ${compact(s.actual_output_tokens)} out`} />
-        <Stat label="Renews" value={date(s.period_end).split(" ").slice(0, 2).join(" ")} note="Unused tokens don’t roll over" />
+        <Stat label="Renews" value={date(s.period_end).split(" ").slice(0, 2).join(" ")} note="Unused plan tokens don’t roll over" />
       </div>
 
       <Card>
@@ -135,6 +129,11 @@ export default function Usage() {
                 <dd className="vr-mono">{fmt(s.bonus)}</dd>
               </>
             ) : null}
+            <dt>Token packages</dt>
+            <dd className="vr-mono">
+              {s.package_remaining ? `${fmt(s.package_remaining)} left, used after the allowance · next expiry ${date(s.package_next_expiry)}` : "None"}{" "}
+              <Link href="/billing/tokens">Buy tokens</Link>
+            </dd>
             <dt>In progress</dt>
             <dd className="vr-mono">{fmt(s.reserved)} held for requests still running</dd>
             <dt>Embeddings</dt>

@@ -8,6 +8,9 @@ x-api-env: &api-env
   VERITY_REDIS_URL: redis://redis:6379/0
   VERITY_APP_URL: http://localhost:3000
   VERITY_ALLOWED_ORIGINS: '["http://localhost:3000"]'
+  # X-Forwarded-For is only believed from these proxies: the web container reaches the API over the compose
+  # network. In production list your load balancer's and the web server's addresses, nothing wider.
+  VERITY_TRUSTED_PROXIES: '["127.0.0.1/32", "::1/128", "172.16.0.0/12"]'
   VERITY_EMAIL_BACKEND: smtp
   VERITY_SMTP_HOST: mailpit
   VERITY_SMTP_PORT: "1025"

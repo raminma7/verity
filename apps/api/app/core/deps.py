@@ -1,6 +1,8 @@
+import ipaddress
 import uuid
 from dataclasses import dataclass
 from datetime import timedelta
+from functools import lru_cache
 from typing import Annotated
 
 from fastapi import Depends, Header, Request
@@ -18,11 +20,49 @@ from app.services.subscriptions import get_subscription, is_active
 Db = Annotated[AsyncSession, Depends(get_db)]
 
 
+@lru_cache(maxsize=8)
+def _networks(cidrs: tuple[str, ...]) -> tuple[ipaddress.IPv4Network | ipaddress.IPv6Network, ...]:
+    return tuple(ipaddress.ip_network(c.strip(), strict=False) for c in cidrs if c.strip())
+
+
+def _address(value: str) -> ipaddress.IPv4Address | ipaddress.IPv6Address | None:
+    """An address from a forwarded hop: "203.0.113.7", "203.0.113.7:4711", "[2001:db8::1]:443" or "2001:db8::1"."""
+    v = value.strip().strip('"')
+    if v.startswith("["):
+        v = v[1 : v.find("]")] if "]" in v else ""
+    elif v.count(":") == 1:
+        v = v.split(":", 1)[0]
+    try:
+        addr = ipaddress.ip_address(v)
+    except ValueError:
+        return None
+    return addr.ipv4_mapped or addr if isinstance(addr, ipaddress.IPv6Address) else addr
+
+
 def client_ip(request: Request) -> str | None:
-    fwd = request.headers.get("x-forwarded-for")
-    if fwd:
-        return fwd.split(",")[0].strip()
-    return request.client.host if request.client else None
+    """The caller's address, for per-IP rate limits and audit logs.
+
+    X-Forwarded-For is only believed when the connection comes from a trusted proxy (VERITY_TRUSTED_PROXIES;
+    the Next.js server on the same host by default). Then the right-most hop that isn't a trusted proxy is the
+    client: anything to its left was written by the client and can be forged.
+    """
+    peer = request.client.host if request.client else None
+    if peer is None:
+        return None
+    nets = _networks(tuple(get_settings().trusted_proxies))
+    peer_addr = _address(peer)
+    if peer_addr is None or not any(peer_addr in n for n in nets):
+        return peer
+    fwd = ",".join(request.headers.getlist("x-forwarded-for"))
+    ip = str(peer_addr)
+    for hop in reversed([h for h in fwd.split(",") if h.strip()]):
+        addr = _address(hop)
+        if addr is None:
+            break  # a malformed hop: don't trust anything left of it
+        ip = str(addr)
+        if not any(addr in n for n in nets):
+            return ip
+    return ip
 
 
 async def _load_session(request: Request, db: AsyncSession) -> tuple[Session, User] | None:

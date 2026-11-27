@@ -260,7 +260,7 @@ export function QueryBar({
   );
 }
 
-export type TraceStep = { name: string; detail?: string; ms?: number | null; state?: "done" | "running" | "pending" | "error" };
+export type TraceStep = { name: string; detail?: string; ms?: number | null; state?: "done" | "running" | "pending" | "error"; kind?: "tool" };
 
 export function PipelineTrace({ steps }: { steps: TraceStep[] }) {
   return (
@@ -268,12 +268,16 @@ export function PipelineTrace({ steps }: { steps: TraceStep[] }) {
       {steps.map((s, i) => {
         const state = s.state || "done";
         return (
-          <li key={i} className={cx("vr-trace-step", `is-${state}`)}>
+          <li key={i} className={cx("vr-trace-step", `is-${state}`, s.kind === "tool" && "is-tool")}>
             <span className="vr-trace-node" aria-hidden="true">
               {state === "done" ? <Icon name="check" size={12} /> : state === "error" ? <Icon name="x" size={12} /> : state === "running" ? <span className="vr-spin vr-spin-sm" /> : null}
             </span>
             <span className="vr-trace-text">
-              <span className="vr-trace-name">{s.name}</span>
+              <span className="vr-trace-name">
+                {s.kind === "tool" ? <Icon name="link" size={12} className="vr-trace-kind" /> : null}
+                {s.name}
+                {s.kind === "tool" && state === "error" ? <span className="vr-trace-word"> · Failed</span> : null}
+              </span>
               {s.detail ? <span className="vr-trace-detail">{s.detail}</span> : null}
             </span>
             <span className="vr-trace-ms">{s.ms != null ? `${s.ms} ms` : state === "running" ? "…" : ""}</span>

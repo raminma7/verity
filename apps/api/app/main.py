@@ -5,15 +5,32 @@ from pydantic import BaseModel, Field
 
 from app.core.config import get_settings
 from app.core.deps import Db, WorkspaceContext, require
-from app.routers import admin, auth, billing, chatbots, email, forms, knowledge, me, tickets, usage, widget, workspaces
+from app.routers import (
+    admin,
+    analytics,
+    auth,
+    billing,
+    chatbots,
+    email,
+    forms,
+    knowledge,
+    me,
+    routing,
+    tickets,
+    tools,
+    usage,
+    widget,
+    workspaces,
+)
 from app.services import email as mail
-from app.services import quota
+from app.services import payments, quota
 
 UNSAFE = {"POST", "PUT", "PATCH", "DELETE"}
 
 
 def create_app() -> FastAPI:
     s = get_settings()
+    payments.check_configuration()
     app = FastAPI(title="Verity API", version="0.1.0", docs_url="/api/docs", openapi_url="/api/openapi.json")
 
     @app.middleware("http")
@@ -56,11 +73,14 @@ def create_app() -> FastAPI:
         billing.router,
         usage.router,
         admin.router,
+        analytics.router,
         knowledge.router,
         chatbots.router,
         forms.router,
         tickets.router,
+        routing.router,
         email.router,
+        tools.router,
         widget.router,
     ):
         api.include_router(r)
@@ -158,6 +178,35 @@ def create_app() -> FastAPI:
                 )
                 n += 1
             return {"settled": n}
+
+        @dev.post("/billing/renew")
+        async def dev_renew(db: Db, ctx: WorkspaceContext = require("billing.manage")):
+            """Test provider only: ends the current period now and runs the renewal job for this workspace, so a
+            renewal (or, with the declining test card, a failed one) can be tried without waiting a month."""
+
+            from sqlalchemy import update
+
+            from app.models import Subscription, TokenLedger
+            from app.models.base import utcnow
+            from app.services.subscriptions import renew_due
+
+            sub = ctx.subscription
+            if sub is None or sub.provider != "mock":
+                return JSONResponse({"detail": {"code": "mock_only", "message": "Only test subscriptions renew here."}}, 409)
+            now = utcnow()
+            await db.execute(
+                update(Subscription).where(Subscription.id == sub.id, Subscription.status == "active").values(current_period_end=now)
+            )
+            await db.execute(
+                update(TokenLedger)
+                .where(TokenLedger.workspace_id == sub.workspace_id, TokenLedger.is_current.is_(True), TokenLedger.period_end > now)
+                .values(period_end=now)
+            )
+            await db.execute(
+                update(Subscription).where(Subscription.id == sub.id, Subscription.status == "past_due").values(next_retry_at=now)
+            )
+            await db.commit()
+            return await renew_due(db, workspace_id=ctx.workspace.id)
 
         api.include_router(dev)
 

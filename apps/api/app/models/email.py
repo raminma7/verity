@@ -70,6 +70,7 @@ class EmailMessage(IdMixin, TimestampMixin, Base):
         Index("uq_email_messages_account_mid", "account_id", "message_id", unique=True),
         Index("ix_email_messages_ws_mid", "workspace_id", "message_id"),
         Index("ix_email_messages_ws_status", "workspace_id", "status", "received_at"),
+        Index("ix_email_messages_ws_direction_received", "workspace_id", "direction", "received_at"),
     )
 
     workspace_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("workspaces.id", ondelete="CASCADE"), index=True)

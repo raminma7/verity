@@ -25,10 +25,12 @@ from app.models import (
     Form,
     Membership,
     Message,
+    Team,
     Ticket,
     TicketCategory,
     TicketEvent,
     User,
+    team_members,
 )
 from app.models.base import utcnow
 from app.services import conversations as convs
@@ -255,6 +257,7 @@ class TicketIn(BaseModel):
     category_id: uuid.UUID | None = None
     priority: str = Field(default="normal", pattern=PRIORITY)
     assignee_id: uuid.UUID | None = None
+    team_id: uuid.UUID | None = None  # with no assignee, routing picks someone in this team
     requester_name: str | None = Field(default=None, max_length=120)
     requester_email: EmailStr | None = None
 
@@ -266,6 +269,7 @@ class TicketUpdateIn(BaseModel):
     category_id: uuid.UUID | None = None
     assignee_id: uuid.UUID | None = None
     unassign: bool = False
+    team_id: uuid.UUID | None = None
 
 
 class NoteIn(BaseModel):
@@ -283,21 +287,32 @@ async def _ticket(db: AsyncSession, ctx: WorkspaceContext, ticket_id: uuid.UUID)
     return t
 
 
-async def _names(db: AsyncSession, tickets: list[Ticket]) -> tuple[dict, dict]:
+async def _names(db: AsyncSession, tickets: list[Ticket]) -> tuple[dict, dict, dict]:
     cat_ids = {t.category_id for t in tickets if t.category_id}
     user_ids = {t.assignee_id for t in tickets if t.assignee_id}
+    team_ids = {t.team_id for t in tickets if t.team_id}
+    teams = dict((await db.execute(select(Team.id, Team.name).where(Team.id.in_(team_ids)))).all()) if team_ids else {}
     cats = (
         dict((await db.execute(select(TicketCategory.id, TicketCategory.name).where(TicketCategory.id.in_(cat_ids)))).all())
         if cat_ids
         else {}
     )
     users = dict((await db.execute(select(User.id, User.full_name).where(User.id.in_(user_ids)))).all()) if user_ids else {}
-    return cats, users
+    return cats, users, teams
 
 
 async def _out(db: AsyncSession, t: Ticket) -> dict:
-    cats, users = await _names(db, [t])
-    return svc.ticket_out(t, category=cats.get(t.category_id), assignee=users.get(t.assignee_id))
+    cats, users, teams = await _names(db, [t])
+    return svc.ticket_out(t, category=cats.get(t.category_id), assignee=users.get(t.assignee_id), team=teams.get(t.team_id))
+
+
+async def _check_team(db: AsyncSession, ws_id: uuid.UUID, team_id: uuid.UUID | None) -> Team | None:
+    if team_id is None:
+        return None
+    team = (await db.execute(select(Team).where(Team.id == team_id, Team.workspace_id == ws_id))).scalar_one_or_none()
+    if team is None:
+        raise ApiError(404, "team_not_found", "Team not found.", field="team_id")
+    return team
 
 
 def _tsquery(q: str) -> str | None:
@@ -312,13 +327,15 @@ async def list_tickets(
     priority: str | None = None,
     category_id: uuid.UUID | None = None,
     assignee: str | None = None,
+    team: str | None = None,
     source: str | None = None,
     q: str | None = None,
     before: datetime | None = None,
     limit: int = 50,
     ctx: WorkspaceContext = READ,
 ):
-    """status: one status, or "active" (new, open, pending). assignee: "me", "none" or a member's id."""
+    """status: one status, or "active" (new, open, pending). assignee: "me", "none" or a member's id.
+    team: a team's id, "mine" (teams the caller belongs to) or "none"."""
     base = select(Ticket).where(Ticket.workspace_id == ctx.workspace.id)
     if status == "active":
         base = base.where(Ticket.status.in_(("new", "open", "pending")))
@@ -328,6 +345,16 @@ async def list_tickets(
         base = base.where(Ticket.priority == priority)
     if category_id:
         base = base.where(Ticket.category_id == category_id)
+    if team == "mine":
+        mine = select(team_members.c.team_id).where(team_members.c.user_id == ctx.user.id)
+        base = base.where(Ticket.team_id.in_(mine))
+    elif team == "none":
+        base = base.where(Ticket.team_id.is_(None))
+    elif team:
+        try:
+            base = base.where(Ticket.team_id == uuid.UUID(team))
+        except ValueError:
+            raise ApiError(422, "invalid_input", "Unknown team filter.", field="team") from None
     if assignee == "me":
         base = base.where(Ticket.assignee_id == ctx.user.id)
     elif assignee == "none":
@@ -359,9 +386,11 @@ async def list_tickets(
     counts = dict(
         (await db.execute(select(Ticket.status, func.count()).where(Ticket.workspace_id == ctx.workspace.id).group_by(Ticket.status))).all()
     )
-    cats, users = await _names(db, rows)
+    cats, users, teams = await _names(db, rows)
     return {
-        "items": [svc.ticket_out(t, category=cats.get(t.category_id), assignee=users.get(t.assignee_id)) for t in rows],
+        "items": [
+            svc.ticket_out(t, category=cats.get(t.category_id), assignee=users.get(t.assignee_id), team=teams.get(t.team_id)) for t in rows
+        ],
         "counts": {s: counts.get(s, 0) for s in TICKET_STATUSES},
     }
 
@@ -388,6 +417,7 @@ async def assignees(db: Db, ctx: WorkspaceContext = READ):
 async def create_ticket(body: TicketIn, request: Request, db: Db, ctx: WorkspaceContext = MANAGE):
     await svc.check_category(db, ctx.workspace.id, body.category_id)
     await svc.check_assignee(db, ctx.workspace.id, body.assignee_id)
+    await _check_team(db, ctx.workspace.id, body.team_id)
     t = await svc.create(
         db,
         ctx.workspace.id,
@@ -398,6 +428,7 @@ async def create_ticket(body: TicketIn, request: Request, db: Db, ctx: Workspace
             category_id=body.category_id,
             priority=body.priority,
             assignee_id=body.assignee_id,
+            team_id=body.team_id,
             requester_name=body.requester_name,
             requester_email=body.requester_email,
             created_by=ctx.user.id,
@@ -541,10 +572,16 @@ async def update_ticket(ticket_id: uuid.UUID, body: TicketUpdateIn, request: Req
             changes["assignee_id"] = {"from": t.assignee_id, "to": new}
             svc.add_event(db, t, "assignment", author_id=ctx.user.id, **{"from": t.assignee_id, "to": new})
             t.assignee_id = new
+            t.assigned_at = utcnow() if new else None
             if new and new != ctx.user.id:
                 svc.notify_assignee(db, t, new)
             if new and t.status == "new" and body.status is None:
                 svc.set_status(db, t, "open", actor_id=ctx.user.id)
+    if "team_id" in body.model_fields_set and body.team_id != t.team_id:
+        team = await _check_team(db, ctx.workspace.id, body.team_id)
+        changes["team_id"] = {"from": t.team_id, "to": body.team_id}
+        svc.add_event(db, t, "team", author_id=ctx.user.id, **{"from": t.team_id, "to": body.team_id, "team": team.name if team else None})
+        t.team_id = body.team_id
     resolved_conv = False
     if body.status is not None and body.status != t.status:
         before = t.status
@@ -609,6 +646,7 @@ async def reply(ticket_id: uuid.UUID, body: ReplyIn, request: Request, db: Db, c
         await convs.agent_reply(db, c, ctx.user, text_out, ip=client_ip(request), ticket=t)
         return await get_ticket(ticket_id, db, ctx)
     e = svc.add_event(db, t, "agent_reply", text_out, author_id=ctx.user.id, channel="email", to=t.requester_email)
+    svc.mark_first_response(t)
     if t.status == "new":
         svc.set_status(db, t, "open", actor_id=ctx.user.id)
     t.assignee_id = t.assignee_id or ctx.user.id

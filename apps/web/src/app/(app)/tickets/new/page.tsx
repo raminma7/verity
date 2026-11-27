@@ -13,7 +13,8 @@ export default function NewTicket() {
   const router = useRouter();
   const cats = useData<TicketCategory[]>("/ticket-categories");
   const people = useData<{ id: string; name: string }[]>("/tickets/assignees");
-  const [f, setF] = useState({ subject: "", description: "", requester_name: "", requester_email: "", category_id: "", priority: "normal", assignee_id: "" });
+  const teams = useData<{ items: { id: string; name: string }[] }>("/teams");
+  const [f, setF] = useState({ subject: "", description: "", requester_name: "", requester_email: "", category_id: "", priority: "normal", assignee_id: "", team_id: "" });
   const [busy, setBusy] = useState(false);
   const [err, setErr] = useState<{ text: string; field?: string } | null>(null);
   const set = (k: keyof typeof f) => (v: string) => setF({ ...f, [k]: v });
@@ -31,6 +32,7 @@ export default function NewTicket() {
         category_id: f.category_id || null,
         priority: f.priority,
         assignee_id: f.assignee_id || null,
+        team_id: f.team_id || null,
       });
       router.push(`/tickets/${t.id}`);
     } catch (e2) {
@@ -65,7 +67,16 @@ export default function NewTicket() {
             <Select label="Category" value={f.category_id} onChange={set("category_id")} options={[{ value: "", label: "No category" }, ...(cats.data ?? []).map((c) => ({ value: c.id, label: c.name }))]} />
             <Select label="Priority" value={f.priority} onChange={set("priority")} options={PRIORITY_ORDER.map((p) => ({ value: p, label: PRIORITY[p].label }))} />
           </div>
-          <Select label="Assignee" value={f.assignee_id} onChange={set("assignee_id")} options={[{ value: "", label: "Unassigned" }, ...(people.data ?? []).map((p) => ({ value: p.id, label: p.name }))]} />
+          <Select
+            label="Assignee"
+            value={f.assignee_id}
+            onChange={set("assignee_id")}
+            help={f.assignee_id ? undefined : "Left unassigned, routing picks someone when it’s on."}
+            options={[{ value: "", label: "Unassigned" }, ...(people.data ?? []).map((p) => ({ value: p.id, label: p.name }))]}
+          />
+          {teams.data?.items.length ? (
+            <Select label="Team" value={f.team_id} onChange={set("team_id")} options={[{ value: "", label: "Let routing decide" }, ...teams.data.items.map((t) => ({ value: t.id, label: t.name }))]} />
+          ) : null}
           {err?.field && err.field !== "subject" && err.field !== "requester_email" ? <Banner tone="danger">{err.text}</Banner> : null}
           <div className="vr-actions">
             <Button type="submit" variant="primary" busy={busy} disabled={!f.subject.trim()}>

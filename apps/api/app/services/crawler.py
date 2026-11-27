@@ -12,18 +12,16 @@ check and the request.
 
 import asyncio
 import hashlib
-import ipaddress
 import logging
-import os
 import re
-import socket
-from collections.abc import AsyncIterator, Awaitable, Callable
+from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
 from urllib.parse import parse_qsl, urlencode, urljoin, urlsplit, urlunsplit
 from urllib.robotparser import RobotFileParser
 
 import httpx
 
+from app.core import ssrf
 from app.core.config import get_settings
 
 log = logging.getLogger("verity.crawler")
@@ -102,27 +100,10 @@ def path_allowed(url: str, include: list[str], exclude: list[str]) -> bool:
 # ---- SSRF guard ---------------------------------------------------------------------------------
 
 
-def ip_blocked(ip: str) -> bool:
-    addr = ipaddress.ip_address(ip)
-    if isinstance(addr, ipaddress.IPv6Address) and addr.ipv4_mapped:
-        addr = addr.ipv4_mapped
-    return (
-        addr.is_private
-        or addr.is_loopback
-        or addr.is_link_local
-        or addr.is_multicast
-        or addr.is_reserved
-        or addr.is_unspecified
-        or (isinstance(addr, ipaddress.IPv4Address) and addr in ipaddress.ip_network("100.64.0.0/10"))  # carrier NAT
-    )
-
-
-Resolver = Callable[[str, int], Awaitable[list[str]]]
-
-
-async def system_resolve(host: str, port: int) -> list[str]:
-    infos = await asyncio.get_running_loop().getaddrinfo(host, port, type=socket.SOCK_STREAM)
-    return sorted({i[4][0] for i in infos})
+Resolver = ssrf.Resolver
+ip_blocked = ssrf.ip_blocked
+system_resolve = ssrf.system_resolve
+_is_ip = ssrf.is_ip
 
 
 async def check_host(url: str, resolve: Resolver, allow_private: bool) -> str:
@@ -131,22 +112,11 @@ async def check_host(url: str, resolve: Resolver, allow_private: bool) -> str:
     host = parts.hostname or ""
     port = parts.port or (443 if parts.scheme == "https" else 80)
     try:
-        ips = [host] if _is_ip(host) else await resolve(host, port)
-    except (OSError, UnicodeError):
-        raise CrawlError("dns_failed", f"Couldn't find the site {host}.") from None
-    if not ips:
-        raise CrawlError("dns_failed", f"Couldn't find the site {host}.")
-    if not allow_private and any(ip_blocked(ip) for ip in ips):
-        raise CrawlError("blocked_address", "This address points to a private network, which Verity doesn't crawl.")
-    return ips[0]
-
-
-def _is_ip(host: str) -> bool:
-    try:
-        ipaddress.ip_address(host)
-        return True
-    except ValueError:
-        return False
+        return await ssrf.checked_address(host, port, resolve, allow_private=allow_private)
+    except ssrf.OutboundError as e:
+        if e.code == "dns_failed":
+            raise CrawlError("dns_failed", f"Couldn't find the site {host}.") from None
+        raise CrawlError("blocked_address", "This address points to a private network, which Verity doesn't crawl.") from None
 
 
 # ---- Fetching -----------------------------------------------------------------------------------
@@ -168,8 +138,7 @@ class Fetcher:
         self.resolve = resolve
         # Pin the connection to the checked address only when we connect directly; behind an egress proxy
         # the proxy resolves (and polices) the destination itself.
-        proxied = transport is None and any(k in os.environ for k in ("HTTPS_PROXY", "https_proxy", "ALL_PROXY"))
-        self.pin = transport is None and not proxied
+        self.pin = transport is None and not ssrf.behind_proxy()
         self.client = httpx.AsyncClient(
             transport=transport,
             timeout=httpx.Timeout(s.crawl_timeout_seconds, connect=10.0),
@@ -184,14 +153,7 @@ class Fetcher:
     async def get(self, url: str) -> Response:
         for _ in range(MAX_REDIRECTS + 1):
             ip = await check_host(url, self.resolve, self.allow_private)
-            req_url, headers, ext = url, {}, {}
-            if self.pin and not _is_ip(urlsplit(url).hostname or ""):
-                parts = urlsplit(url)
-                ip_host = f"[{ip}]" if ":" in ip else ip
-                netloc = f"{ip_host}:{parts.port}" if parts.port else ip_host
-                req_url = urlunsplit((parts.scheme, netloc, parts.path, parts.query, ""))
-                headers["Host"] = parts.netloc
-                ext = {"sni_hostname": parts.hostname}
+            req_url, headers, ext = ssrf.pinned(url, ip) if self.pin else (url, {}, {})
             try:
                 req = self.client.build_request("GET", req_url, headers=headers, extensions=ext)
                 resp = await self.client.send(req, stream=True)

@@ -26,7 +26,7 @@ from typing import Protocol
 
 from app.core.config import get_settings
 from app.core.ratelimit import get_redis
-from app.services.crawler import ip_blocked
+from app.core.ssrf import ip_blocked
 
 
 class TransportError(Exception):

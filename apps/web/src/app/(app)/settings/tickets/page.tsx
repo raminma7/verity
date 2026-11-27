@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 
+import { SlaTargets } from "@/components/sla";
 import { Badge, Banner, Button, Card, EmptyState, Field, Spinner, Switch } from "@/components/ui";
 import { api, errorText, type TicketCategory } from "@/lib/api";
 import { useSession } from "@/lib/session";
@@ -143,6 +144,7 @@ export default function TicketSettings() {
           }}
         />
       </Card>
+      <SlaTargets />
     </>
   );
 }
