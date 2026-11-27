@@ -20,7 +20,7 @@ from app.models.base import Base, IdMixin, TimestampMixin
 
 TICKET_STATUSES = ("new", "open", "pending", "resolved", "closed")
 TICKET_PRIORITIES = ("low", "normal", "high", "urgent")
-# email arrives in Phase 4; the API refuses it as an input until then.
+# "email" tickets are created only by the email integration (services.mail.ingest), never from API input.
 TICKET_SOURCES = ("chatbot_form", "conversation", "manual", "email")
 FIELD_TYPES = ("text", "email", "number", "select", "multiselect", "date", "textarea", "checkbox")
 
@@ -95,6 +95,8 @@ class Ticket(IdMixin, TimestampMixin, Base):
     form_snapshot: Mapped[list] = mapped_column(JSONB, default=list)
     form_data: Mapped[dict] = mapped_column(JSONB, default=dict)
     conversation_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("conversations.id", ondelete="SET NULL"), index=True)
+    # The mailbox an email ticket arrived on; agent replies go out from it, inside the original thread.
+    email_account_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("email_accounts.id", ondelete="SET NULL"), index=True)
     requester_name: Mapped[str | None] = mapped_column(String(120))
     requester_email: Mapped[str | None] = mapped_column(String(320), index=True)
     created_by: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("users.id", ondelete="SET NULL"))

@@ -21,6 +21,7 @@ PERMISSIONS: dict[str, str] = {
     "tickets.manage": "Reply to, assign and update tickets",
     "tickets.configure": "Manage ticket categories",
     "integrations.manage": "Connect email accounts and external APIs",
+    "email.review": "Review spam and promotional email, mark it not spam or delete it",
     "audit.read": "See the workspace audit log",
 }
 
@@ -54,6 +55,7 @@ DEFAULT_ROLES: list[dict] = [
             "conversations.reply",
             "tickets.read",
             "tickets.manage",
+            "email.review",
         ],
     },
     {
