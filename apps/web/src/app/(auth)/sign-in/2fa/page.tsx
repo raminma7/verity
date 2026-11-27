@@ -1,5 +1,6 @@
 "use client";
 
+import { t } from "@/i18n";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 
@@ -30,14 +31,14 @@ function TwoFactor() {
         <Icon name="shield" size={24} />
       </span>
       <div className="vr-auth-title">
-        <h1 className="vr-display">Two-factor check</h1>
+        <h1 className="vr-display">{t("Two-factor check")}</h1>
         <p className="vr-muted">
-          {recovery ? "Enter one of your saved recovery codes." : "Enter the 6-digit code from your authenticator app."}
+          {recovery ? t("Enter one of your saved recovery codes.") : t("Enter the 6-digit code from your authenticator app.")}
         </p>
       </div>
       {f.error ? <Banner tone="danger">{f.error}</Banner> : null}
       <Field
-        label={recovery ? "Recovery code" : "Code"}
+        label={recovery ? t("Recovery code") : t("Code")}
         name="code"
         inputMode={recovery ? "text" : "numeric"}
         autoComplete="one-time-code"
@@ -49,10 +50,10 @@ function TwoFactor() {
         autoFocus
       />
       <Button type="submit" variant="primary" size="lg" busy={f.busy} disabled={code.length < 6}>
-        Verify and continue
+        {t("Verify and continue")}
       </Button>
       <button type="button" className="vr-link vr-auth-foot" style={{ background: "none", border: 0, cursor: "pointer" }} onClick={() => { setRecovery(!recovery); setCode(""); }}>
-        {recovery ? "Use your authenticator app instead" : "Lost your device? Use a recovery code"}
+        {recovery ? t("Use your authenticator app instead") : t("Lost your device? Use a recovery code")}
       </button>
     </form>
   );

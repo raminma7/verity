@@ -1,5 +1,6 @@
 "use client";
 
+import { t } from "@/i18n";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -25,18 +26,18 @@ export default function ForgotPassword() {
       }}
     >
       <div className="vr-auth-title">
-        <span className="vr-eyebrow">Reset password</span>
-        <h1 className="vr-display">Forgot your password?</h1>
-        <p className="vr-muted">Enter your work email and we’ll send a reset link.</p>
+        <span className="vr-eyebrow">{t("Reset password")}</span>
+        <h1 className="vr-display">{t("Forgot your password?")}</h1>
+        <p className="vr-muted">{t("Enter your work email and we’ll send a reset link.")}</p>
       </div>
       {f.error ? <Banner tone="danger">{f.error}</Banner> : null}
-      <Field label="Work email" name="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} error={f.fieldErrors.email} required />
-      {sent ? <Banner title="Check your email.">If an account uses that address, the link is on its way. It works for 60 minutes.</Banner> : null}
+      <Field label={t("Work email")} name="email" type="email" autoComplete="email" value={email} onChange={(e) => setEmail(e.target.value)} error={f.fieldErrors.email} required />
+      {sent ? <Banner title={t("Check your email.")}>{t("If an account uses that address, the link is on its way. It works for 60 minutes.")}</Banner> : null}
       <Button type="submit" variant="primary" size="lg" busy={f.busy}>
-        {sent ? "Send again" : "Send reset link"}
+        {sent ? t("Send again") : t("Send reset link")}
       </Button>
       <Link className="vr-link vr-auth-foot" href="/sign-in">
-        ← Back to sign in
+        {t("← Back to sign in")}
       </Link>
     </form>
   );

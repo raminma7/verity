@@ -1,5 +1,6 @@
 "use client";
 
+import { t } from "@/i18n";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
@@ -34,7 +35,7 @@ function WorkspaceSettings() {
     <>
       {msg ? <Banner tone={msg.tone}>{msg.text}</Banner> : null}
       {showNew ? (
-        <Card title="Create a new workspace">
+        <Card title={t("Create a new workspace")}>
           <form
             className="vr-form"
             style={{ maxWidth: 520 }}
@@ -46,21 +47,21 @@ function WorkspaceSettings() {
               });
             }}
           >
-            <p className="vr-muted">Each workspace has its own members, plan, knowledge and tickets. You’ll be its Owner.</p>
-            <Field label="Workspace name" value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Acme Support" />
+            <p className="vr-muted">{t("Each workspace has its own members, plan, knowledge and tickets. You’ll be its Owner.")}</p>
+            <Field label={t("Workspace name")} value={newName} onChange={(e) => setNewName(e.target.value)} placeholder={t("Acme Support")} />
             <div className="vr-actions">
               <Button type="submit" variant="primary" busy={busy === "new"} disabled={!newName.trim()}>
-                Create workspace
+                {t("Create workspace")}
               </Button>
               <Button variant="ghost" onClick={() => router.replace("/settings/workspace")}>
-                Cancel
+                {t("Cancel")}
               </Button>
             </div>
           </form>
         </Card>
       ) : null}
       {current ? (
-        <Card title="This workspace">
+        <Card title={t("This workspace")}>
           <form
             className="vr-form"
             style={{ maxWidth: 560 }}
@@ -69,30 +70,30 @@ function WorkspaceSettings() {
               act("save", async () => {
                 await api.patch("/workspace", { name });
                 await refresh();
-                setMsg({ tone: "brand", text: "Workspace saved." });
+                setMsg({ tone: "brand", text: t("Workspace saved.") });
               });
             }}
           >
-            <Field label="Name" value={name} onChange={(e) => setName(e.target.value)} disabled={!editable} />
-            <Field label="Workspace ID" value={current.workspace.slug} disabled className="vr-mono" help={`Created ${date(current.workspace.created_at)}`} />
+            <Field label={t("Name")} value={name} onChange={(e) => setName(e.target.value)} disabled={!editable} />
+            <Field label={t("Workspace ID")} value={current.workspace.slug} disabled className="vr-mono" help={t("Created {created_at}", { created_at: date(current.workspace.created_at) })} />
             <p className="vr-help">
-              Ticket settings, such as reopening tickets when customers reply, are under{" "}
+              {t("Ticket settings, such as reopening tickets when customers reply, are under")}{" "}
               <Link className="vr-link" href="/settings/tickets">
-                Tickets
+                {t("Tickets")}
               </Link>
               .
             </p>
             {editable ? (
               <div className="vr-actions">
                 <Button type="submit" variant="primary" busy={busy === "save"}>
-                  Save workspace
+                  {t("Save workspace")}
                 </Button>
                 <Button variant="ghost" icon="plus" onClick={() => router.push("/settings/workspace?new=1")}>
-                  New workspace
+                  {t("New workspace")}
                 </Button>
               </div>
             ) : (
-              <p className="vr-help">Your role can’t change workspace settings.</p>
+              <p className="vr-help">{t("Your role can’t change workspace settings.")}</p>
             )}
           </form>
         </Card>

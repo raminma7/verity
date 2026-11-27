@@ -1,5 +1,6 @@
 "use client";
 
+import { t } from "@/i18n";
 import { useState } from "react";
 
 import { SlaTargets } from "@/components/sla";
@@ -44,18 +45,18 @@ export default function TicketSettings() {
   return (
     <>
       {msg ? <Banner tone={msg.tone}>{msg.text}</Banner> : null}
-      <Card title="Categories">
+      <Card title={t("Categories")}>
         <p className="vr-muted" style={{ marginTop: 0 }}>
-          Every chatbot form sends its tickets to one category. The order here is the order everywhere else.
+          {t("Every chatbot form sends its tickets to one category. The order here is the order everywhere else.")}
         </p>
         {cats.loading && !cats.data ? (
           <Spinner />
         ) : !list.length ? (
-          <EmptyState icon="tag" title="No categories yet">
-            Add one below, or let Verity create “General” the first time a ticket needs one.
+          <EmptyState icon="tag" title={t("No categories yet")}>
+            {t("Add one below, or let Verity create “General” the first time a ticket needs one.")}
           </EmptyState>
         ) : (
-          <div className="vr-card" aria-label="Ticket categories">
+          <div className="vr-card" aria-label={t("Ticket categories")}>
             {[...active, ...archived].map((c) => {
               const i = active.findIndex((x) => x.id === c.id);
               return (
@@ -68,13 +69,13 @@ export default function TicketSettings() {
                         act("edit", () => api.patch(`/ticket-categories/${c.id}`, { name: editing.name, description: editing.description }), "Category saved.").then(() => setEditing(null));
                       }}
                     >
-                      <Field label="Name" value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} maxLength={80} />
-                      <Field label="Description" value={editing.description} onChange={(e) => setEditing({ ...editing, description: e.target.value })} maxLength={300} />
+                      <Field label={t("Name")} value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} maxLength={80} />
+                      <Field label={t("Description")} value={editing.description} onChange={(e) => setEditing({ ...editing, description: e.target.value })} maxLength={300} />
                       <Button type="submit" variant="primary" size="sm" busy={busy === "edit"}>
-                        Save
+                        {t("Save")}
                       </Button>
                       <Button size="sm" variant="ghost" onClick={() => setEditing(null)}>
-                        Cancel
+                        {t("Cancel")}
                       </Button>
                     </form>
                   ) : (
@@ -83,23 +84,23 @@ export default function TicketSettings() {
                         <b style={{ fontWeight: 500 }}>{c.name}</b>
                         {c.description ? <small className="vr-muted">{c.description}</small> : null}
                       </span>
-                      {c.archived ? <Badge>Archived</Badge> : <span className="vr-num">{c.open_tickets} active</span>}
+                      {c.archived ? <Badge>{t("Archived")}</Badge> : <span className="vr-num">{c.open_tickets} {t("active")}</span>}
                       {configure ? (
                         c.archived ? (
                           <Button size="sm" onClick={() => act(`restore-${c.id}`, () => api.post(`/ticket-categories/${c.id}/restore`), `${c.name} restored.`)}>
-                            Restore
+                            {t("Restore")}
                           </Button>
                         ) : (
                           <span className="vr-actions">
-                            <Button size="sm" variant="ghost" icon="chevron" aria-label={`Move ${c.name} down`} disabled={i === active.length - 1 || !!busy} onClick={() => move(i, 1)} />
-                            <Button size="sm" variant="ghost" aria-label={`Move ${c.name} up`} disabled={i === 0 || !!busy} onClick={() => move(i, -1)}>
+                            <Button size="sm" variant="ghost" icon="chevron" aria-label={t("Move {name} down", { name: c.name })} disabled={i === active.length - 1 || !!busy} onClick={() => move(i, 1)} />
+                            <Button size="sm" variant="ghost" aria-label={t("Move {name} up", { name: c.name })} disabled={i === 0 || !!busy} onClick={() => move(i, -1)}>
                               ↑
                             </Button>
                             <Button size="sm" onClick={() => setEditing({ id: c.id, name: c.name, description: c.description })}>
-                              Edit
+                              {t("Edit")}
                             </Button>
                             <Button size="sm" variant="ghost" onClick={() => act(`archive-${c.id}`, () => api.post(`/ticket-categories/${c.id}/archive`), `${c.name} archived.`)}>
-                              Archive
+                              {t("Archive")}
                             </Button>
                           </span>
                         )
@@ -120,19 +121,19 @@ export default function TicketSettings() {
               act("add", () => api.post("/ticket-categories", { name }), `${name.trim()} added.`).then(() => setName(""));
             }}
           >
-            <Field label="New category" placeholder="Returns" value={name} onChange={(e) => setName(e.target.value)} maxLength={80} />
+            <Field label={t("New category")} placeholder={t("Returns")} value={name} onChange={(e) => setName(e.target.value)} maxLength={80} />
             <Button type="submit" variant="primary" icon="plus" busy={busy === "add"} disabled={!name.trim()}>
-              Add category
+              {t("Add category")}
             </Button>
           </form>
         ) : (
-          <p className="vr-help">Your role can’t change categories.</p>
+          <p className="vr-help">{t("Your role can’t change categories.")}</p>
         )}
       </Card>
-      <Card title="When customers reply">
+      <Card title={t("When customers reply")}>
         <Switch
-          label="Reopen resolved tickets when the customer replies"
-          help="A resolved ticket goes back to Open when the customer writes again. Pending tickets always move to Open; closed tickets stay closed."
+          label={t("Reopen resolved tickets when the customer replies")}
+          help={t("A resolved ticket goes back to Open when the customer writes again. Pending tickets always move to Open; closed tickets stay closed.")}
           checked={reopen}
           disabled={!can("workspace.update") || busy === "reopen"}
           onChange={(v) => {

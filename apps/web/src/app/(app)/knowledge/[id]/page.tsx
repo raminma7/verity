@@ -1,5 +1,6 @@
 "use client";
 
+import { t as tr, msg } from "@/i18n";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -15,13 +16,13 @@ type Chunk = { id: string; ordinal: number; content: string; token_count: number
 type Page = { id: string; url: string; title: string; status: string; error_code: string | null; http_status: number | null; chunk_count: number; fetched_at: string | null };
 
 const PAGE_ERRORS: Record<string, string> = {
-  noindex: "Marked noindex",
-  not_html: "Not a web page",
-  no_content: "No readable text",
-  too_large: "Too large",
-  blocked_address: "Private address",
-  timeout: "Timed out",
-  off_site_redirect: "Redirects off the site",
+  noindex: msg("Marked noindex"),
+  not_html: msg("Not a web page"),
+  no_content: msg("No readable text"),
+  too_large: msg("Too large"),
+  blocked_address: msg("Private address"),
+  timeout: msg("Timed out"),
+  off_site_redirect: msg("Redirects off the site"),
 };
 
 function where(meta: Chunk["meta"]) {
@@ -69,7 +70,7 @@ export default function SourcePage() {
   }
 
   if (src.loading && !src.data) return <Spinner />;
-  if (src.error || !src.data) return <Banner tone="danger">{src.error?.message ?? "Not found."}</Banner>;
+  if (src.error || !src.data) return <Banner tone="danger">{src.error?.message ?? tr("Not found.")}</Banner>;
   const s = src.data;
   const web = s.kind === "website";
   const sel = chunks.data?.items.find((c) => c.id === selected) ?? null;
@@ -78,7 +79,7 @@ export default function SourcePage() {
     <>
       <div>
         <Link className="vr-link" href="/knowledge" style={{ fontSize: 13 }}>
-          ← Knowledge base
+          {tr("← Knowledge base")}
         </Link>
       </div>
       <PageHeader
@@ -88,7 +89,7 @@ export default function SourcePage() {
             <FileTag type={web ? "web" : s.file_type} />
             <StatusBadge status={docStatus(s.status)} />
             <span className="vr-mono" style={{ fontSize: 12 }}>
-              {web ? `${s.root_url} · ${fmt(s.page_count ?? 0)} pages` : bytes(s.size_bytes ?? 0)} · {fmt(s.chunk_count)} chunks · {fmt(s.token_count)} tokens
+              {web ? tr("{root_url} · {fmt} pages", { root_url: s.root_url, fmt: fmt(s.page_count ?? 0) }) : bytes(s.size_bytes ?? 0)} · {fmt(s.chunk_count)} {tr("chunks ·")} {fmt(s.token_count)} {tr("tokens")}
             </span>
           </span>
         }
@@ -96,13 +97,13 @@ export default function SourcePage() {
           manage ? (
             <>
               <Button icon="refresh" disabled={active} onClick={() => act(() => api.post(`/knowledge/sources/${s.id}/reprocess`), web ? "Re-sync started." : "Reprocessing started.")}>
-                {web ? "Re-sync now" : "Reprocess"}
+                {web ? tr("Re-sync now") : tr("Reprocess")}
               </Button>
               <Button
                 variant="danger"
                 icon="x"
                 onClick={async () => {
-                  if (!confirm(`Remove ${s.name}? The chatbot stops using it at once.`)) return;
+                  if (!confirm(tr("Remove {name}? The chatbot stops using it at once.", { name: s.name }))) return;
                   try {
                     await api.del(`/knowledge/sources/${s.id}`);
                     router.push("/knowledge");
@@ -111,26 +112,26 @@ export default function SourcePage() {
                   }
                 }}
               >
-                Remove
+                {tr("Remove")}
               </Button>
             </>
           ) : null
         }
       />
       {msg ? <Banner tone={msg.tone}>{msg.text}</Banner> : null}
-      {s.status === "failed" ? <Banner tone="danger" title="Processing failed">{s.error_message}</Banner> : null}
-      {s.notice === "page_limit_reached" ? <Banner tone="warn" title="Page limit reached">Some pages weren’t indexed because your plan’s crawled-page limit is reached.</Banner> : null}
+      {s.status === "failed" ? <Banner tone="danger" title={tr("Processing failed")}>{s.error_message}</Banner> : null}
+      {s.notice === "page_limit_reached" ? <Banner tone="warn" title={tr("Page limit reached")}>{tr("Some pages weren’t indexed because your plan’s crawled-page limit is reached.")}</Banner> : null}
 
       <div className="vr-doc-layout">
         <section style={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 16 }}>
           {web ? (
             <Segmented
-              label="View"
+              label={tr("View")}
               value={tab}
               onChange={setTab}
               options={[
-                { value: "passages", label: `Passages · ${fmt(chunks.data?.total ?? s.chunk_count)}` },
-                { value: "pages", label: `Pages · ${fmt(pages.data?.length ?? s.page_count ?? 0)}` },
+                { value: "passages", label: tr("Passages · {fmt}", { fmt: fmt(chunks.data?.total ?? s.chunk_count) }) },
+                { value: "pages", label: tr("Pages · {fmt}", { fmt: fmt(pages.data?.length ?? s.page_count ?? 0) }) },
               ]}
             />
           ) : null}
@@ -139,10 +140,10 @@ export default function SourcePage() {
               <table className="vr-table">
                 <thead>
                   <tr>
-                    <th>Page</th>
-                    <th>Chunks</th>
-                    <th>Status</th>
-                    <th>Fetched</th>
+                    <th>{tr("Page")}</th>
+                    <th>{tr("Chunks")}</th>
+                    <th>{tr("Status")}</th>
+                    <th>{tr("Fetched")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -158,11 +159,11 @@ export default function SourcePage() {
                       <td>
                         {p.status === "ready" ? (
                           <Badge tone="brand" dot>
-                            Indexed
+                            {tr("Indexed")}
                           </Badge>
                         ) : (
                           <Badge tone={p.status === "skipped" ? "neutral" : "danger"} dot>
-                            {PAGE_ERRORS[p.error_code ?? ""] ?? (p.http_status ? `HTTP ${p.http_status}` : "Failed")}
+                            {tr(PAGE_ERRORS[p.error_code ?? ""]) ?? (p.http_status ? tr("HTTP {http_status}", { http_status: p.http_status }) : tr("Failed"))}
                           </Badge>
                         )}
                       </td>
@@ -185,45 +186,45 @@ export default function SourcePage() {
               {chunks.data.total > 50 ? (
                 <div style={{ display: "flex", gap: 8, justifyContent: "center", paddingTop: 8 }}>
                   <Button size="sm" disabled={offset === 0} onClick={() => setOffset(Math.max(0, offset - 50))}>
-                    Previous
+                    {tr("Previous")}
                   </Button>
                   <span className="vr-muted vr-mono" style={{ fontSize: 12, alignSelf: "center" }}>
-                    {offset + 1}–{Math.min(offset + 50, chunks.data.total)} of {chunks.data.total}
+                    {offset + 1}–{Math.min(offset + 50, chunks.data.total)} {tr("of")} {chunks.data.total}
                   </span>
                   <Button size="sm" disabled={offset + 50 >= chunks.data.total} onClick={() => setOffset(offset + 50)}>
-                    Next
+                    {tr("Next")}
                   </Button>
                 </div>
               ) : null}
             </div>
           ) : (
-            <EmptyState icon="file" title={active ? "Processing…" : "No passages yet"}>
-              {active ? "Passages appear here once the document is indexed." : "Reprocess to try again."}
+            <EmptyState icon="file" title={active ? tr("Processing…") : tr("No passages yet")}>
+              {active ? tr("Passages appear here once the document is indexed.") : tr("Reprocess to try again.")}
             </EmptyState>
           )}
         </section>
 
         <aside style={{ display: "flex", flexDirection: "column", gap: 16 }}>
           {sel ? (
-            <Card title="Selected passage">
+            <Card title={tr("Selected passage")}>
               <dl className="vr-kv">
-                <dt>Location</dt>
+                <dt>{tr("Location")}</dt>
                 <dd>{where(sel.meta) || "—"}</dd>
-                <dt>Tokens</dt>
+                <dt>{tr("Tokens")}</dt>
                 <dd className="vr-mono">{sel.token_count}</dd>
-                <dt>Cited in answers</dt>
+                <dt>{tr("Cited in answers")}</dt>
                 <dd className="vr-mono">{sel.cited}</dd>
-                <dt>Chunk ID</dt>
+                <dt>{tr("Chunk ID")}</dt>
                 <dd className="vr-mono" style={{ fontSize: 11, wordBreak: "break-all" }}>
                   {sel.id}
                 </dd>
               </dl>
             </Card>
           ) : null}
-          <Card title="Last run">
-            {s.steps.length ? <PipelineTrace steps={active ? [...s.steps, { name: "Working", state: "running" }] : s.steps} /> : <p className="vr-muted" style={{ margin: 0 }}>{active ? "Waiting for a worker…" : "Not processed yet."}</p>}
+          <Card title={tr("Last run")}>
+            {s.steps.length ? <PipelineTrace steps={active ? [...s.steps, { name: "Working", state: "running" }] : s.steps} /> : <p className="vr-muted" style={{ margin: 0 }}>{active ? tr("Waiting for a worker…") : tr("Not processed yet.")}</p>}
             <p className="vr-help" style={{ marginTop: 12 }}>
-              {s.processed_at ? `Finished ${dateTime(s.processed_at)}` : `Added ${dateTime(s.created_at)}`}
+              {s.processed_at ? tr("Finished {processed_at}", { processed_at: dateTime(s.processed_at) }) : tr("Added {created_at}", { created_at: dateTime(s.created_at) })}
             </p>
           </Card>
           {web && manage ? <WebsiteSettings source={s} onSaved={src.reload} /> : null}
@@ -242,7 +243,7 @@ function WebsiteSettings({ source, onSaved }: { source: Source; onSaved: () => v
   const [msg, setMsg] = useState<string | null>(null);
   const lines = (v: string) => v.split(/[\n,]/).map((x) => x.trim()).filter(Boolean);
   return (
-    <Card title="Crawl settings">
+    <Card title={tr("Crawl settings")}>
       <form
         className="vr-form"
         onSubmit={async (e) => {
@@ -261,28 +262,28 @@ function WebsiteSettings({ source, onSaved }: { source: Source; onSaved: () => v
         }}
       >
         <Select
-          label="Re-sync"
+          label={tr("Re-sync")}
           value={sync}
           onChange={(v) => setSync(v as typeof sync)}
           options={[
-            { value: "daily", label: "Every day" },
-            { value: "weekly", label: "Every week" },
-            { value: "off", label: "Only when I ask" },
+            { value: "daily", label: tr("Every day") },
+            { value: "weekly", label: tr("Every week") },
+            { value: "off", label: tr("Only when I ask") },
           ]}
         />
         <Select
-          label="Follow links"
+          label={tr("Follow links")}
           value={depth}
           onChange={setDepth}
-          options={["0", "1", "2", "3", "5"].map((d) => ({ value: d, label: d === "0" ? "Start page only" : `${d} level${d === "1" ? "" : "s"} deep` }))}
+          options={["0", "1", "2", "3", "5"].map((d) => ({ value: d, label: d === "0" ? tr("Start page only") : tr("{d} level{v} deep", { d: d, v: d === "1" ? "" : "s" }) }))}
         />
-        <Field label="Only these paths" value={include} onChange={(e) => setInclude(e.target.value)} placeholder="/docs" />
-        <Field label="Skip these paths" value={exclude} onChange={(e) => setExclude(e.target.value)} placeholder="/blog" />
+        <Field label={tr("Only these paths")} value={include} onChange={(e) => setInclude(e.target.value)} placeholder="/docs" />
+        <Field label={tr("Skip these paths")} value={exclude} onChange={(e) => setExclude(e.target.value)} placeholder="/blog" />
         <p className="vr-help" style={{ margin: 0 }}>
-          Next sync: {source.next_sync_at ? dateTime(source.next_sync_at) : "not scheduled"}
+          {tr("Next sync:")} {source.next_sync_at ? dateTime(source.next_sync_at) : tr("not scheduled")}
         </p>
         <Button type="submit" busy={busy}>
-          Save
+          {tr("Save")}
         </Button>
         {msg ? <span className="vr-help">{msg}</span> : null}
       </form>

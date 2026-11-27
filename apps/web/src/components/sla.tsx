@@ -1,5 +1,6 @@
 "use client";
 
+import { t } from "@/i18n";
 import { useEffect, useState } from "react";
 
 import { minutes } from "@/components/charts";
@@ -49,19 +50,19 @@ export function SlaTargets() {
   }
 
   return (
-    <Card title="Response targets (SLA)">
+    <Card title={t("Response targets (SLA)")}>
       <div className="vr-form">
         <p className="vr-muted" style={{ margin: 0 }}>
-          How quickly the team should first answer and resolve a ticket, by priority, in hours around the clock. Analytics counts a ticket as breached once it passes a target; changing a target recounts past tickets too.
+          {t("How quickly the team should first answer and resolve a ticket, by priority, in hours around the clock. Analytics counts a ticket as breached once it passes a target; changing a target recounts past tickets too.")}
         </p>
         {msg ? <Banner tone={msg.tone}>{msg.text}</Banner> : null}
         <div className="vr-table-wrap">
           <table className="vr-table">
             <thead>
               <tr>
-                <th>Priority</th>
-                <th>First response within (hours)</th>
-                <th>Resolved within (hours)</th>
+                <th>{t("Priority")}</th>
+                <th>{t("First response within (hours)")}</th>
+                <th>{t("Resolved within (hours)")}</th>
               </tr>
             </thead>
             <tbody>
@@ -70,14 +71,14 @@ export function SlaTargets() {
                   <td>{label}</td>
                   <td>
                     {edit ? (
-                      <Field aria-label={`${label}: first response within, in hours`} type="number" min={0.1} step="any" value={form[p]?.frt ?? ""} onChange={(e) => setForm({ ...form, [p]: { ...form[p], frt: e.target.value } })} />
+                      <Field aria-label={t("{label}: first response within, in hours", { label: label })} type="number" min={0.1} step="any" value={form[p]?.frt ?? ""} onChange={(e) => setForm({ ...form, [p]: { ...form[p], frt: e.target.value } })} />
                     ) : (
                       minutes(d.data!.targets[p].first_response_minutes)
                     )}
                   </td>
                   <td>
                     {edit ? (
-                      <Field aria-label={`${label}: resolved within, in hours`} type="number" min={0.1} step="any" value={form[p]?.res ?? ""} onChange={(e) => setForm({ ...form, [p]: { ...form[p], res: e.target.value } })} />
+                      <Field aria-label={t("{label}: resolved within, in hours", { label: label })} type="number" min={0.1} step="any" value={form[p]?.res ?? ""} onChange={(e) => setForm({ ...form, [p]: { ...form[p], res: e.target.value } })} />
                     ) : (
                       minutes(d.data!.targets[p].resolution_minutes)
                     )}
@@ -90,7 +91,7 @@ export function SlaTargets() {
         {edit ? (
           <div className="vr-actions">
             <Button variant="primary" busy={busy} onClick={() => save(form, "Targets saved. Analytics uses them from now on, for past tickets too.")}>
-              Save targets
+              {t("Save targets")}
             </Button>
             <Button
               variant="ghost"
@@ -100,7 +101,7 @@ export function SlaTargets() {
                 save(defaults, "Default targets restored.");
               }}
             >
-              Restore defaults
+              {t("Restore defaults")}
             </Button>
           </div>
         ) : null}

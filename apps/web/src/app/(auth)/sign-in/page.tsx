@@ -1,5 +1,6 @@
 "use client";
 
+import { t } from "@/i18n";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
@@ -35,15 +36,15 @@ function SignIn() {
       }}
     >
       <div className="vr-auth-title">
-        <h1 className="vr-display">Welcome back</h1>
-        <p className="vr-muted">Sign in to your workspace.</p>
+        <h1 className="vr-display">{t("Welcome back")}</h1>
+        <p className="vr-muted">{t("Sign in to your workspace.")}</p>
       </div>
-      {params.get("suspended") ? <Banner tone="danger" title="This account is suspended.">Contact support if you think this is a mistake.</Banner> : null}
-      {params.get("reset") ? <Banner title="Password changed.">Sign in with your new password.</Banner> : null}
+      {params.get("suspended") ? <Banner tone="danger" title={t("This account is suspended.")}>{t("Contact support if you think this is a mistake.")}</Banner> : null}
+      {params.get("reset") ? <Banner title={t("Password changed.")}>{t("Sign in with your new password.")}</Banner> : null}
       {f.error ? <Banner tone="danger">{f.error}</Banner> : null}
-      <Field label="Work email" name="email" type="email" autoComplete="email" inputSize="lg" placeholder="you@company.com" value={email} onChange={(e) => setEmail(e.target.value)} error={f.fieldErrors.email} required />
+      <Field label={t("Work email")} name="email" type="email" autoComplete="email" inputSize="lg" placeholder={t("you@company.com")} value={email} onChange={(e) => setEmail(e.target.value)} error={f.fieldErrors.email} required />
       <Field
-        label="Password"
+        label={t("Password")}
         name="password"
         type="password"
         autoComplete="current-password"
@@ -53,16 +54,16 @@ function SignIn() {
         error={f.fieldErrors.password}
         trailing={
           <Link className="vr-link" style={{ fontWeight: 400 }} href="/forgot-password">
-            Forgot password?
+            {t("Forgot password?")}
           </Link>
         }
         required
       />
       <Button type="submit" variant="ink" size="lg" busy={f.busy}>
-        Sign in
+        {t("Sign in")}
       </Button>
       <p className="vr-auth-foot vr-muted">
-        New to Verity? <Link className="vr-link" href="/sign-up">Create an account</Link>
+        {t("New to Verity?")} <Link className="vr-link" href="/sign-up">{t("Create an account")}</Link>
       </p>
     </form>
   );

@@ -1,5 +1,6 @@
 "use client";
 
+import { t } from "@/i18n";
 import { useCallback, useEffect, useState } from "react";
 
 import { api, ApiError } from "./api";
@@ -17,7 +18,7 @@ export function useData<T>(path: string | null) {
       setData(await api.get<T>(path));
       setError(null);
     } catch (e) {
-      setError(e instanceof ApiError ? e : new ApiError(0, { message: "Something went wrong." }));
+      setError(e instanceof ApiError ? e : new ApiError(0, { message: t("Something went wrong.") }));
     } finally {
       setLoading(false);
     }

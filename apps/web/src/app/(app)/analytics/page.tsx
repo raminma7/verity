@@ -1,5 +1,6 @@
 "use client";
 
+import { t as tr, msg } from "@/i18n";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
@@ -86,7 +87,7 @@ type Email = {
 type Usage = { name: string; input_tokens: number; output_tokens: number; weighted_tokens: number; calls: number };
 type Ai = { totals: { weighted_tokens: number; calls: number; input_tokens: number; output_tokens: number }; previous: { weighted_tokens: number }; series: Point[]; by_feature: Usage[]; by_model: Usage[] };
 
-const PRIORITY: Record<string, string> = { urgent: "Urgent", high: "High", normal: "Normal", low: "Low" };
+const PRIORITY: Record<string, string> = { urgent: msg("Urgent"), high: msg("High"), normal: msg("Normal"), low: msg("Low") };
 
 const sumKeys = (p: Point, keys: string[]) => keys.reduce((a, k) => a + (Number(p[k]) || 0), 0);
 
@@ -118,15 +119,15 @@ export default function Analytics() {
   if (!allowed)
     return (
       <>
-        <PageHeader eyebrow="Analytics" title="Support analytics" />
-        <Banner tone="neutral" title="Analytics are for workspace owners and administrators.">Ask your workspace owner for access.</Banner>
+        <PageHeader eyebrow={tr("Analytics")} title={tr("Support analytics")} />
+        <Banner tone="neutral" title={tr("Analytics are for workspace owners and administrators.")}>{tr("Ask your workspace owner for access.")}</Banner>
       </>
     );
   const errors = [tickets, sla, agents, chat, tools, email, ai].map((x) => x.error).filter(Boolean);
 
   return (
     <>
-      <PageHeader eyebrow="Analytics" title="Support analytics" subtitle="Tickets, response times, SLA targets, workload, the chatbot, API tools, email and AI usage." />
+      <PageHeader eyebrow={tr("Analytics")} title={tr("Support analytics")} subtitle={tr("Tickets, response times, SLA targets, workload, the chatbot, API tools, email and AI usage.")} />
       <RangePicker value={range} onChange={setRange} range={r} />
       {errors.length ? <Banner tone="danger">{errors[0]!.message}</Banner> : null}
       {!t ? (
@@ -134,98 +135,98 @@ export default function Analytics() {
       ) : (
         <>
           <div className="vr-grid vr-grid-4">
-            <KPI label="Tickets created" value={fmt(t.totals.created)} note={delta(t.totals.created, t.previous.created, days)} />
-            <KPI label="Median first response" value={minutes(t.totals.first_response_median_minutes)} note={delta(t.totals.first_response_median_minutes, t.previous.first_response_median_minutes, days)} />
-            <KPI label="Median resolution" value={minutes(t.totals.resolution_median_minutes)} note={`90% within ${minutes(t.totals.resolution_p90_minutes)}`} />
-            <KPI label="Reopen rate" value={pct(t.totals.reopen_rate)} note={`${fmt(t.totals.reopened)} reopened of ${fmt(t.totals.resolutions)} resolutions`} />
+            <KPI label={tr("Tickets created")} value={fmt(t.totals.created)} note={delta(t.totals.created, t.previous.created, days)} />
+            <KPI label={tr("Median first response")} value={minutes(t.totals.first_response_median_minutes)} note={delta(t.totals.first_response_median_minutes, t.previous.first_response_median_minutes, days)} />
+            <KPI label={tr("Median resolution")} value={minutes(t.totals.resolution_median_minutes)} note={tr("90% within {resolution_p90_minutes}", { resolution_p90_minutes: minutes(t.totals.resolution_p90_minutes) })} />
+            <KPI label={tr("Reopen rate")} value={pct(t.totals.reopen_rate)} note={tr("{reopened} reopened of {resolutions} resolutions", { reopened: fmt(t.totals.reopened), resolutions: fmt(t.totals.resolutions) })} />
           </div>
           <div className="vr-grid vr-grid-4">
-            <KPI label="SLA breaches" value={fmt(sla.data?.breaches ?? 0)} note={sla.data ? `${sla.data.breaching_now.length ? `${sla.data.breaching_now.length} open tickets breaching now` : "No open ticket is breaching now"}` : null} />
-            <KPI label="Chatbot deflection" value={pct(chat.data?.totals.deflection_rate)} note={chat.data ? `${fmt(chat.data.totals.deflected)} of ${fmt(chat.data.totals.conversations)} conversations answered without a person` : null} />
-            <KPI label="Handoff rate" value={pct(chat.data?.totals.handoff_rate)} note={chat.data ? `${fmt(chat.data.totals.handed_off)} went to the team` : null} />
-            <KPI label="AI tokens" value={compact(ai.data?.totals.weighted_tokens ?? 0)} note={ai.data ? delta(ai.data.totals.weighted_tokens, ai.data.previous.weighted_tokens, days) : null} />
+            <KPI label={tr("SLA breaches")} value={fmt(sla.data?.breaches ?? 0)} note={sla.data ? `${sla.data.breaching_now.length ? `${sla.data.breaching_now.length} open tickets breaching now` : "No open ticket is breaching now"}` : null} />
+            <KPI label={tr("Chatbot deflection")} value={pct(chat.data?.totals.deflection_rate)} note={chat.data ? tr("{deflected} of {conversations} conversations answered without a person", { deflected: fmt(chat.data.totals.deflected), conversations: fmt(chat.data.totals.conversations) }) : null} />
+            <KPI label={tr("Handoff rate")} value={pct(chat.data?.totals.handoff_rate)} note={chat.data ? tr("{handed_off} went to the team", { handed_off: fmt(chat.data.totals.handed_off) }) : null} />
+            <KPI label={tr("AI tokens")} value={compact(ai.data?.totals.weighted_tokens ?? 0)} note={ai.data ? delta(ai.data.totals.weighted_tokens, ai.data.previous.weighted_tokens, days) : null} />
           </div>
 
-          <h2 className="vr-h vr-section-title">Tickets</h2>
+          <h2 className="vr-h vr-section-title">{tr("Tickets")}</h2>
           <ChartCard
-            title="Ticket volume by source"
-            subtitle={`${fmt(t.totals.created)} tickets created`}
+            title={tr("Ticket volume by source")}
+            subtitle={tr("{created} tickets created", { created: fmt(t.totals.created) })}
             chart={
               <div className="vr-grid vr-grid-2">
                 {sourceKeys.map((k) => (
                   <div key={k}>
                     <b style={{ fontSize: 13 }}>
-                      {SOURCE[k]} · <span className="vr-mono">{fmt(t.source_totals[k] ?? 0)}</span>
+                      {tr(SOURCE[k])} · <span className="vr-mono">{fmt(t.source_totals[k] ?? 0)}</span>
                     </b>
-                    <BarChart data={t.by_source} series={[{ key: k, label: SOURCE[k], tone: "s2" }]} label={`Tickets from ${SOURCE[k]}`} bucket={bucket} height={80} />
+                    <BarChart data={t.by_source} series={[{ key: k, label: tr(SOURCE[k]), tone: "s2" }]} label={tr("Tickets from {v}", { v: SOURCE[k] })} bucket={bucket} height={80} />
                   </div>
                 ))}
               </div>
             }
-            table={seriesTable(t.by_source, sourceKeys.map((k) => ({ key: k, label: SOURCE[k], tone: "s2" })), bucket)}
+            table={seriesTable(t.by_source, sourceKeys.map((k) => ({ key: k, label: tr(SOURCE[k]), tone: "s2" })), bucket)}
           />
           <div className="vr-grid vr-grid-2">
             <ChartCard
-              title="Tickets by category"
-              chart={<BarList label="Tickets by category" rows={t.category_totals.map((c) => ({ name: c.name, value: c.count }))} />}
+              title={tr("Tickets by category")}
+              chart={<BarList label={tr("Tickets by category")} rows={t.category_totals.map((c) => ({ name: c.name, value: c.count }))} />}
               table={{ columns: ["Category", "Tickets"], rows: t.category_totals.map((c) => [c.name, fmt(c.count)]) }}
             />
             <ChartCard
-              title="Resolved and reopened"
-              subtitle={`Reopen rate ${pct(t.totals.reopen_rate)}`}
+              title={tr("Resolved and reopened")}
+              subtitle={tr("Reopen rate {reopen_rate}", { reopen_rate: pct(t.totals.reopen_rate) })}
               chart={
                 <BarChart
                   data={t.reopens}
                   series={[
-                    { key: "resolved", label: "Resolved", tone: "s3" },
-                    { key: "reopened", label: "Reopened", tone: "s1" },
+                    { key: "resolved", label: tr("Resolved"), tone: "s3" },
+                    { key: "reopened", label: tr("Reopened"), tone: "s1" },
                   ]}
-                  label="Resolutions and reopens"
+                  label={tr("Resolutions and reopens")}
                   bucket={bucket}
                 />
               }
-              table={seriesTable(t.reopens, [{ key: "resolved", label: "Resolved", tone: "s3" }, { key: "reopened", label: "Reopened", tone: "s1" }], bucket)}
+              table={seriesTable(t.reopens, [{ key: "resolved", label: tr("Resolved"), tone: "s3" }, { key: "reopened", label: tr("Reopened"), tone: "s1" }], bucket)}
             />
           </div>
           <div className="vr-grid vr-grid-2">
             <ChartCard
-              title="First response time"
-              subtitle={`Median ${minutes(t.totals.first_response_median_minutes)} · 90% within ${minutes(t.totals.first_response_p90_minutes)}`}
-              chart={<LineChart data={t.response_times} serie={{ key: "first_response", label: "Median first response", tone: "s2" }} label="Median first response time" bucket={bucket} format={minutes} />}
-              table={seriesTable(t.response_times, [{ key: "first_response", label: "Median first response", tone: "s2" }], bucket, minutes)}
+              title={tr("First response time")}
+              subtitle={tr("Median {first_response_median_minutes} · 90% within {first_response_p90_minutes}", { first_response_median_minutes: minutes(t.totals.first_response_median_minutes), first_response_p90_minutes: minutes(t.totals.first_response_p90_minutes) })}
+              chart={<LineChart data={t.response_times} serie={{ key: "first_response", label: tr("Median first response"), tone: "s2" }} label={tr("Median first response time")} bucket={bucket} format={minutes} />}
+              table={seriesTable(t.response_times, [{ key: "first_response", label: tr("Median first response"), tone: "s2" }], bucket, minutes)}
             />
             <ChartCard
-              title="Resolution time"
-              subtitle={`Median ${minutes(t.totals.resolution_median_minutes)} · 90% within ${minutes(t.totals.resolution_p90_minutes)}`}
-              chart={<LineChart data={t.response_times} serie={{ key: "resolution", label: "Median resolution", tone: "s2" }} label="Median resolution time" bucket={bucket} format={minutes} />}
-              table={seriesTable(t.response_times, [{ key: "resolution", label: "Median resolution", tone: "s2" }], bucket, minutes)}
+              title={tr("Resolution time")}
+              subtitle={tr("Median {resolution_median_minutes} · 90% within {resolution_p90_minutes}", { resolution_median_minutes: minutes(t.totals.resolution_median_minutes), resolution_p90_minutes: minutes(t.totals.resolution_p90_minutes) })}
+              chart={<LineChart data={t.response_times} serie={{ key: "resolution", label: tr("Median resolution"), tone: "s2" }} label={tr("Median resolution time")} bucket={bucket} format={minutes} />}
+              table={seriesTable(t.response_times, [{ key: "resolution", label: tr("Median resolution"), tone: "s2" }], bucket, minutes)}
             />
           </div>
 
           {sla.data ? <SlaSection sla={sla.data} bucket={bucket} /> : null}
           {agents.data ? <AgentsSection agents={agents.data} /> : null}
 
-          <h2 className="vr-h vr-section-title">Chatbot</h2>
+          <h2 className="vr-h vr-section-title">{tr("Chatbot")}</h2>
           {chat.data ? (
             <div className="vr-grid vr-grid-2">
               <ChartCard
-                title="Conversations by outcome"
-                subtitle={`${fmt(chat.data.totals.conversations)} conversations · ${delta(chat.data.totals.conversations, chat.data.previous.conversations, days)}`}
-                chart={<BarChart data={chat.data.series} series={CHAT_SERIES} label="Chatbot conversations by outcome" bucket={bucket} />}
+                title={tr("Conversations by outcome")}
+                subtitle={tr("{conversations} conversations · {conversations2}", { conversations: fmt(chat.data.totals.conversations), conversations2: delta(chat.data.totals.conversations, chat.data.previous.conversations, days) })}
+                chart={<BarChart data={chat.data.series} series={CHAT_SERIES} label={tr("Chatbot conversations by outcome")} bucket={bucket} />}
                 table={seriesTable(chat.data.series, CHAT_SERIES, bucket)}
               />
-              <Card title="By chatbot" padded={false}>
+              <Card title={tr("By chatbot")} padded={false}>
                 {chat.data.chatbots.length === 0 ? (
-                  <EmptyState icon="chat" title="No chatbot conversations in this range" />
+                  <EmptyState icon="chat" title={tr("No chatbot conversations in this range")} />
                 ) : (
                   <div className="vr-table-wrap">
                     <table className="vr-table">
                       <thead>
                         <tr>
-                          <th>Chatbot</th>
-                          <th className="num">Conversations</th>
-                          <th className="num">Answered without a person</th>
-                          <th className="num">Went to the team</th>
+                          <th>{tr("Chatbot")}</th>
+                          <th className="num">{tr("Conversations")}</th>
+                          <th className="num">{tr("Answered without a person")}</th>
+                          <th className="num">{tr("Went to the team")}</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -245,16 +246,16 @@ export default function Analytics() {
             </div>
           ) : null}
 
-          <h2 className="vr-h vr-section-title">API tools and email</h2>
+          <h2 className="vr-h vr-section-title">{tr("API tools and email")}</h2>
           <div className="vr-grid vr-grid-2">
             {tools.data ? (
               <ChartCard
-                title="API tool calls"
-                subtitle={`${fmt(tools.data.totals.calls)} calls · ${pct(tools.data.totals.success_rate)} succeeded · typical ${tools.data.totals.latency_p50_ms ?? "—"} ms, 95% within ${tools.data.totals.latency_p95_ms ?? "—"} ms`}
+                title={tr("API tool calls")}
+                subtitle={tr("{calls} calls · {success_rate} succeeded · typical {v} ms, 95% within {v2} ms", { calls: fmt(tools.data.totals.calls), success_rate: pct(tools.data.totals.success_rate), v: tools.data.totals.latency_p50_ms ?? "—", v2: tools.data.totals.latency_p95_ms ?? "—" })}
                 chart={
                   <div className="vr-form">
-                    <BarChart data={tools.data.series} series={TOOL_SERIES} label="API tool calls" bucket={bucket} />
-                    <BarList label="Calls by outcome" rows={tools.data.by_status.map((s) => ({ name: CALL_WORD[s.status] ?? s.status, value: s.count, tone: s.status === "ok" ? ("s2" as const) : ("danger" as const) }))} />
+                    <BarChart data={tools.data.series} series={TOOL_SERIES} label={tr("API tool calls")} bucket={bucket} />
+                    <BarList label={tr("Calls by outcome")} rows={tools.data.by_status.map((s) => ({ name: CALL_WORD[s.status] ?? s.status, value: s.count, tone: s.status === "ok" ? ("s2" as const) : ("danger" as const) }))} />
                   </div>
                 }
                 table={{
@@ -265,13 +266,13 @@ export default function Analytics() {
             ) : null}
             {email.data ? (
               <ChartCard
-                title="Incoming email"
-                subtitle={`${fmt(email.data.totals.received)} received · ${pct(email.data.totals.spam_rate)} spam or promotions · ${fmt(email.data.totals.marked_not_spam)} marked not spam`}
+                title={tr("Incoming email")}
+                subtitle={tr("{received} received · {spam_rate} spam or promotions · {marked_not_spam} marked not spam", { received: fmt(email.data.totals.received), spam_rate: pct(email.data.totals.spam_rate), marked_not_spam: fmt(email.data.totals.marked_not_spam) })}
                 chart={
                   <div className="vr-form">
-                    <BarChart data={mailSeries} series={MAIL_SERIES} label="Incoming email" bucket={bucket} />
+                    <BarChart data={mailSeries} series={MAIL_SERIES} label={tr("Incoming email")} bucket={bucket} />
                     <BarList
-                      label="Incoming email by verdict"
+                      label={tr("Incoming email by verdict")}
                       rows={[
                         { name: "Became tickets or replies", value: email.data.totals.legitimate },
                         { name: "Spam", value: email.data.totals.spam },
@@ -288,21 +289,21 @@ export default function Analytics() {
             ) : null}
           </div>
 
-          <h2 className="vr-h vr-section-title">AI usage</h2>
+          <h2 className="vr-h vr-section-title">{tr("AI usage")}</h2>
           {ai.data ? (
             <div className="vr-grid vr-grid-2">
               <ChartCard
-                title="Weighted AI tokens"
-                subtitle={`${fmt(ai.data.totals.weighted_tokens)} weighted · ${fmt(ai.data.totals.calls)} requests`}
-                chart={<BarChart data={aiSeries} series={[{ key: "weighted", label: "Weighted tokens", tone: "s2" }]} label="Weighted AI tokens" bucket={bucket} format={compact} />}
-                table={seriesTable(aiSeries, [{ key: "weighted", label: "Weighted tokens", tone: "s2" }], bucket)}
+                title={tr("Weighted AI tokens")}
+                subtitle={tr("{weighted_tokens} weighted · {calls} requests", { weighted_tokens: fmt(ai.data.totals.weighted_tokens), calls: fmt(ai.data.totals.calls) })}
+                chart={<BarChart data={aiSeries} series={[{ key: "weighted", label: tr("Weighted tokens"), tone: "s2" }]} label={tr("Weighted AI tokens")} bucket={bucket} format={compact} />}
+                table={seriesTable(aiSeries, [{ key: "weighted", label: tr("Weighted tokens"), tone: "s2" }], bucket)}
               />
               <ChartCard
-                title="By feature and model"
+                title={tr("By feature and model")}
                 chart={
                   <div className="vr-form">
-                    <BarList label="Weighted tokens by feature" rows={ai.data.by_feature.map((f) => ({ name: OPS[f.name] ?? f.name, value: f.weighted_tokens }))} format={compact} />
-                    <BarList label="Weighted tokens by model" rows={ai.data.by_model.map((f) => ({ name: f.name, value: f.weighted_tokens }))} format={compact} tone="s1" />
+                    <BarList label={tr("Weighted tokens by feature")} rows={ai.data.by_feature.map((f) => ({ name: OPS[f.name] ?? f.name, value: f.weighted_tokens }))} format={compact} />
+                    <BarList label={tr("Weighted tokens by model")} rows={ai.data.by_model.map((f) => ({ name: f.name, value: f.weighted_tokens }))} format={compact} tone="s1" />
                   </div>
                 }
                 table={{
@@ -319,34 +320,34 @@ export default function Analytics() {
 }
 
 const CHAT_SERIES: Series[] = [
-  { key: "deflected", label: "Answered without a person", tone: "s1" },
-  { key: "handed_off", label: "Went to the team", tone: "s2" },
-  { key: "unanswered", label: "No answer", tone: "s3" },
+  { key: "deflected", label: msg("Answered without a person"), tone: "s1" },
+  { key: "handed_off", label: msg("Went to the team"), tone: "s2" },
+  { key: "unanswered", label: msg("No answer"), tone: "s3" },
 ];
 const TOOL_SERIES: Series[] = [
-  { key: "ok", label: "Succeeded", tone: "s2" },
-  { key: "failed", label: "Failed", tone: "danger" },
+  { key: "ok", label: msg("Succeeded"), tone: "s2" },
+  { key: "failed", label: msg("Failed"), tone: "danger" },
 ];
 const MAIL_SERIES: Series[] = [
-  { key: "legitimate", label: "Tickets and replies", tone: "s1" },
-  { key: "unwanted", label: "Spam and promotions", tone: "s3" },
-  { key: "other", label: "Held, automatic or failed", tone: "muted" },
+  { key: "legitimate", label: msg("Tickets and replies"), tone: "s1" },
+  { key: "unwanted", label: msg("Spam and promotions"), tone: "s3" },
+  { key: "other", label: msg("Held, automatic or failed"), tone: "muted" },
 ];
 
 function SlaSection({ sla, bucket }: { sla: Sla; bucket: "day" | "week" }) {
   const series: Series[] = [
-    { key: "response_breached", label: "First response late", tone: "warn" },
-    { key: "resolution_breached", label: "Resolution late", tone: "danger" },
+    { key: "response_breached", label: tr("First response late"), tone: "warn" },
+    { key: "resolution_breached", label: tr("Resolution late"), tone: "danger" },
   ];
   return (
     <>
-      <h2 className="vr-h vr-section-title">SLA targets</h2>
+      <h2 className="vr-h vr-section-title">{tr("SLA targets")}</h2>
       <Card
-        title="Within target, by priority"
+        title={tr("Within target, by priority")}
         padded={false}
         actions={
           <Link className="vr-btn vr-btn-ghost vr-btn-sm" href="/settings/tickets">
-            Change targets
+            {tr("Change targets")}
           </Link>
         }
       >
@@ -354,30 +355,30 @@ function SlaSection({ sla, bucket }: { sla: Sla; bucket: "day" | "week" }) {
           <table className="vr-table">
             <thead>
               <tr>
-                <th>Priority</th>
-                <th className="num">Tickets</th>
-                <th>First response target</th>
-                <th className="num">Answered in time</th>
-                <th>Resolution target</th>
-                <th className="num">Resolved in time</th>
+                <th>{tr("Priority")}</th>
+                <th className="num">{tr("Tickets")}</th>
+                <th>{tr("First response target")}</th>
+                <th className="num">{tr("Answered in time")}</th>
+                <th>{tr("Resolution target")}</th>
+                <th className="num">{tr("Resolved in time")}</th>
               </tr>
             </thead>
             <tbody>
               {sla.by_priority.map((p) => (
                 <tr key={p.priority} className="vr-sla-row">
-                  <td>{PRIORITY[p.priority]}</td>
+                  <td>{tr(PRIORITY[p.priority])}</td>
                   <td className="num">{fmt(p.tickets)}</td>
                   <td>{minutes(p.targets.first_response_minutes)}</td>
                   <td className="num">
                     {pct(p.response_met_rate)}
-                    {p.response_breached ? <span className="vr-word-danger"> · {fmt(p.response_breached)} breached</span> : null}
-                    {p.response_pending ? <span className="vr-muted"> · {fmt(p.response_pending)} still in time</span> : null}
+                    {p.response_breached ? <span className="vr-word-danger"> · {fmt(p.response_breached)} {tr("breached")}</span> : null}
+                    {p.response_pending ? <span className="vr-muted"> · {fmt(p.response_pending)} {tr("still in time")}</span> : null}
                   </td>
                   <td>{minutes(p.targets.resolution_minutes)}</td>
                   <td className="num">
                     {pct(p.resolution_met_rate)}
-                    {p.resolution_breached ? <span className="vr-word-danger"> · {fmt(p.resolution_breached)} breached</span> : null}
-                    {p.resolution_pending ? <span className="vr-muted"> · {fmt(p.resolution_pending)} still in time</span> : null}
+                    {p.resolution_breached ? <span className="vr-word-danger"> · {fmt(p.resolution_breached)} {tr("breached")}</span> : null}
+                    {p.resolution_pending ? <span className="vr-muted"> · {fmt(p.resolution_pending)} {tr("still in time")}</span> : null}
                   </td>
                 </tr>
               ))}
@@ -387,23 +388,23 @@ function SlaSection({ sla, bucket }: { sla: Sla; bucket: "day" | "week" }) {
       </Card>
       <div className="vr-grid vr-grid-2">
         <ChartCard
-          title="Breaches over time"
-          subtitle="By the day the ticket was created"
-          chart={<BarChart data={sla.series} series={series} label="SLA breaches" bucket={bucket} />}
+          title={tr("Breaches over time")}
+          subtitle={tr("By the day the ticket was created")}
+          chart={<BarChart data={sla.series} series={series} label={tr("SLA breaches")} bucket={bucket} />}
           table={seriesTable(sla.series, series, bucket)}
         />
-        <Card title="Open tickets breaching now" padded={false}>
+        <Card title={tr("Open tickets breaching now")} padded={false}>
           {sla.breaching_now.length === 0 ? (
-            <EmptyState icon="check" title="No open ticket is past its target" />
+            <EmptyState icon="check" title={tr("No open ticket is past its target")} />
           ) : (
             <div className="vr-table-wrap">
               <table className="vr-table">
                 <thead>
                   <tr>
-                    <th>Ticket</th>
-                    <th>Priority</th>
-                    <th>Late on</th>
-                    <th className="num">Overdue by</th>
+                    <th>{tr("Ticket")}</th>
+                    <th>{tr("Priority")}</th>
+                    <th>{tr("Late on")}</th>
+                    <th className="num">{tr("Overdue by")}</th>
                   </tr>
                 </thead>
                 <tbody>
@@ -413,10 +414,10 @@ function SlaSection({ sla, bucket }: { sla: Sla; bucket: "day" | "week" }) {
                         <Link href={`/tickets/${x.id}`}>
                           #{x.number} {x.subject}
                         </Link>
-                        <div className="vr-muted vr-caption">{x.assignee ?? "Unassigned"}</div>
+                        <div className="vr-muted vr-caption">{x.assignee ?? tr("Unassigned")}</div>
                       </td>
-                      <td>{PRIORITY[x.priority]}</td>
-                      <td className="vr-word-danger">{x.target === "first_response" ? "First response" : "Resolution"}</td>
+                      <td>{tr(PRIORITY[x.priority])}</td>
+                      <td className="vr-word-danger">{x.target === "first_response" ? tr("First response") : tr("Resolution")}</td>
                       <td className="num">{minutes(x.overdue_minutes)}</td>
                     </tr>
                   ))}
@@ -433,20 +434,20 @@ function SlaSection({ sla, bucket }: { sla: Sla; bucket: "day" | "week" }) {
 function AgentsSection({ agents }: { agents: Agents }) {
   return (
     <>
-      <h2 className="vr-h vr-section-title">Agent workload</h2>
-      <Card title="People who work tickets" padded={false} actions={<span className="vr-help">{fmt(agents.unassigned_open)} open tickets unassigned</span>}>
+      <h2 className="vr-h vr-section-title">{tr("Agent workload")}</h2>
+      <Card title={tr("People who work tickets")} padded={false} actions={<span className="vr-help">{fmt(agents.unassigned_open)} {tr("open tickets unassigned")}</span>}>
         <div className="vr-table-wrap">
           <table className="vr-table">
             <thead>
               <tr>
-                <th>Member</th>
-                <th>Availability</th>
-                <th className="num">Open now</th>
-                <th className="num">Assigned</th>
-                <th className="num">Ticket replies</th>
-                <th className="num">Chat replies</th>
-                <th className="num">Resolved</th>
-                <th className="num">Median first response</th>
+                <th>{tr("Member")}</th>
+                <th>{tr("Availability")}</th>
+                <th className="num">{tr("Open now")}</th>
+                <th className="num">{tr("Assigned")}</th>
+                <th className="num">{tr("Ticket replies")}</th>
+                <th className="num">{tr("Chat replies")}</th>
+                <th className="num">{tr("Resolved")}</th>
+                <th className="num">{tr("Median first response")}</th>
               </tr>
             </thead>
             <tbody>
@@ -459,12 +460,12 @@ function AgentsSection({ agents }: { agents: Agents }) {
                   <td>
                     <span className="vr-avail">
                       <span className={m.availability === "away" ? "vr-avail-dot is-away" : "vr-avail-dot"} aria-hidden="true" />
-                      {m.availability === "away" ? "Away" : "Available"}
+                      {m.availability === "away" ? tr("Away") : tr("Available")}
                     </span>
                   </td>
                   <td className="num">
                     {fmt(m.open_now)}
-                    {m.max_open ? <span className="vr-muted"> of {m.max_open}</span> : null}
+                    {m.max_open ? <span className="vr-muted"> {tr("of")} {m.max_open}</span> : null}
                   </td>
                   <td className="num">{fmt(m.assigned)}</td>
                   <td className="num">{fmt(m.replies)}</td>

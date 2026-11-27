@@ -3,6 +3,8 @@
 import { useRouter } from "next/navigation";
 import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react";
 
+import { setLocale } from "@/i18n";
+
 import { api, ApiError, type User, type WorkspaceDetail, type WorkspaceSummary } from "./api";
 
 type SessionState = {
@@ -48,6 +50,7 @@ export function SessionProvider({ children, fallback }: { children: ReactNode; f
           }
         }
       }
+      await setLocale(me.user.locale); // before anything renders, so every screen is in the user's language
       setState({ user: me.user, workspaces: me.workspaces, current });
     } catch (e) {
       if (e instanceof ApiError && e.code === "mfa_required") router.replace("/sign-in/2fa");

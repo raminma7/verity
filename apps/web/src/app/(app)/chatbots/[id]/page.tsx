@@ -1,5 +1,6 @@
 "use client";
 
+import { t as tr, msg } from "@/i18n";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -28,9 +29,9 @@ const LANGS = [
 ] as const;
 
 const MODELS: Record<string, string> = {
-  "claude-opus-5-5": "Claude Opus 5.5 · most capable",
-  "claude-sonnet-5-5": "Claude Sonnet 5.5 · balanced",
-  "claude-haiku-5-5": "Claude Haiku 5.5 · fastest, lowest cost",
+  "claude-opus-5-5": msg("Claude Opus 5.5 · most capable"),
+  "claude-sonnet-5-5": msg("Claude Sonnet 5.5 · balanced"),
+  "claude-haiku-5-5": msg("Claude Haiku 5.5 · fastest, lowest cost"),
 };
 
 export default function ChatbotSettings() {
@@ -88,7 +89,7 @@ export default function ChatbotSettings() {
     <>
       <div>
         <Link className="vr-link" href="/chatbots" style={{ fontSize: 13 }}>
-          ← Chatbots
+          {tr("← Chatbots")}
         </Link>
       </div>
       <PageHeader
@@ -96,10 +97,10 @@ export default function ChatbotSettings() {
         subtitle={
           <span style={{ display: "inline-flex", gap: 8, alignItems: "center" }}>
             <Badge tone={bot.status === "active" && bot.allowed_domains.length ? "brand" : "neutral"} dot>
-              {bot.status === "paused" ? "Paused" : bot.allowed_domains.length ? "Live" : "Not installed"}
+              {bot.status === "paused" ? tr("Paused") : bot.allowed_domains.length ? tr("Live") : tr("Not installed")}
             </Badge>
             <Link className="vr-link" href={`/conversations?chatbot=${bot.id}`}>
-              Conversations →
+              {tr("Conversations →")}
             </Link>
           </span>
         }
@@ -107,10 +108,10 @@ export default function ChatbotSettings() {
           manage ? (
             <>
               <Button onClick={() => save({ status: bot.status === "active" ? "paused" : "active" }, bot.status === "active" ? "Chatbot paused." : "Chatbot is live.")}>
-                {bot.status === "active" ? "Pause" : "Resume"}
+                {bot.status === "active" ? tr("Pause") : tr("Resume")}
               </Button>
               <Button variant="primary" busy={busy} onClick={saveAll}>
-                Save changes
+                {tr("Save changes")}
               </Button>
             </>
           ) : null
@@ -118,113 +119,113 @@ export default function ChatbotSettings() {
       />
       {msg ? <Banner tone={msg.tone}>{msg.text}</Banner> : null}
       <Segmented
-        label="Settings"
+        label={tr("Settings")}
         value={tab}
         onChange={setTab}
         options={[
-          { value: "behaviour", label: "Behaviour" },
-          { value: "appearance", label: "Appearance" },
-          { value: "install", label: "Domains & install" },
-          { value: "handoff", label: "Handoff" },
-          { value: "tools", label: "API tools" },
+          { value: "behaviour", label: tr("Behaviour") },
+          { value: "appearance", label: tr("Appearance") },
+          { value: "install", label: tr("Domains & install") },
+          { value: "handoff", label: tr("Handoff") },
+          { value: "tools", label: tr("API tools") },
         ]}
       />
       <div className="vr-bot-layout">
         <div style={{ display: "flex", flexDirection: "column", gap: 16, minWidth: 0 }}>
           {tab === "behaviour" ? (
-            <Card title="How it answers">
+            <Card title={tr("How it answers")}>
               <div className="vr-form">
-                <Field label="Name" value={bot.name} onChange={(e) => set("name", e.target.value)} disabled={!manage} />
+                <Field label={tr("Name")} value={bot.name} onChange={(e) => set("name", e.target.value)} disabled={!manage} />
                 <div className="vr-form-row" style={{ gridTemplateColumns: "1fr 1fr" }}>
-                  <Select label="Language" value={bot.language} onChange={(v) => set("language", v)} options={LANGS.map(([value, label]) => ({ value, label }))} disabled={!manage} />
+                  <Select label={tr("Language")} value={bot.language} onChange={(v) => set("language", v)} options={LANGS.map(([value, label]) => ({ value, label }))} disabled={!manage} />
                   <Select
-                    label="Tone"
+                    label={tr("Tone")}
                     value={bot.tone}
                     onChange={(v) => set("tone", v as Chatbot["tone"])}
                     options={[
-                      { value: "friendly", label: "Friendly" },
-                      { value: "professional", label: "Professional" },
-                      { value: "concise", label: "Concise" },
+                      { value: "friendly", label: tr("Friendly") },
+                      { value: "professional", label: tr("Professional") },
+                      { value: "concise", label: tr("Concise") },
                     ]}
                     disabled={!manage}
                   />
                 </div>
-                <Select label="Model" value={bot.model} onChange={(v) => set("model", v)} options={Object.entries(MODELS).map(([value, label]) => ({ value, label }))} help="Larger models answer harder questions better and use more weighted tokens per answer." disabled={!manage} />
-                <Field label="Welcome message" value={bot.welcome_message} onChange={(e) => set("welcome_message", e.target.value)} maxLength={500} disabled={!manage} />
+                <Select label={tr("Model")} value={bot.model} onChange={(v) => set("model", v)} options={Object.entries(MODELS).map(([value, label]) => ({ value, label }))} help={tr("Larger models answer harder questions better and use more weighted tokens per answer.")} disabled={!manage} />
+                <Field label={tr("Welcome message")} value={bot.welcome_message} onChange={(e) => set("welcome_message", e.target.value)} maxLength={500} disabled={!manage} />
                 <label className="vr-field">
-                  <span className="vr-field-top">Behaviour instructions</span>
+                  <span className="vr-field-top">{tr("Behaviour instructions")}</span>
                   <span className="vr-input vr-textarea">
                     <textarea
                       rows={6}
                       maxLength={4000}
-                      placeholder={"Always end with a link to the relevant help page.\nNever promise delivery dates.\nCall our product “Acme Cloud”, never “the app”."}
+                      placeholder={tr("Always end with a link to the relevant help page.\nNever promise delivery dates.\nCall our product “Acme Cloud”, never “the app”.")}
                       value={bot.instructions}
                       onChange={(e) => set("instructions", e.target.value)}
                       disabled={!manage}
                     />
                   </span>
-                  <span className="vr-help">Added to every answer. The assistant still answers only from your knowledge base.</span>
+                  <span className="vr-help">{tr("Added to every answer. The assistant still answers only from your knowledge base.")}</span>
                 </label>
-                <Field label="When nothing relevant is found" value={bot.no_answer_message} onChange={(e) => set("no_answer_message", e.target.value)} maxLength={500} disabled={!manage} help="Shown without calling the AI, with an offer to talk to the team." />
+                <Field label={tr("When nothing relevant is found")} value={bot.no_answer_message} onChange={(e) => set("no_answer_message", e.target.value)} maxLength={500} disabled={!manage} help={tr("Shown without calling the AI, with an offer to talk to the team.")} />
                 <Field
-                  label="Fallback message"
+                  label={tr("Fallback message")}
                   value={bot.fallback_message}
                   onChange={(e) => set("fallback_message", e.target.value)}
                   maxLength={500}
                   disabled={!manage}
-                  help="Shown when AI is unavailable: the token allowance is used up, the subscription lapsed or the AI provider is down."
+                  help={tr("Shown when AI is unavailable: the token allowance is used up, the subscription lapsed or the AI provider is down.")}
                 />
               </div>
             </Card>
           ) : null}
           {tab === "appearance" ? (
-            <Card title="Look and feel">
+            <Card title={tr("Look and feel")}>
               <div className="vr-form">
                 <div className="vr-form-row" style={{ gridTemplateColumns: "auto 1fr", alignItems: "end" }}>
                   <label className="vr-field">
-                    <span className="vr-field-top">Colour</span>
+                    <span className="vr-field-top">{tr("Colour")}</span>
                     <input
                       type="color"
                       className="vr-color"
                       value={bot.appearance.primary_color}
                       onChange={(e) => set("appearance", { ...bot.appearance, primary_color: e.target.value })}
                       disabled={!manage}
-                      aria-label="Primary colour"
+                      aria-label={tr("Primary colour")}
                     />
                   </label>
-                  <Field label="Hex" className="vr-mono" value={bot.appearance.primary_color} onChange={(e) => set("appearance", { ...bot.appearance, primary_color: e.target.value })} disabled={!manage} />
+                  <Field label={tr("Hex")} className="vr-mono" value={bot.appearance.primary_color} onChange={(e) => set("appearance", { ...bot.appearance, primary_color: e.target.value })} disabled={!manage} />
                 </div>
                 <div className="vr-form-row" style={{ gridTemplateColumns: "1fr 1fr" }}>
                   <Select
-                    label="Position"
+                    label={tr("Position")}
                     value={bot.appearance.position}
                     onChange={(v) => set("appearance", { ...bot.appearance, position: v as "left" | "right" })}
                     options={[
-                      { value: "right", label: "Bottom right" },
-                      { value: "left", label: "Bottom left" },
+                      { value: "right", label: tr("Bottom right") },
+                      { value: "left", label: tr("Bottom left") },
                     ]}
                     disabled={!manage}
                   />
                   <Select
-                    label="Theme"
+                    label={tr("Theme")}
                     value={bot.appearance.theme}
                     onChange={(v) => set("appearance", { ...bot.appearance, theme: v as "light" | "dark" | "auto" })}
                     options={[
-                      { value: "light", label: "Light" },
-                      { value: "dark", label: "Dark" },
-                      { value: "auto", label: "Follow the visitor’s system" },
+                      { value: "light", label: tr("Light") },
+                      { value: "dark", label: tr("Dark") },
+                      { value: "auto", label: tr("Follow the visitor’s system") },
                     ]}
                     disabled={!manage}
                   />
                 </div>
-                <Field label="Launcher label" maxLength={30} value={bot.appearance.launcher_label} onChange={(e) => set("appearance", { ...bot.appearance, launcher_label: e.target.value })} disabled={!manage} />
+                <Field label={tr("Launcher label")} maxLength={30} value={bot.appearance.launcher_label} onChange={(e) => set("appearance", { ...bot.appearance, launcher_label: e.target.value })} disabled={!manage} />
                 <div className="vr-field">
-                  <span className="vr-field-top">Logo</span>
+                  <span className="vr-field-top">{tr("Logo")}</span>
                   <div style={{ display: "flex", gap: 12, alignItems: "center" }}>
                     {bot.logo_url ? <img src={bot.logo_url} alt="" width={40} height={40} style={{ borderRadius: 10, objectFit: "cover", border: "1px solid var(--line)" }} /> : null}
                     {manage ? (
                       <label className="vr-btn vr-btn-secondary vr-btn-sm">
-                        <span>{bot.logo_url ? "Replace" : "Upload"} logo</span>
+                        <span>{bot.logo_url ? tr("Replace") : tr("Upload")} {tr("logo")}</span>
                         <input
                           type="file"
                           accept="image/png,image/jpeg,image/webp"
@@ -236,7 +237,7 @@ export default function ChatbotSettings() {
                             try {
                               const b = await api.upload<Chatbot>(`/chatbots/${id}/logo`, f);
                               data.setData({ ...b, snippet: bot.snippet });
-                              setMsg({ tone: "brand", text: "Logo updated." });
+                              setMsg({ tone: "brand", text: tr("Logo updated.") });
                             } catch (e2) {
                               setMsg({ tone: "danger", text: errorText(e2) });
                             }
@@ -246,60 +247,59 @@ export default function ChatbotSettings() {
                     ) : null}
                     {manage && bot.logo_url ? (
                       <Button size="sm" variant="ghost" onClick={async () => data.setData({ ...(await api.del<Chatbot>(`/chatbots/${id}/logo`)), snippet: bot.snippet })}>
-                        Remove
+                        {tr("Remove")}
                       </Button>
                     ) : null}
                   </div>
-                  <span className="vr-help">PNG, JPEG or WebP, up to 512 KB. Square images work best.</span>
+                  <span className="vr-help">{tr("PNG, JPEG or WebP, up to 512 KB. Square images work best.")}</span>
                 </div>
               </div>
             </Card>
           ) : null}
           {tab === "install" ? (
             <>
-              <Card title="Authorized domains">
+              <Card title={tr("Authorized domains")}>
                 <label className="vr-field">
                   <span className="vr-input vr-textarea">
-                    <textarea rows={4} value={domains} onChange={(e) => setDomains(e.target.value)} placeholder={"example.com\n*.example.com"} disabled={!manage} aria-label="Domains, one per line" />
+                    <textarea rows={4} value={domains} onChange={(e) => setDomains(e.target.value)} placeholder={tr("example.com\n*.example.com")} disabled={!manage} aria-label={tr("Domains, one per line")} />
                   </span>
                   <span className="vr-help">
-                    One per line. <span className="vr-mono">example.com</span> covers example.com and www.example.com; <span className="vr-mono">*.example.com</span> covers every subdomain. On any other site the
-                    chatbot doesn’t load.
+                    {tr("One per line.")} <span className="vr-mono">{tr("example.com")}</span> {tr("covers example.com and www.example.com;")} <span className="vr-mono">{tr("*.example.com")}</span> {tr("covers every subdomain. On any other site the chatbot doesn’t load.")}
                   </span>
                 </label>
                 {manage ? (
                   <div style={{ marginTop: 12 }}>
                     <Button busy={busy} onClick={() => save({ allowed_domains: domains.split(/[\n,]/).map((d) => d.trim()).filter(Boolean) }, "Domains saved.")}>
-                      Save domains
+                      {tr("Save domains")}
                     </Button>
                   </div>
                 ) : null}
               </Card>
-              <Card title="Install on your site">
+              <Card title={tr("Install on your site")}>
                 <p className="vr-muted" style={{ marginTop: 0 }}>
-                  Paste this before <span className="vr-mono">&lt;/body&gt;</span> on every page where the chatbot should appear.
+                  {tr("Paste this before")} <span className="vr-mono">{tr("</body>")}</span> {tr("on every page where the chatbot should appear.")}
                 </p>
                 <pre className="vr-code" style={{ whiteSpace: "pre-wrap", wordBreak: "break-all" }}>
                   {data.data?.snippet}
                 </pre>
                 <Button size="sm" icon="copy" onClick={() => navigator.clipboard?.writeText(data.data?.snippet ?? "")}>
-                  Copy snippet
+                  {tr("Copy snippet")}
                 </Button>
               </Card>
             </>
           ) : null}
           {tab === "handoff" ? (
-            <Card title="Talking to a person">
+            <Card title={tr("Talking to a person")}>
               <Switch
-                label="Let customers ask for a person"
-                help="Customers can hand the conversation to your team. It’s offered automatically when the assistant can’t answer."
+                label={tr("Let customers ask for a person")}
+                help={tr("Customers can hand the conversation to your team. It’s offered automatically when the assistant can’t answer.")}
                 checked={bot.escalation.enabled}
                 onChange={(v) => set("escalation", { ...bot.escalation, enabled: v })}
                 disabled={!manage}
               />
               <Switch
-                label="Offer a ticket form if nobody replies"
-                help="If no one from the team answers in time, the chat offers the form that fits the conversation, or the contact form. Sending it opens a ticket and the assistant takes the chat back."
+                label={tr("Offer a ticket form if nobody replies")}
+                help={tr("If no one from the team answers in time, the chat offers the form that fits the conversation, or the contact form. Sending it opens a ticket and the assistant takes the chat back.")}
                 checked={bot.escalation.ticket_fallback ?? true}
                 onChange={(v) => set("escalation", { ...bot.escalation, ticket_fallback: v })}
                 disabled={!manage || !bot.escalation.enabled}
@@ -307,7 +307,7 @@ export default function ChatbotSettings() {
               {bot.escalation.ticket_fallback ?? true ? (
                 <div className="vr-form-row" style={{ marginTop: 12 }}>
                   <Field
-                    label="Wait before offering it (seconds)"
+                    label={tr("Wait before offering it (seconds)")}
                     type="number"
                     min={10}
                     max={3600}
@@ -317,42 +317,42 @@ export default function ChatbotSettings() {
                     onChange={(e) => set("escalation", { ...bot.escalation, wait_seconds: Number(e.target.value) })}
                   />
                   <Select
-                    label="When no other form fits"
+                    label={tr("When no other form fits")}
                     value={bot.escalation.fallback_form_id ?? ""}
                     disabled={!manage || !bot.escalation.enabled}
                     onChange={(v) => set("escalation", { ...bot.escalation, fallback_form_id: v || null })}
-                    options={[{ value: "", label: "Contact the team (built in)" }, ...(forms.data ?? []).filter((x) => x.status === "active" && !x.is_contact).map((x) => ({ value: x.id, label: x.name }))]}
+                    options={[{ value: "", label: tr("Contact the team (built in)") }, ...(forms.data ?? []).filter((x) => x.status === "active" && !x.is_contact).map((x) => ({ value: x.id, label: x.name }))]}
                   />
                 </div>
               ) : (
                 <Switch
-                  label="Ask for their email first"
-                  help="So the team can reach them if they leave before someone replies."
+                  label={tr("Ask for their email first")}
+                  help={tr("So the team can reach them if they leave before someone replies.")}
                   checked={bot.escalation.ask_email}
                   onChange={(v) => set("escalation", { ...bot.escalation, ask_email: v })}
                   disabled={!manage || !bot.escalation.enabled}
                 />
               )}
               <p className="vr-help" style={{ marginTop: 12 }}>
-                Members whose role can reply to conversations get an in-app and email notice. While someone has the conversation, the assistant stays quiet; resolving it hands it back.{" "}
+                {tr("Members whose role can reply to conversations get an in-app and email notice. While someone has the conversation, the assistant stays quiet; resolving it hands it back.")}{" "}
                 <Link className="vr-link" href="/forms">
-                  Manage forms →
+                  {tr("Manage forms →")}
                 </Link>
               </p>
             </Card>
           ) : null}
           {tab === "tools" ? <BotTools botId={bot.id} manage={manage} /> : null}
           {manage ? (
-            <Card title="Danger zone">
+            <Card title={tr("Danger zone")}>
               <Button
                 variant="danger"
                 onClick={async () => {
-                  if (!confirm(`Delete ${bot.name}? It stops working on your site at once. Conversations are deleted too.`)) return;
+                  if (!confirm(tr("Delete {name}? It stops working on your site at once. Conversations are deleted too.", { name: bot.name }))) return;
                   await api.del(`/chatbots/${id}`);
                   router.push("/chatbots");
                 }}
               >
-                Delete chatbot
+                {tr("Delete chatbot")}
               </Button>
             </Card>
           ) : null}
@@ -367,8 +367,8 @@ export default function ChatbotSettings() {
 function WidgetPreview({ bot }: { bot: Chatbot }) {
   const dark = bot.appearance.theme === "dark";
   return (
-    <aside className="vr-rail" aria-label="Preview">
-      <span className="vr-eyebrow">Preview</span>
+    <aside className="vr-rail" aria-label={tr("Preview")}>
+      <span className="vr-eyebrow">{tr("Preview")}</span>
       <div className="vr-wpreview" data-theme={dark ? "dark" : "light"} style={{ ["--w-brand" as string]: bot.appearance.primary_color }}>
         <div className="vr-wpreview-head">
           {bot.logo_url ? <img src={bot.logo_url} alt="" width={28} height={28} /> : <span className="vr-wpreview-dot" />}
@@ -376,13 +376,13 @@ function WidgetPreview({ bot }: { bot: Chatbot }) {
         </div>
         <div className="vr-wpreview-body">
           <div className="vr-wmsg is-bot">{bot.welcome_message}</div>
-          <div className="vr-wmsg is-me">How long do refunds take?</div>
+          <div className="vr-wmsg is-me">{tr("How long do refunds take?")}</div>
           <div className="vr-wmsg is-bot">
-            Refunds are processed within five business days<span className="vr-cite">1</span>.
+            {tr("Refunds are processed within five business days")}<span className="vr-cite">1</span>.
           </div>
         </div>
         <div className="vr-wpreview-input">
-          <span>Type a message…</span>
+          <span>{tr("Type a message…")}</span>
           <span className="vr-wpreview-send" />
         </div>
       </div>
@@ -415,10 +415,9 @@ function BotTools({ botId, manage }: { botId: string; manage: boolean }) {
     }
   }
   return (
-    <Card title="API tools">
+    <Card title={tr("API tools")}>
       <p className="vr-help" style={{ marginTop: 0 }}>
-        The assistant calls a tool only when a question needs it, such as “where is my order?”. Every call shows in the conversation’s “How it was answered”, and the
-        visitor never sees the tool or its key. Calls use AI tokens for the decision, shown as “API tool decisions” on the usage page.
+        {tr("The assistant calls a tool only when a question needs it, such as “where is my order?”. Every call shows in the conversation’s “How it was answered”, and the visitor never sees the tool or its key. Calls use AI tokens for the decision, shown as “API tool decisions” on the usage page.")}
       </p>
       {err ? <Banner tone="danger">{err}</Banner> : null}
       {items.length ? (
@@ -426,12 +425,12 @@ function BotTools({ botId, manage }: { botId: string; manage: boolean }) {
           <Switch key={t.id} label={t.display_name} help={t.description} checked={t.enabled} disabled={!manage || busy === t.id} onChange={(on) => toggle(t.id, on)} />
         ))
       ) : (
-        <span className="vr-help">No API tool is turned on yet.</span>
+        <span className="vr-help">{tr("No API tool is turned on yet.")}</span>
       )}
       {can("integrations.manage") ? (
         <p className="vr-help">
           <Link className="vr-link" href="/tools">
-            Manage API tools →
+            {tr("Manage API tools →")}
           </Link>
         </p>
       ) : null}

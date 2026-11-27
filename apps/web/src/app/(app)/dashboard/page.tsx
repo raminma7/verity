@@ -1,5 +1,6 @@
 "use client";
 
+import { t } from "@/i18n";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense } from "react";
@@ -22,7 +23,7 @@ function Step({ done, icon, title, body, href, cta, soon }: { done?: boolean; ic
         <span className="vr-ws-mark" style={done ? undefined : { background: "var(--surface-sunken)", color: "var(--ink-muted)" }}>
           <Icon name={done ? "check" : icon} />
         </span>
-        {done ? <Badge tone="brand" dot>Done</Badge> : soon ? <Badge>{soon}</Badge> : null}
+        {done ? <Badge tone="brand" dot>{t("Done")}</Badge> : soon ? <Badge>{soon}</Badge> : null}
       </div>
       <b style={{ fontWeight: 500, fontSize: 15 }}>{title}</b>
       <span className="vr-muted" style={{ fontSize: 13, lineHeight: "20px" }}>
@@ -49,21 +50,21 @@ function Dashboard() {
       <Card>
         <EmptyState
           icon="building"
-          title="You’re not in a workspace yet"
+          title={t("You’re not in a workspace yet")}
           action={
             <Link className="vr-btn vr-btn-primary vr-btn-md" href="/settings/workspace?new=1">
-              Create a workspace
+              {t("Create a workspace")}
             </Link>
           }
         >
-          Create one for your team, or open an invitation link from a teammate.
+          {t("Create one for your team, or open an invitation link from a teammate.")}
         </EmptyState>
       </Card>
     );
   if (!current)
     return (
-      <Banner tone="danger" title="This workspace is suspended.">
-        Contact support to restore access, or switch to another workspace. Your account settings are still available.
+      <Banner tone="danger" title={t("This workspace is suspended.")}>
+        {t("Contact support to restore access, or switch to another workspace. Your account settings are still available.")}
       </Banner>
     );
 
@@ -74,78 +75,78 @@ function Dashboard() {
     <>
       <div style={{ display: "flex", flexDirection: "column", gap: 12, alignItems: "flex-start" }}>
         <Badge tone={subscribed ? "brand" : "warn"} dot>
-          {subscribed ? `${current.subscription!.plan_name} plan · active` : "No active plan"}
+          {subscribed ? t("{plan_name} plan · active", { plan_name: current.subscription!.plan_name }) : t("No active plan")}
         </Badge>
         <h1 className="vr-display" style={{ fontSize: 56, lineHeight: "60px", letterSpacing: "-0.015em" }}>
           {greeting()}, {first}.
           <br />
-          <span className="vr-muted">{subscribed ? `Here’s ${current.workspace.name}.` : "Let’s get your workspace ready."}</span>
+          <span className="vr-muted">{subscribed ? t("Here’s {name}.", { name: current.workspace.name }) : t("Let’s get your workspace ready.")}</span>
         </h1>
       </div>
 
       {welcome ? (
-        <Banner title="Email verified. Your workspace is ready.">You’re its Owner, so you can choose a plan, invite your team and change every setting.</Banner>
+        <Banner title={t("Email verified. Your workspace is ready.")}>{t("You’re its Owner, so you can choose a plan, invite your team and change every setting.")}</Banner>
       ) : null}
 
       {!subscribed ? (
         <Banner
           tone="warn"
-          title="Choose a plan to turn on Verity’s AI features."
+          title={t("Choose a plan to turn on Verity’s AI features.")}
           action={
             can("billing.manage") ? (
               <Link className="vr-btn vr-btn-primary vr-btn-sm" href="/plans">
-                Compare plans
+                {t("Compare plans")}
               </Link>
             ) : null
           }
         >
           {can("billing.manage")
-            ? "Until then, the knowledge base, chatbot, tickets and team invitations stay locked. Settings and billing are open."
-            : "Ask the workspace owner to choose a plan. Settings stay available."}
+            ? t("Until then, the knowledge base, chatbot, tickets and team invitations stay locked. Settings and billing are open.")
+            : t("Ask the workspace owner to choose a plan. Settings stay available.")}
         </Banner>
       ) : current.subscription?.cancel_at_period_end ? (
-        <Banner tone="warn" title={`Your plan ends on ${date(current.subscription.renews_at)}.`} action={<Link className="vr-btn vr-btn-secondary vr-btn-sm" href="/billing">Manage billing</Link>}>
-          AI features stop after that date unless you resume the subscription.
+        <Banner tone="warn" title={t("Your plan ends on {renews_at}.", { renews_at: date(current.subscription.renews_at) })} action={<Link className="vr-btn vr-btn-secondary vr-btn-sm" href="/billing">{t("Manage billing")}</Link>}>
+          {t("AI features stop after that date unless you resume the subscription.")}
         </Banner>
       ) : u && !u.ai_available ? (
-        <Banner tone="danger" title="AI token allowance used up." action={<Link className="vr-btn vr-btn-secondary vr-btn-sm" href="/plans">Upgrade</Link>}>
-          AI answers are paused until {date(u.period_end)}. Manual ticketing, email ingestion and forms keep working.
+        <Banner tone="danger" title={t("AI token allowance used up.")} action={<Link className="vr-btn vr-btn-secondary vr-btn-sm" href="/plans">{t("Upgrade")}</Link>}>
+          {t("AI answers are paused until")} {date(u.period_end)}{t(". Manual ticketing, email ingestion and forms keep working.")}
         </Banner>
       ) : u && u.percent_used >= 80 ? (
-        <Banner tone="warn" title={`${Math.floor(u.percent_used)}% of this period’s AI tokens used.`} action={<Link className="vr-btn vr-btn-secondary vr-btn-sm" href="/usage">See usage</Link>}>
-          {compact(u.remaining)} weighted tokens remain until {date(u.period_end)}.
+        <Banner tone="warn" title={t("{percent_used}% of this period’s AI tokens used.", { percent_used: Math.floor(u.percent_used) })} action={<Link className="vr-btn vr-btn-secondary vr-btn-sm" href="/usage">{t("See usage")}</Link>}>
+          {compact(u.remaining)} {t("weighted tokens remain until")} {date(u.period_end)}.
         </Banner>
       ) : null}
 
       {subscribed ? (
         <div className="vr-grid vr-grid-4">
-          <Stat label="Plan" value={current.subscription!.plan_name} note={current.subscription!.cancel_at_period_end ? `Ends ${date(current.subscription!.renews_at)}` : `Renews ${date(current.subscription!.renews_at)}`} />
-          <Stat label="AI tokens left" value={u ? compact(u.remaining) : "—"} note={u ? `${u.percent_used}% of ${compact(u.total_allowance)} used` : undefined} />
-          <Stat label="Members" value={current.usage.seats} note={limits.members < 0 ? "No member limit" : `of ${limits.members} seats`} />
-          <Stat label="AI status" value={current.ai_available ? "On" : "Paused"} note={current.ai_available ? "Answers and automations run" : "Allowance exhausted"} />
+          <Stat label={t("Plan")} value={current.subscription!.plan_name} note={current.subscription!.cancel_at_period_end ? t("Ends {renews_at}", { renews_at: date(current.subscription!.renews_at) }) : t("Renews {renews_at}", { renews_at: date(current.subscription!.renews_at) })} />
+          <Stat label={t("AI tokens left")} value={u ? compact(u.remaining) : "—"} note={u ? t("{percent_used}% of {total_allowance} used", { percent_used: u.percent_used, total_allowance: compact(u.total_allowance) }) : undefined} />
+          <Stat label={t("Members")} value={current.usage.seats} note={limits.members < 0 ? t("No member limit") : t("of {members} seats", { members: limits.members })} />
+          <Stat label={t("AI status")} value={current.ai_available ? "On" : "Paused"} note={current.ai_available ? t("Answers and automations run") : t("Allowance exhausted")} />
         </div>
       ) : null}
 
       <section style={{ display: "flex", flexDirection: "column", gap: 12 }}>
-        <span className="vr-eyebrow">Set up your workspace</span>
+        <span className="vr-eyebrow">{t("Set up your workspace")}</span>
         <div className="vr-grid vr-grid-4">
-          <Step done={subscribed} icon="card" title="Choose a plan" body="Pick the allowance and limits that fit your support volume." href="/plans" cta="Compare plans" />
-          <Step done={current.usage.seats > 1} icon="users" title="Invite your team" body="Add administrators, support agents and viewers." href="/members" cta="Invite people" />
-          <Step icon="book" title="Add knowledge" body="Upload documents and crawl your help centre so answers cite real sources." soon="Phase 2" />
-          <Step icon="chat" title="Install the chatbot" body="Embed one script on your site and start answering customers." soon="Phase 2" />
+          <Step done={subscribed} icon="card" title={t("Choose a plan")} body="Pick the allowance and limits that fit your support volume." href="/plans" cta="Compare plans" />
+          <Step done={current.usage.seats > 1} icon="users" title={t("Invite your team")} body="Add administrators, support agents and viewers." href="/members" cta="Invite people" />
+          <Step icon="book" title={t("Add knowledge")} body="Upload documents and crawl your help centre so answers cite real sources." soon="Phase 2" />
+          <Step icon="chat" title={t("Install the chatbot")} body="Embed one script on your site and start answering customers." soon="Phase 2" />
         </div>
       </section>
 
-      <Card title="Plan limits" actions={<Link className="vr-link" style={{ fontSize: 13 }} href="/plans">{subscribed ? "Change plan" : "See plans"}</Link>}>
+      <Card title={t("Plan limits")} actions={<Link className="vr-link" style={{ fontSize: 13 }} href="/plans">{subscribed ? t("Change plan") : t("See plans")}</Link>}>
         <div className="vr-grid vr-grid-3" style={{ gap: 20 }}>
-          <UsageMeter label="Members" used={current.usage.seats} total={limits.members} />
-          {u ? <UsageMeter label="AI tokens (weighted)" used={u.consumed_weighted} total={u.total_allowance} /> : null}
+          <UsageMeter label={t("Members")} used={current.usage.seats} total={limits.members} />
+          {u ? <UsageMeter label={t("AI tokens (weighted)")} used={u.consumed_weighted} total={u.total_allowance} /> : null}
           {(Object.keys(LIMIT_LABELS) as (keyof Limits)[])
             .filter((k) => k !== "members")
             .map((k) => (
               <div key={k} className="vr-usage">
                 <div className="vr-usage-top">
-                  <span>{LIMIT_LABELS[k]}</span>
+                  <span>{t(LIMIT_LABELS[k])}</span>
                   <span className="vr-mono">{limitText(k, limits[k])}</span>
                 </div>
               </div>

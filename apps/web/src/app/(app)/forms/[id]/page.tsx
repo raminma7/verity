@@ -1,5 +1,6 @@
 "use client";
 
+import { t as tr, msg } from "@/i18n";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -11,14 +12,14 @@ import { useSession } from "@/lib/session";
 import { useData } from "@/lib/use-data";
 
 const TYPES: { value: FieldType; label: string }[] = [
-  { value: "text", label: "Short text" },
-  { value: "email", label: "Email" },
-  { value: "number", label: "Number" },
-  { value: "select", label: "Choose one" },
-  { value: "multiselect", label: "Choose several" },
-  { value: "date", label: "Date" },
-  { value: "textarea", label: "Long text" },
-  { value: "checkbox", label: "Checkbox" },
+  { value: "text", label: msg("Short text") },
+  { value: "email", label: msg("Email") },
+  { value: "number", label: msg("Number") },
+  { value: "select", label: msg("Choose one") },
+  { value: "multiselect", label: msg("Choose several") },
+  { value: "date", label: msg("Date") },
+  { value: "textarea", label: msg("Long text") },
+  { value: "checkbox", label: msg("Checkbox") },
 ];
 const TYPE_LABEL = Object.fromEntries(TYPES.map((t) => [t.value, t.label]));
 
@@ -105,7 +106,7 @@ export default function FormBuilder() {
       } else {
         const saved = await api.patch<ChatForm>(`/forms/${id}`, body);
         setF(saved);
-        setMsg({ tone: "brand", text: `Saved · version ${saved.version}.` });
+        setMsg({ tone: "brand", text: tr("Saved · version {version}.", { version: saved.version }) });
       }
     } catch (e) {
       const key = e instanceof ApiError ? (e.data.field_key as string | undefined) : undefined;
@@ -121,18 +122,18 @@ export default function FormBuilder() {
     <>
       <div>
         <Link className="vr-link" href="/forms" style={{ fontSize: 13 }}>
-          ← Forms
+          {tr("← Forms")}
         </Link>
       </div>
       <PageHeader
-        title={isNew ? "New form" : f.name || "Untitled form"}
+        title={isNew ? tr("New form") : f.name || tr("Untitled form")}
         subtitle={
           isNew ? (
-            "Each form sends its tickets to one category."
+            tr("Each form sends its tickets to one category.")
           ) : (
             <span style={{ display: "inline-flex", gap: 8, alignItems: "center" }}>
-              {f.is_contact ? <Badge tone="brand" dot>Contact form</Badge> : f.status === "active" ? <Badge tone="brand" dot>Active</Badge> : f.status === "archived" ? <Badge>Archived</Badge> : <Badge dot>Draft</Badge>}
-              <span className="vr-num">version {f.version}</span>
+              {f.is_contact ? <Badge tone="brand" dot>{tr("Contact form")}</Badge> : f.status === "active" ? <Badge tone="brand" dot>{tr("Active")}</Badge> : f.status === "archived" ? <Badge>{tr("Archived")}</Badge> : <Badge dot>{tr("Draft")}</Badge>}
+              <span className="vr-num">{tr("version")} {f.version}</span>
             </span>
           )
         }
@@ -143,16 +144,16 @@ export default function FormBuilder() {
                 <Button
                   variant="ghost"
                   onClick={async () => {
-                    if (!confirm(`Archive ${f.name}? Chatbots stop offering it. Tickets it created stay.`)) return;
+                    if (!confirm(tr("Archive {name}? Chatbots stop offering it. Tickets it created stay.", { name: f.name }))) return;
                     await api.post(`/forms/${id}/archive`);
                     router.push("/forms");
                   }}
                 >
-                  Archive
+                  {tr("Archive")}
                 </Button>
               ) : null}
               <Button variant="primary" busy={busy} onClick={save} disabled={!f.name.trim() || !f.category_id || f.status === "archived"}>
-                {isNew ? "Create form" : "Save form"}
+                {isNew ? tr("Create form") : tr("Save form")}
               </Button>
             </>
           ) : null
@@ -160,39 +161,39 @@ export default function FormBuilder() {
       />
       {msg ? <Banner tone={msg.tone}>{msg.text}</Banner> : null}
       {cats.data && !cats.data.length ? (
-        <Banner tone="warn" title="Add a ticket category first">
-          Forms send their tickets to a category. <Link className="vr-link" href="/settings/tickets">Add one in Settings → Tickets</Link>.
+        <Banner tone="warn" title={tr("Add a ticket category first")}>
+          {tr("Forms send their tickets to a category.")} <Link className="vr-link" href="/settings/tickets">{tr("Add one in Settings → Tickets")}</Link>.
         </Banner>
       ) : null}
       <div className="vr-builder">
         <div style={{ display: "flex", flexDirection: "column", gap: "var(--space-6)" }}>
-          <Card title="Details">
+          <Card title={tr("Details")}>
             <div className="vr-form">
-              <Field label="Name" value={f.name} onChange={(e) => set("name", e.target.value)} maxLength={80} disabled={ro} placeholder="Return request" />
-              <Field label="Description" help="Shown to the customer above the form." value={f.description} onChange={(e) => set("description", e.target.value)} maxLength={500} disabled={ro} />
+              <Field label={tr("Name")} value={f.name} onChange={(e) => set("name", e.target.value)} maxLength={80} disabled={ro} placeholder={tr("Return request")} />
+              <Field label={tr("Description")} help={tr("Shown to the customer above the form.")} value={f.description} onChange={(e) => set("description", e.target.value)} maxLength={500} disabled={ro} />
               <div className="vr-form-row">
-                <Select label="Ticket category" value={f.category_id} disabled={ro} onChange={(v) => set("category_id", v)} options={[...(f.category_id ? [] : [{ value: "", label: "Choose…" }]), ...(cats.data ?? []).map((c) => ({ value: c.id, label: c.name }))]} />
-                <Field label="Button label" value={f.submit_label} onChange={(e) => set("submit_label", e.target.value)} maxLength={40} disabled={ro} />
+                <Select label={tr("Ticket category")} value={f.category_id} disabled={ro} onChange={(v) => set("category_id", v)} options={[...(f.category_id ? [] : [{ value: "", label: tr("Choose…") }]), ...(cats.data ?? []).map((c) => ({ value: c.id, label: c.name }))]} />
+                <Field label={tr("Button label")} value={f.submit_label} onChange={(e) => set("submit_label", e.target.value)} maxLength={40} disabled={ro} />
               </div>
               {!f.is_contact ? (
                 <div>
                   <span className="vr-field-top" style={{ display: "block", marginBottom: 6 }}>
-                    Status
+                    {tr("Status")}
                   </span>
                   <Segmented
-                    label="Status"
+                    label={tr("Status")}
                     value={f.status === "archived" ? "draft" : f.status}
                     onChange={(v) => !ro && set("status", v as Draft["status"])}
                     options={[
-                      { value: "draft", label: "Draft" },
-                      { value: "active", label: "Active" },
+                      { value: "draft", label: tr("Draft") },
+                      { value: "active", label: tr("Active") },
                     ]}
                   />
                 </div>
               ) : null}
               <Field
-                label="Message after sending"
-                help="Leave empty to tell the customer their ticket number and that the team will be in touch."
+                label={tr("Message after sending")}
+                help={tr("Leave empty to tell the customer their ticket number and that the team will be in touch.")}
                 value={f.success_message}
                 onChange={(e) => set("success_message", e.target.value)}
                 maxLength={500}
@@ -200,32 +201,32 @@ export default function FormBuilder() {
               />
             </div>
           </Card>
-          <Card title="When the assistant offers it">
+          <Card title={tr("When the assistant offers it")}>
             <div className="vr-form">
               {f.is_contact ? (
                 <p className="vr-muted" style={{ margin: 0 }}>
-                  The contact form is offered when a customer asks for a person, nobody replies in time, and none of your other forms fits the conversation.
+                  {tr("The contact form is offered when a customer asks for a person, nobody replies in time, and none of your other forms fits the conversation.")}
                 </p>
               ) : (
                 <>
                   <label className="vr-field">
-                    <span className="vr-field-top">Activation condition</span>
+                    <span className="vr-field-top">{tr("Activation condition")}</span>
                     <span className="vr-input vr-textarea">
                       <textarea
                         rows={3}
                         value={f.activation_condition}
                         disabled={ro}
                         maxLength={2000}
-                        placeholder="The customer wants to return or exchange an order."
-                        aria-label="Activation condition"
+                        placeholder={tr("The customer wants to return or exchange an order.")}
+                        aria-label={tr("Activation condition")}
                         onChange={(e) => set("activation_condition", e.target.value)}
                       />
                     </span>
-                    <span className="vr-help">In plain words. The assistant checks it against the conversation and offers the form when it clearly applies. Leave empty to offer it only when the customer picks it.</span>
+                    <span className="vr-help">{tr("In plain words. The assistant checks it against the conversation and offers the form when it clearly applies. Leave empty to offer it only when the customer picks it.")}</span>
                   </label>
                   <div>
                     <span className="vr-field-top" style={{ display: "block", marginBottom: 6 }}>
-                      Offered by
+                      {tr("Offered by")}
                     </span>
                     {(bots.data ?? []).length ? (
                       (bots.data ?? []).map((b) => (
@@ -240,7 +241,7 @@ export default function FormBuilder() {
                         </label>
                       ))
                     ) : (
-                      <p className="vr-help">No chatbots yet.</p>
+                      <p className="vr-help">{tr("No chatbots yet.")}</p>
                     )}
                   </div>
                 </>
@@ -248,20 +249,20 @@ export default function FormBuilder() {
             </div>
           </Card>
           <Card
-            title={`Fields · ${f.fields.length}`}
+            title={tr("Fields · {length}", { length: f.fields.length })}
             actions={
               manage ? (
-                <Select ariaLabel="Add a field" value="" onChange={(v) => v && addField(v as FieldType)} options={[{ value: "", label: "Add a field…" }, ...TYPES]} />
+                <Select ariaLabel="Add a field" value="" onChange={(v) => v && addField(v as FieldType)} options={[{ value: "", label: tr("Add a field…") }, ...TYPES]} />
               ) : null
             }
             padded={false}
           >
             {!f.fields.length ? (
               <p className="vr-muted" style={{ padding: "var(--space-4) var(--space-6)", margin: 0 }}>
-                Add the details you need, such as an order number or an email.
+                {tr("Add the details you need, such as an order number or an email.")}
               </p>
             ) : (
-              <div className="vr-fieldlist" role="listbox" aria-label="Fields">
+              <div className="vr-fieldlist" role="listbox" aria-label={tr("Fields")}>
                 {f.fields.map((x, i) => (
                   <div key={x.key + i} style={{ display: "flex", alignItems: "center" }}>
                     <button type="button" role="option" aria-selected={i === sel} className={`vr-fieldrow${i === sel ? " is-on" : ""}`} onClick={() => setSel(i)}>
@@ -271,21 +272,21 @@ export default function FormBuilder() {
                           {TYPE_LABEL[x.type]} · <span className="vr-mono">{x.key}</span>
                         </small>
                       </span>
-                      {x.required ? <Badge>Required</Badge> : <Badge>Optional</Badge>}
+                      {x.required ? <Badge>{tr("Required")}</Badge> : <Badge>{tr("Optional")}</Badge>}
                     </button>
                     {manage ? (
                       <span className="vr-actions" style={{ padding: "0 8px", flexWrap: "nowrap" }}>
-                        <Button size="sm" variant="ghost" aria-label={`Move ${x.label} up`} disabled={i === 0} onClick={() => move(i, -1)}>
+                        <Button size="sm" variant="ghost" aria-label={tr("Move {label} up", { label: x.label })} disabled={i === 0} onClick={() => move(i, -1)}>
                           ↑
                         </Button>
-                        <Button size="sm" variant="ghost" aria-label={`Move ${x.label} down`} disabled={i === f.fields.length - 1} onClick={() => move(i, 1)}>
+                        <Button size="sm" variant="ghost" aria-label={tr("Move {label} down", { label: x.label })} disabled={i === f.fields.length - 1} onClick={() => move(i, 1)}>
                           ↓
                         </Button>
                         <Button
                           size="sm"
                           variant="ghost"
                           icon="x"
-                          aria-label={`Remove ${x.label}`}
+                          aria-label={tr("Remove {label}", { label: x.label })}
                           onClick={() => {
                             set("fields", f.fields.filter((_, j) => j !== i));
                             setSel(Math.max(0, i - 1));
@@ -299,11 +300,11 @@ export default function FormBuilder() {
             )}
           </Card>
           {field ? (
-            <Card title={`Field · ${field.label}`}>
+            <Card title={tr("Field · {label}", { label: field.label })}>
               <div className="vr-form">
                 <div className="vr-form-row">
                   <Field
-                    label="Label"
+                    label={tr("Label")}
                     value={field.label}
                     disabled={ro}
                     maxLength={120}
@@ -314,19 +315,19 @@ export default function FormBuilder() {
                       setField({ label: e.target.value, ...(auto ? { key: slug(e.target.value, others) } : {}) });
                     }}
                   />
-                  <Select label="Type" value={field.type} disabled={ro} onChange={(v) => setField({ type: v as FieldType, validation: {}, options: v === "select" || v === "multiselect" ? (field.options.length ? field.options : ["Option 1"]) : [] })} options={TYPES} />
+                  <Select label={tr("Type")} value={field.type} disabled={ro} onChange={(v) => setField({ type: v as FieldType, validation: {}, options: v === "select" || v === "multiselect" ? (field.options.length ? field.options : ["Option 1"]) : [] })} options={TYPES} />
                 </div>
                 <div className="vr-form-row">
-                  <Field label="Key" className="vr-mono" help="Used in exports and the ticket. Lowercase letters, numbers and _." value={field.key} disabled={ro} maxLength={40} onChange={(e) => setField({ key: e.target.value })} />
-                  <Field label="Placeholder" value={field.placeholder ?? ""} disabled={ro || field.type === "checkbox" || field.type === "multiselect"} maxLength={120} onChange={(e) => setField({ placeholder: e.target.value })} />
+                  <Field label={tr("Key")} className="vr-mono" help={tr("Used in exports and the ticket. Lowercase letters, numbers and _.")} value={field.key} disabled={ro} maxLength={40} onChange={(e) => setField({ key: e.target.value })} />
+                  <Field label={tr("Placeholder")} value={field.placeholder ?? ""} disabled={ro || field.type === "checkbox" || field.type === "multiselect"} maxLength={120} onChange={(e) => setField({ placeholder: e.target.value })} />
                 </div>
-                <Field label="Help text" value={field.help ?? ""} disabled={ro} maxLength={300} onChange={(e) => setField({ help: e.target.value })} />
-                <Switch label="Required" help={field.type === "checkbox" ? "The customer must tick it (for example, to accept a policy). The assistant never ticks it for them." : "The form can't be sent without it."} checked={field.required} disabled={ro} onChange={(v) => setField({ required: v })} />
+                <Field label={tr("Help text")} value={field.help ?? ""} disabled={ro} maxLength={300} onChange={(e) => setField({ help: e.target.value })} />
+                <Switch label={tr("Required")} help={field.type === "checkbox" ? tr("The customer must tick it (for example, to accept a policy). The assistant never ticks it for them.") : tr("The form can't be sent without it.")} checked={field.required} disabled={ro} onChange={(v) => setField({ required: v })} />
                 {field.type === "select" || field.type === "multiselect" ? (
                   <label className="vr-field">
-                    <span className="vr-field-top">Options, one per line</span>
+                    <span className="vr-field-top">{tr("Options, one per line")}</span>
                     <span className="vr-input vr-textarea">
-                      <textarea rows={4} disabled={ro} value={field.options.join("\n")} aria-label="Options" onChange={(e) => setField({ options: e.target.value.split("\n") })} />
+                      <textarea rows={4} disabled={ro} value={field.options.join("\n")} aria-label={tr("Options")} onChange={(e) => setField({ options: e.target.value.split("\n") })} />
                     </span>
                   </label>
                 ) : null}
@@ -337,16 +338,16 @@ export default function FormBuilder() {
         </div>
         <div className="vr-preview-frame">
           <span className="vr-eyebrow" style={{ display: "block", marginBottom: 8 }}>
-            Preview · as customers see it
+            {tr("Preview · as customers see it")}
           </span>
           <div className="vr-wpreview">
             <div className="vr-wpreview-head">
               <span className="vr-wpreview-dot" />
-              <b style={{ fontSize: 14 }}>{f.name || "Untitled form"}</b>
+              <b style={{ fontSize: 14 }}>{f.name || tr("Untitled form")}</b>
             </div>
             <div className="vr-wpreview-body">
               <div className="vr-wform-card">
-                <b>{f.name || "Untitled form"}</b>
+                <b>{f.name || tr("Untitled form")}</b>
                 {f.description ? <span className="vr-wform-sub">{f.description}</span> : null}
                 <ChatFormFields
                   block={{ form_id: "preview", version: f.version ?? 1, title: f.name, description: f.description, fields: f.fields.map((x) => ({ ...x, options: x.options.filter(Boolean) })), submit_label: f.submit_label }}
@@ -370,11 +371,11 @@ function Rules({ field, setRule, ro }: { field: FormField; setRule: (k: keyof Fo
     return (
       <>
         <div className="vr-form-row">
-          <Field label="Minimum length" type="number" min={0} className="vr-mono" disabled={ro} value={v.min_length ?? ""} onChange={(e) => setRule("min_length", num(e.target.value))} />
-          <Field label="Maximum length" type="number" min={1} className="vr-mono" disabled={ro} value={v.max_length ?? ""} placeholder={field.type === "text" ? "500" : "4000"} onChange={(e) => setRule("max_length", num(e.target.value))} />
+          <Field label={tr("Minimum length")} type="number" min={0} className="vr-mono" disabled={ro} value={v.min_length ?? ""} onChange={(e) => setRule("min_length", num(e.target.value))} />
+          <Field label={tr("Maximum length")} type="number" min={1} className="vr-mono" disabled={ro} value={v.max_length ?? ""} placeholder={field.type === "text" ? "500" : "4000"} onChange={(e) => setRule("max_length", num(e.target.value))} />
         </div>
         {field.type === "text" ? (
-          <Field label="Pattern" className="vr-mono" help="Optional regular expression the whole answer must match, for example [0-9]{5,8} for an order number." disabled={ro} value={v.pattern ?? ""} maxLength={200} onChange={(e) => setRule("pattern", e.target.value)} />
+          <Field label={tr("Pattern")} className="vr-mono" help={tr("Optional regular expression the whole answer must match, for example [0-9]{5,8} for an order number.")} disabled={ro} value={v.pattern ?? ""} maxLength={200} onChange={(e) => setRule("pattern", e.target.value)} />
         ) : null}
       </>
     );
@@ -382,24 +383,24 @@ function Rules({ field, setRule, ro }: { field: FormField; setRule: (k: keyof Fo
     return (
       <>
         <div className="vr-form-row">
-          <Field label="Minimum" type="number" className="vr-mono" disabled={ro} value={(v.min as number | undefined) ?? ""} onChange={(e) => setRule("min", num(e.target.value))} />
-          <Field label="Maximum" type="number" className="vr-mono" disabled={ro} value={(v.max as number | undefined) ?? ""} onChange={(e) => setRule("max", num(e.target.value))} />
+          <Field label={tr("Minimum")} type="number" className="vr-mono" disabled={ro} value={(v.min as number | undefined) ?? ""} onChange={(e) => setRule("min", num(e.target.value))} />
+          <Field label={tr("Maximum")} type="number" className="vr-mono" disabled={ro} value={(v.max as number | undefined) ?? ""} onChange={(e) => setRule("max", num(e.target.value))} />
         </div>
-        <Switch label="Whole numbers only" checked={Boolean(v.integer)} disabled={ro} onChange={(on) => setRule("integer", on)} />
+        <Switch label={tr("Whole numbers only")} checked={Boolean(v.integer)} disabled={ro} onChange={(on) => setRule("integer", on)} />
       </>
     );
   if (field.type === "multiselect")
     return (
       <div className="vr-form-row">
-        <Field label="Choose at least" type="number" min={0} className="vr-mono" disabled={ro} value={v.min_selected ?? ""} onChange={(e) => setRule("min_selected", num(e.target.value))} />
-        <Field label="Choose at most" type="number" min={1} className="vr-mono" disabled={ro} value={v.max_selected ?? ""} onChange={(e) => setRule("max_selected", num(e.target.value))} />
+        <Field label={tr("Choose at least")} type="number" min={0} className="vr-mono" disabled={ro} value={v.min_selected ?? ""} onChange={(e) => setRule("min_selected", num(e.target.value))} />
+        <Field label={tr("Choose at most")} type="number" min={1} className="vr-mono" disabled={ro} value={v.max_selected ?? ""} onChange={(e) => setRule("max_selected", num(e.target.value))} />
       </div>
     );
   if (field.type === "date")
     return (
       <div className="vr-form-row">
-        <Field label="Earliest" type="date" disabled={ro} value={(v.min as string | undefined) ?? ""} onChange={(e) => setRule("min", e.target.value)} />
-        <Field label="Latest" type="date" disabled={ro} value={(v.max as string | undefined) ?? ""} onChange={(e) => setRule("max", e.target.value)} />
+        <Field label={tr("Earliest")} type="date" disabled={ro} value={(v.min as string | undefined) ?? ""} onChange={(e) => setRule("min", e.target.value)} />
+        <Field label={tr("Latest")} type="date" disabled={ro} value={(v.max as string | undefined) ?? ""} onChange={(e) => setRule("max", e.target.value)} />
       </div>
     );
   return null;

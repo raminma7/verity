@@ -1,5 +1,6 @@
 "use client";
 
+import { t as tr, msg } from "@/i18n";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { useEffect, useRef, useState, type ReactNode } from "react";
@@ -12,24 +13,24 @@ import { Avatar, Button, compact, cx, Icon, type IconName } from "./ui";
 type NavItem = { href: string; label: string; icon: IconName; perm?: string | string[]; soon?: string };
 
 const PRODUCT: NavItem[] = [
-  { href: "/dashboard", label: "Dashboard", icon: "home" },
-  { href: "/ask", label: "Ask", icon: "spark", perm: "knowledge.read" },
-  { href: "/knowledge", label: "Knowledge base", icon: "book", perm: "knowledge.read" },
-  { href: "/chatbots", label: "Chatbots", icon: "chat", perm: "chatbots.read" },
-  { href: "/conversations", label: "Conversations", icon: "clock", perm: "chatbots.read" },
-  { href: "/tickets", label: "Tickets", icon: "tag", perm: "tickets.read" },
-  { href: "/forms", label: "Forms", icon: "file", perm: "chatbots.read" },
-  { href: "/email", label: "Email", icon: "mail", perm: ["integrations.manage", "email.review"] },
-  { href: "/tools", label: "API tools", icon: "link", perm: "integrations.manage" },
+  { href: "/dashboard", label: msg("Dashboard"), icon: "home" },
+  { href: "/ask", label: msg("Ask"), icon: "spark", perm: "knowledge.read" },
+  { href: "/knowledge", label: msg("Knowledge base"), icon: "book", perm: "knowledge.read" },
+  { href: "/chatbots", label: msg("Chatbots"), icon: "chat", perm: "chatbots.read" },
+  { href: "/conversations", label: msg("Conversations"), icon: "clock", perm: "chatbots.read" },
+  { href: "/tickets", label: msg("Tickets"), icon: "tag", perm: "tickets.read" },
+  { href: "/forms", label: msg("Forms"), icon: "file", perm: "chatbots.read" },
+  { href: "/email", label: msg("Email"), icon: "mail", perm: ["integrations.manage", "email.review"] },
+  { href: "/tools", label: msg("API tools"), icon: "link", perm: "integrations.manage" },
 ];
 
 const MANAGE: NavItem[] = [
-  { href: "/analytics", label: "Analytics", icon: "chart", perm: "analytics.read" },
-  { href: "/usage", label: "AI usage", icon: "spark", perm: "usage.read" },
-  { href: "/members", label: "Members", icon: "users", perm: "members.read" },
-  { href: "/billing", label: "Billing", icon: "card", perm: "billing.read" },
-  { href: "/plans", label: "Plans", icon: "sliders" },
-  { href: "/settings", label: "Settings", icon: "gear" },
+  { href: "/analytics", label: msg("Analytics"), icon: "chart", perm: "analytics.read" },
+  { href: "/usage", label: msg("AI usage"), icon: "spark", perm: "usage.read" },
+  { href: "/members", label: msg("Members"), icon: "users", perm: "members.read" },
+  { href: "/billing", label: msg("Billing"), icon: "card", perm: "billing.read" },
+  { href: "/plans", label: msg("Plans"), icon: "sliders" },
+  { href: "/settings", label: msg("Settings"), icon: "gear" },
 ];
 
 function useTheme() {
@@ -78,15 +79,15 @@ function WorkspaceSwitcher() {
       <button type="button" className="vr-ws-btn" aria-haspopup="menu" aria-expanded={open} onClick={() => setOpen(!open)}>
         <span className="vr-ws-mark">{ws?.name[0]?.toUpperCase() ?? "?"}</span>
         <span className="vr-ws-text">
-          <b>{ws?.name ?? "No workspace"}</b>
-          <span>{current?.subscription?.active ? current.subscription.plan_name : "No plan"}</span>
+          <b>{ws?.name ?? tr("No workspace")}</b>
+          <span>{current?.subscription?.active ? current.subscription.plan_name : tr("No plan")}</span>
         </span>
         <Icon name="chevron" />
       </button>
       {open ? (
         <div className="vr-menu" role="menu">
           <span className="vr-eyebrow" style={{ padding: "4px 10px" }}>
-            Workspaces
+            {tr("Workspaces")}
           </span>
           {workspaces.map((w) => (
             <button key={w.id} role="menuitem" type="button" onClick={() => { setOpen(false); if (w.id !== ws?.id) switchWorkspace(w.id); }}>
@@ -99,7 +100,7 @@ function WorkspaceSwitcher() {
           ))}
           <hr />
           <button role="menuitem" type="button" onClick={() => { setOpen(false); router.push("/settings/workspace?new=1"); }}>
-            <Icon name="plus" /> New workspace
+            <Icon name="plus" /> {tr("New workspace")}
           </button>
         </div>
       ) : null}
@@ -141,15 +142,15 @@ function UserMenu() {
       {open ? (
         <div className="vr-menu" role="menu" style={{ top: "auto", bottom: "calc(100% + 6px)" }}>
           <Link role="menuitem" href="/settings" onClick={() => setOpen(false)}>
-            <Icon name="gear" /> Account settings
+            <Icon name="gear" /> {tr("Account settings")}
           </Link>
           {availability ? (
             <button role="menuitem" type="button" onClick={toggleAvailability}>
-              <Icon name="users" /> {availability === "away" ? "Set yourself available" : "Set yourself away"}
+              <Icon name="users" /> {availability === "away" ? tr("Set yourself available") : tr("Set yourself away")}
             </button>
           ) : null}
           <button role="menuitem" type="button" onClick={toggleTheme}>
-            <Icon name={theme === "dark" ? "sun" : "moon"} /> {theme === "dark" ? "Light theme" : "Dark theme"}
+            <Icon name={theme === "dark" ? "sun" : "moon"} /> {theme === "dark" ? tr("Light theme") : tr("Dark theme")}
           </button>
           <hr />
           <button
@@ -160,7 +161,7 @@ function UserMenu() {
               router.replace("/sign-in");
             }}
           >
-            <Icon name="logout" /> Sign out
+            <Icon name="logout" /> {tr("Sign out")}
           </button>
         </div>
       ) : null}
@@ -169,19 +170,19 @@ function UserMenu() {
         <span style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0 }}>
           <span style={{ fontSize: 13, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.full_name}</span>
           <span className="vr-muted" style={{ fontSize: 12 }}>
-            {current?.role.name ?? (user.is_system_admin ? "System administrator" : "No workspace")}
+            {current?.role.name ?? (user.is_system_admin ? tr("System administrator") : tr("No workspace"))}
             {availability ? (
               <>
                 <br />
-                <span className="vr-avail" aria-label={availability === "away" ? "You are away" : "You are available"}>
+                <span className="vr-avail" aria-label={availability === "away" ? tr("You are away") : tr("You are available")}>
                   <span className={availability === "away" ? "vr-avail-dot is-away" : "vr-avail-dot"} aria-hidden="true" />
-                  {availability === "away" ? "Away" : "Available"}
+                  {availability === "away" ? tr("Away") : tr("Available")}
                 </span>
               </>
             ) : null}
           </span>
         </span>
-        <Button variant="ghost" size="sm" icon="dots" aria-label="Account menu" aria-expanded={open} onClick={() => setOpen(!open)} />
+        <Button variant="ghost" size="sm" icon="dots" aria-label={tr("Account menu")} aria-expanded={open} onClick={() => setOpen(!open)} />
       </div>
     </div>
   );
@@ -203,7 +204,7 @@ function TokenMeter() {
   return (
     <Link href="/usage" style={{ display: "flex", flexDirection: "column", gap: 8, padding: 12, borderRadius: "var(--radius-md)", background: "var(--surface-sunken)", textDecoration: "none", color: "var(--ink)" }}>
       <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, lineHeight: "16px" }}>
-        <span className="vr-muted">AI tokens</span>
+        <span className="vr-muted">{tr("AI tokens")}</span>
         <span className="vr-mono">
           {compact(usage.used)} / {compact(usage.total)}
         </span>
@@ -223,10 +224,10 @@ function NavList({ items, pathname, onNavigate }: { items: NavItem[]; pathname: 
         .filter((i) => !i.perm || (Array.isArray(i.perm) ? i.perm.some(can) : can(i.perm)))
         .map((i) =>
           i.soon ? (
-            <a key={i.href} className="is-disabled" aria-disabled="true" title={`Arrives in ${i.soon}`}>
+            <a key={i.href} className="is-disabled" aria-disabled="true" title={tr("Arrives in {soon}", { soon: i.soon })}>
               <Icon name={i.icon} size={18} />
               <span>{i.label}</span>
-              <span className="vr-soon">Soon</span>
+              <span className="vr-soon">{tr("Soon")}</span>
             </a>
           ) : (
             <Link key={i.href} href={i.href} onClick={onNavigate} className={cx(pathname.startsWith(i.href) && "is-on")} aria-current={pathname.startsWith(i.href) ? "page" : undefined}>
@@ -249,14 +250,14 @@ export function AppShell({ children }: { children: ReactNode }) {
     <div className={cx("vr-shell", open && "is-open")}>
       <div className="vr-topbar">
         <Link href="/dashboard" className="vr-logo">
-          Verity
+          {tr("Verity")}
         </Link>
-        <Button variant="ghost" icon="menu" aria-label="Open navigation" onClick={() => setOpen(true)} />
+        <Button variant="ghost" icon="menu" aria-label={tr("Open navigation")} onClick={() => setOpen(true)} />
       </div>
       {open ? <div className="vr-scrim" onClick={close} /> : null}
-      <nav className="vr-side" aria-label="Main">
+      <nav className="vr-side" aria-label={tr("Main")}>
         <Link href="/dashboard" className="vr-logo" style={{ padding: "0 8px" }} onClick={close}>
-          Verity
+          {tr("Verity")}
         </Link>
         <WorkspaceSwitcher />
         <div className="vr-side-nav">
@@ -264,13 +265,13 @@ export function AppShell({ children }: { children: ReactNode }) {
         </div>
         <div className="vr-side-nav">
           <span className="vr-eyebrow" style={{ padding: "0 12px 4px" }}>
-            Manage
+            {tr("Manage")}
           </span>
           <NavList items={MANAGE} pathname={pathname} onNavigate={close} />
           {user.is_system_admin ? (
             <Link href="/admin" onClick={close} className={cx(pathname.startsWith("/admin") && "is-on")}>
               <Icon name="building" size={18} />
-              <span>System admin</span>
+              <span>{tr("System admin")}</span>
             </Link>
           ) : null}
         </div>

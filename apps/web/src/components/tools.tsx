@@ -1,5 +1,6 @@
 "use client";
 
+import { t, msg } from "@/i18n";
 import { Badge, type Tone } from "./ui";
 import type { ApiTool, ToolCallStatus } from "@/lib/api";
 
@@ -21,14 +22,14 @@ export function ToolStatusBadge({ status }: { status: ApiTool["status"] }) {
 }
 
 export const CALL_WORD: Record<ToolCallStatus, string> = {
-  ok: "Succeeded",
-  http_error: "API error",
-  timeout: "Timed out",
-  blocked: "Blocked",
-  rate_limited: "Rate limited",
-  invalid_args: "Invalid input",
-  too_large: "Response too large",
-  failed: "Failed",
+  ok: msg("Succeeded"),
+  http_error: msg("API error"),
+  timeout: msg("Timed out"),
+  blocked: msg("Blocked"),
+  rate_limited: msg("Rate limited"),
+  invalid_args: msg("Invalid input"),
+  too_large: msg("Response too large"),
+  failed: msg("Failed"),
 };
 
 export function CallStatusBadge({ status, http }: { status: ToolCallStatus; http?: number | null }) {
@@ -36,14 +37,14 @@ export function CallStatusBadge({ status, http }: { status: ToolCallStatus; http
   const tone: Tone = status === "ok" ? "brand" : status === "rate_limited" || status === "invalid_args" ? "warn" : "danger";
   return (
     <Badge tone={tone} dot>
-      {status === "ok" ? word : `Failed · ${word}`}
+      {status === "ok" ? word : t("Failed · {word}", { word: word })}
       {http ? ` · ${http}` : ""}
     </Badge>
   );
 }
 
-export const SOURCE_WORDS: Record<string, string> = { ai: "The chat (AI)", visitor_email: "Visitor’s email", visitor_name: "Visitor’s name" };
-export const LOCATION_WORDS: Record<string, string> = { path: "Address path", query: "Query string", body: "JSON body" };
+export const SOURCE_WORDS: Record<string, string> = { ai: msg("The chat (AI)"), visitor_email: msg("Visitor’s email"), visitor_name: msg("Visitor’s name") };
+export const LOCATION_WORDS: Record<string, string> = { path: msg("Address path"), query: msg("Query string"), body: msg("JSON body") };
 
 /** Placeholders in the URL's path, in order: https://shop.example.com/orders/{order_id} → ["order_id"]. */
 export function placeholders(url: string): string[] {

@@ -1,5 +1,6 @@
 "use client";
 
+import { t as tr } from "@/i18n";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
@@ -70,13 +71,13 @@ export default function KnowledgeBase() {
   return (
     <>
       <PageHeader
-        title="Knowledge base"
-        subtitle="Everything your chatbot can answer from. Reprocess a document after you replace it; websites re-sync on their schedule."
+        title={tr("Knowledge base")}
+        subtitle={tr("Everything your chatbot can answer from. Reprocess a document after you replace it; websites re-sync on their schedule.")}
         actions={
           manage ? (
             <Link className="vr-btn vr-btn-primary vr-btn-md" href="/knowledge/add">
               <Icon name="upload" />
-              <span>Add knowledge</span>
+              <span>{tr("Add knowledge")}</span>
             </Link>
           ) : null
         }
@@ -85,13 +86,13 @@ export default function KnowledgeBase() {
 
       {st ? (
         <div className="vr-grid vr-grid-4">
-          <Stat label="Documents" value={fmt(st.usage.documents)} note={of(st.usage.documents, st.limits.documents, "documents")} />
-          <Stat label="Websites" value={fmt(st.usage.domains)} note={of(st.usage.domains, st.limits.domains, "websites")} />
-          <Stat label="Crawled pages" value={fmt(st.usage.crawled_pages)} note={of(st.usage.crawled_pages, st.limits.crawled_pages, "pages")} />
+          <Stat label={tr("Documents")} value={fmt(st.usage.documents)} note={of(st.usage.documents, st.limits.documents, "documents")} />
+          <Stat label={tr("Websites")} value={fmt(st.usage.domains)} note={of(st.usage.domains, st.limits.domains, "websites")} />
+          <Stat label={tr("Crawled pages")} value={fmt(st.usage.crawled_pages)} note={of(st.usage.crawled_pages, st.limits.crawled_pages, "pages")} />
           <Stat
-            label="Storage"
+            label={tr("Storage")}
             value={`${(st.usage.storage_bytes / 1024 / 1024).toFixed(1)} MB`}
-            note={`${st.limits.storage_mb < 0 ? "Unlimited" : `of ${limitText("storage_mb", st.limits.storage_mb)}`} · ${fmt(st.chunks)} searchable chunk${st.chunks === 1 ? "" : "s"}`}
+            note={tr("{v} · {chunks} searchable chunk{v2}", { v: st.limits.storage_mb < 0 ? "Unlimited" : `of ${limitText("storage_mb", st.limits.storage_mb)}`, chunks: fmt(st.chunks), v2: st.chunks === 1 ? "" : "s" })}
           />
         </div>
       ) : null}
@@ -99,41 +100,41 @@ export default function KnowledgeBase() {
       {(sources.data ?? []).length === 0 ? (
         <EmptyState
           icon="book"
-          title="Your knowledge base is empty"
+          title={tr("Your knowledge base is empty")}
           action={
             manage ? (
               <Link className="vr-btn vr-btn-primary vr-btn-md" href="/knowledge/add">
-                Add documents or a website
+                {tr("Add documents or a website")}
               </Link>
             ) : null
           }
         >
-          Upload PDF, DOCX, TXT, CSV or XLSX files, or add your help-centre website. The chatbot answers only from what is here.
+          {tr("Upload PDF, DOCX, TXT, CSV or XLSX files, or add your help-centre website. The chatbot answers only from what is here.")}
         </EmptyState>
       ) : (
         <>
           <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
             <div style={{ flex: "1 1 260px", maxWidth: 420 }}>
-              <Field icon="search" placeholder="Search by name or address…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search sources" />
+              <Field icon="search" placeholder={tr("Search by name or address…")} value={q} onChange={(e) => setQ(e.target.value)} aria-label={tr("Search sources")} />
             </div>
             <Segmented
-              label="Status"
+              label={tr("Status")}
               value={filter}
               onChange={setFilter}
               options={[
-                { value: "all", label: `All · ${(sources.data ?? []).length}` },
-                { value: "indexed", label: `Indexed · ${count("indexed")}` },
-                { value: "indexing", label: `Processing · ${count("indexing")}` },
-                { value: "failed", label: `Failed · ${count("failed")}` },
+                { value: "all", label: tr("All · {length}", { length: (sources.data ?? []).length }) },
+                { value: "indexed", label: tr("Indexed · {count}", { count: count("indexed") }) },
+                { value: "indexing", label: tr("Processing · {count}", { count: count("indexing") }) },
+                { value: "failed", label: tr("Failed · {count}", { count: count("failed") }) },
               ]}
             />
           </div>
-          <div className="vr-card" style={{ overflow: "visible" }} role="table" aria-label="Knowledge sources">
+          <div className="vr-card" style={{ overflow: "visible" }} role="table" aria-label={tr("Knowledge sources")}>
             <div className="vr-docrow vr-docrow-head vr-eyebrow" role="row">
               <span />
-              <span>Source</span>
-              <span>Chunks</span>
-              <span>Status</span>
+              <span>{tr("Source")}</span>
+              <span>{tr("Chunks")}</span>
+              <span>{tr("Status")}</span>
               <span />
             </div>
             {rows.map((s) => (
@@ -148,14 +149,14 @@ export default function KnowledgeBase() {
                 actions={
                   manage ? (
                     <span style={{ position: "relative" }}>
-                      <Button variant="ghost" size="sm" icon="dots" aria-label={`More actions for ${s.name}`} aria-expanded={menu === s.id} onClick={() => setMenu(menu === s.id ? null : s.id)} />
+                      <Button variant="ghost" size="sm" icon="dots" aria-label={tr("More actions for {name}", { name: s.name })} aria-expanded={menu === s.id} onClick={() => setMenu(menu === s.id ? null : s.id)} />
                       {menu === s.id ? (
                         <div className="vr-menu" role="menu" style={{ right: 0, left: "auto", top: "calc(100% + 4px)", minWidth: 180 }}>
                           <button role="menuitem" type="button" onClick={() => act(() => api.post(`/knowledge/sources/${s.id}/reprocess`), s.kind === "website" ? `Re-syncing ${s.name}.` : `Reprocessing ${s.name}.`)}>
-                            <Icon name="refresh" /> {s.kind === "website" ? "Re-sync now" : "Reprocess"}
+                            <Icon name="refresh" /> {s.kind === "website" ? tr("Re-sync now") : tr("Reprocess")}
                           </button>
                           <Link role="menuitem" href={`/knowledge/${s.id}`}>
-                            <Icon name="file" /> Open
+                            <Icon name="file" /> {tr("Open")}
                           </Link>
                           <hr />
                           <button
@@ -163,10 +164,10 @@ export default function KnowledgeBase() {
                             type="button"
                             style={{ color: "var(--danger)" }}
                             onClick={() => {
-                              if (confirm(`Remove ${s.name} from the knowledge base? The chatbot stops using it at once.`)) act(() => api.del(`/knowledge/sources/${s.id}`), `${s.name} is being removed.`);
+                              if (confirm(tr("Remove {name} from the knowledge base? The chatbot stops using it at once.", { name: s.name }))) act(() => api.del(`/knowledge/sources/${s.id}`), `${s.name} is being removed.`);
                             }}
                           >
-                            <Icon name="x" /> Remove
+                            <Icon name="x" /> {tr("Remove")}
                           </button>
                         </div>
                       ) : null}
@@ -177,7 +178,7 @@ export default function KnowledgeBase() {
                 }
               />
             ))}
-            {rows.length === 0 ? <p className="vr-muted" style={{ padding: 16, margin: 0 }}>No sources match.</p> : null}
+            {rows.length === 0 ? <p className="vr-muted" style={{ padding: 16, margin: 0 }}>{tr("No sources match.")}</p> : null}
           </div>
         </>
       )}

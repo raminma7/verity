@@ -1,5 +1,6 @@
 "use client";
 
+import { intlLocale, t } from "@/i18n";
 /* Charts for Phase 5B (analytics, admin reports). The design system has no charts yet, so these are built only
    from its tokens and rules:
    - one hue: a teal ramp derived from --brand (--chart-1..3, validated for both themes in app.css), ordered by
@@ -26,13 +27,17 @@ const TONE_VAR: Record<Tone, string> = {
   muted: "var(--line-strong)",
 };
 
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 /** "3 Nov" for a local calendar day (YYYY-MM-DD, already in the viewer's time zone), "Week of 3 Nov" for weeks. */
 export function dayLabel(iso: string, bucket: "day" | "week" = "day", long = false) {
   const [y, m, d] = iso.split("-").map(Number);
-  const s = `${d} ${MONTHS[m - 1]}${long ? ` ${y}` : ""}`;
-  return bucket === "week" ? `Week of ${s}` : s;
+  const s = new Date(Date.UTC(y, m - 1, d)).toLocaleDateString(intlLocale(), {
+    day: "numeric",
+    month: "short",
+    ...(long ? { year: "numeric" } : {}),
+    timeZone: "UTC",
+  });
+  return bucket === "week" ? t("Week of {date}", { date: s }) : s;
 }
 
 /** A max whose half is a whole number too, so a count axis never shows "0.5". */
@@ -101,7 +106,7 @@ export function BarChart({
           <span data-v={format(max / 2)} />
           <span data-v="0" />
         </div>
-        <div className="vr-chart-bars" role="img" aria-label={`${label}: ${format(sum)} in total over ${data.length} ${bucket === "week" ? "weeks" : "days"}`}>
+        <div className="vr-chart-bars" role="img" aria-label={t("{label}: {sum} in total over {length} {v}", { label: label, sum: format(sum), length: data.length, v: bucket === "week" ? "weeks" : "days" })}>
           {data.map((p, i) => (
             <button
               key={p.date}
@@ -225,7 +230,7 @@ export function LineChart({
           <div className="vr-chart-tip" style={{ left: `${x(hover)}%` }} role="status">
             <b>{dayLabel(data[hover].date, bucket, true)}</b>
             <span>
-              {serie.label} <span className="vr-mono">{tipV === null ? "no data" : format(tipV)}</span>
+              {serie.label} <span className="vr-mono">{tipV === null ? t("no data") : format(tipV)}</span>
             </span>
           </div>
         ) : null}
@@ -251,7 +256,7 @@ export function BarList({
 }) {
   const max = Math.max(1, ...rows.map((r) => r.value));
   const total = rows.reduce((a, r) => a + r.value, 0);
-  if (!rows.length) return <p className="vr-muted vr-caption">Nothing in this range.</p>;
+  if (!rows.length) return <p className="vr-muted vr-caption">{t("Nothing in this range.")}</p>;
   return (
     <ul className="vr-barlist" aria-label={label}>
       {rows.map((r) => (
@@ -318,12 +323,12 @@ export function ChartCard({
         <div className="vr-actions">
           {actions}
           <Segmented
-            label={`${title}: chart or table`}
+            label={t("{title}: chart or table", { title: title })}
             value={view}
             onChange={setView}
             options={[
-              { value: "chart", label: "Chart" },
-              { value: "table", label: "Table" },
+              { value: "chart", label: t("Chart") },
+              { value: "table", label: t("Table") },
             ]}
           />
         </div>

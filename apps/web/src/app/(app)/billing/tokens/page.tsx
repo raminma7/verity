@@ -1,5 +1,6 @@
 "use client";
 
+import { t, msg } from "@/i18n";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
@@ -18,10 +19,10 @@ type Packages = {
 };
 
 const GRANT: Record<Packages["grants"][number]["status"], { tone: Tone; word: string }> = {
-  active: { tone: "brand", word: "Available" },
-  used_up: { tone: "neutral", word: "Used up" },
-  expired: { tone: "neutral", word: "Expired" },
-  revoked: { tone: "warn", word: "Refunded" },
+  active: { tone: "brand", word: msg("Available") },
+  used_up: { tone: "neutral", word: msg("Used up") },
+  expired: { tone: "neutral", word: msg("Expired") },
+  revoked: { tone: "warn", word: msg("Refunded") },
 };
 
 function Tokens() {
@@ -52,37 +53,37 @@ function Tokens() {
   return (
     <>
       <PageHeader
-        eyebrow="Billing"
-        title="AI token packages"
-        subtitle="Extra weighted tokens for the whole workspace, paid once. They’re used after the plan’s allowance runs out, carry over from period to period and expire 12 months after purchase."
+        eyebrow={t("Billing")}
+        title={t("AI token packages")}
+        subtitle={t("Extra weighted tokens for the whole workspace, paid once. They’re used after the plan’s allowance runs out, carry over from period to period and expire 12 months after purchase.")}
       />
-      {paid ? <Banner title="Payment received. The tokens are in your balance.">A receipt is on its way to the billing contacts.</Banner> : null}
+      {paid ? <Banner title={t("Payment received. The tokens are in your balance.")}>{t("A receipt is on its way to the billing contacts.")}</Banner> : null}
       {error ? <Banner tone="danger">{error}</Banner> : null}
       {!subscribed ? (
-        <Banner tone="neutral" title="Token packages need an active plan." action={<Link className="vr-btn vr-btn-secondary vr-btn-sm" href="/plans">See plans</Link>}>
-          They add to a plan’s allowance.
+        <Banner tone="neutral" title={t("Token packages need an active plan.")} action={<Link className="vr-btn vr-btn-secondary vr-btn-sm" href="/plans">{t("See plans")}</Link>}>
+          {t("They add to a plan’s allowance.")}
         </Banner>
       ) : null}
 
       <div className="vr-grid vr-grid-2">
         <div className="vr-stat">
-          <span className="vr-eyebrow">Package tokens left</span>
+          <span className="vr-eyebrow">{t("Package tokens left")}</span>
           <span className="vr-display vr-stat-num">{compact(d.remaining)}</span>
-          <span className="vr-help">{d.next_expiry ? `Next expiry ${date(d.next_expiry)}` : "No package tokens yet"}</span>
+          <span className="vr-help">{d.next_expiry ? t("Next expiry {next_expiry}", { next_expiry: date(d.next_expiry) }) : t("No package tokens yet")}</span>
         </div>
         <div className="vr-stat">
-          <span className="vr-eyebrow">Used first</span>
-          <span className="vr-display vr-stat-num">Plan</span>
+          <span className="vr-eyebrow">{t("Used first")}</span>
+          <span className="vr-display vr-stat-num">{t("Plan")}</span>
           <span className="vr-help">
-            Package tokens start when this period’s allowance is used up. <Link href="/usage">See usage</Link>
+            {t("Package tokens start when this period’s allowance is used up.")} <Link href="/usage">{t("See usage")}</Link>
           </span>
         </div>
       </div>
 
-      <section aria-label="Packages">
+      <section aria-label={t("Packages")}>
         {d.packages.length === 0 ? (
           <Card>
-            <EmptyState icon="spark" title="No token packages on sale right now" />
+            <EmptyState icon="spark" title={t("No token packages on sale right now")} />
           </Card>
         ) : (
           <div className="vr-packages">
@@ -93,16 +94,16 @@ function Tokens() {
                   <h2 className="vr-h">{pk.name}</h2>
                   <span className="vr-display">{money(pk.price_cents, pk.currency)}</span>
                   <span className="vr-muted vr-caption">
-                    {fmt(pk.tokens)} weighted tokens · plus tax where it applies
+                    {fmt(pk.tokens)} {t("weighted tokens · plus tax where it applies")}
                   </span>
                   {pk.description ? <p className="vr-muted" style={{ fontSize: 13 }}>{pk.description}</p> : null}
                   {other ? (
                     <span className="vr-help">
-                      Priced in {pk.currency}; this workspace pays in {subCurrency}.
+                      {t("Priced in")} {pk.currency}{t("; this workspace pays in")} {subCurrency}.
                     </span>
                   ) : d.can_buy ? (
                     <Button variant="primary" busy={busy === pk.id} disabled={!!busy} onClick={() => buy(pk.id)}>
-                      Buy {pk.name}
+                      {t("Buy")} {pk.name}
                     </Button>
                   ) : null}
                 </article>
@@ -112,20 +113,20 @@ function Tokens() {
         )}
       </section>
 
-      <Card title="Bought packages" padded={false}>
+      <Card title={t("Bought packages")} padded={false}>
         {d.grants.length === 0 ? (
-          <EmptyState icon="file" title="No packages bought yet" />
+          <EmptyState icon="file" title={t("No packages bought yet")} />
         ) : (
           <div className="vr-table-wrap">
             <table className="vr-table">
               <thead>
                 <tr>
-                  <th>Bought</th>
-                  <th>Package</th>
-                  <th>Status</th>
-                  <th className="num">Used</th>
-                  <th className="num">Left</th>
-                  <th>Expires</th>
+                  <th>{t("Bought")}</th>
+                  <th>{t("Package")}</th>
+                  <th>{t("Status")}</th>
+                  <th className="num">{t("Used")}</th>
+                  <th className="num">{t("Left")}</th>
+                  <th>{t("Expires")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -135,7 +136,7 @@ function Tokens() {
                     <td>{g.name}</td>
                     <td>
                       <Badge tone={GRANT[g.status].tone} dot>
-                        {GRANT[g.status].word}
+                        {t(GRANT[g.status].word)}
                       </Badge>
                     </td>
                     <td className="num">{fmt(g.consumed)}</td>

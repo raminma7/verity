@@ -1,5 +1,6 @@
 "use client";
 
+import { t as tr, msg } from "@/i18n";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
@@ -28,7 +29,7 @@ type Draft = {
 const NEW: Draft = {
   name: "order_status",
   display_name: "Order status",
-  description: "Look up the shipping status of a customer's order by its order number.",
+  description: msg("Look up the shipping status of a customer's order by its order number."),
   method: "GET",
   url_template: "https://",
   headers: [],
@@ -97,9 +98,9 @@ export default function ToolEditor() {
   const missing = holes.filter((h) => !pathKeys.includes(h));
   const extra = pathKeys.filter((k) => !holes.includes(k));
 
-  if (!manage) return <Banner tone="neutral">Your role can’t manage integrations.</Banner>;
+  if (!manage) return <Banner tone="neutral">{tr("Your role can’t manage integrations.")}</Banner>;
   if (!isNew && tool.loading && !tool.data) return <Spinner />;
-  if (!isNew && (tool.error || !tool.data)) return <Banner tone="danger">{tool.error?.message ?? "Couldn’t load this tool."}</Banner>;
+  if (!isNew && (tool.error || !tool.data)) return <Banner tone="danger">{tool.error?.message ?? tr("Couldn’t load this tool.")}</Banner>;
   const t = tool.data;
 
   function body() {
@@ -182,20 +183,20 @@ export default function ToolEditor() {
   return (
     <>
       <PageHeader
-        eyebrow="API tools"
-        title={isNew ? "New API tool" : t?.display_name ?? ""}
-        subtitle={isNew ? "Describe the request once. The chatbot fills in the values it learns in the chat; Verity adds the key and makes the call." : t?.url_template}
+        eyebrow={tr("API tools")}
+        title={isNew ? tr("New API tool") : t?.display_name ?? ""}
+        subtitle={isNew ? tr("Describe the request once. The chatbot fills in the values it learns in the chat; Verity adds the key and makes the call.") : t?.url_template}
         actions={
           t ? (
             <span className="vr-actions">
               <ToolStatusBadge status={t.status} />
               {t.status === "active" ? (
                 <Button variant="ghost" busy={busy === "status"} onClick={() => setStatus("disabled")}>
-                  Turn off
+                  {tr("Turn off")}
                 </Button>
               ) : (
                 <Button variant="primary" busy={busy === "status"} onClick={() => setStatus("active")}>
-                  Turn on
+                  {tr("Turn on")}
                 </Button>
               )}
             </span>
@@ -203,211 +204,211 @@ export default function ToolEditor() {
         }
       />
       <p className="vr-help">
-        <Link href="/tools">← All API tools</Link>
+        <Link href="/tools">{tr("← All API tools")}</Link>
       </p>
       {msg ? <Banner tone={msg.tone}>{msg.text}</Banner> : null}
       <div className="vr-tool-edit">
         <div className="vr-stack">
-          <Card title="What the tool does">
+          <Card title={tr("What the tool does")}>
             <div className="vr-form">
               <div className="vr-grid2">
-                <Field label="Name" value={d.display_name} onChange={(e) => setD({ ...d, display_name: e.target.value })} maxLength={80} />
+                <Field label={tr("Name")} value={d.display_name} onChange={(e) => setD({ ...d, display_name: e.target.value })} maxLength={80} />
                 <Field
-                  label="Tool name for the AI"
+                  label={tr("Tool name for the AI")}
                   value={d.name}
                   onChange={(e) => setD({ ...d, name: e.target.value })}
-                  help="Lowercase letters, digits and _, like order_status."
+                  help={tr("Lowercase letters, digits and _, like order_status.")}
                   maxLength={64}
                   className="vr-mono-input"
                 />
               </div>
               <label className="vr-field">
-                <span className="vr-field-top">When the AI should use it</span>
+                <span className="vr-field-top">{tr("When the AI should use it")}</span>
                 <span className="vr-input vr-textarea">
                   <textarea rows={3} value={d.description} maxLength={1500} onChange={(e) => setD({ ...d, description: e.target.value })} />
                 </span>
-                <span className="vr-help">Plain words: what it looks up and which value it needs. The AI reads this to decide.</span>
+                <span className="vr-help">{tr("Plain words: what it looks up and which value it needs. The AI reads this to decide.")}</span>
               </label>
             </div>
           </Card>
 
-          <Card title="Request">
+          <Card title={tr("Request")}>
             <div className="vr-form">
               <div className="vr-tool-url-row">
                 <Segmented
-                  label="Method"
+                  label={tr("Method")}
                   value={d.method}
                   onChange={(v) => setD({ ...d, method: v as Draft["method"] })}
                   options={[
-                    { value: "GET", label: "GET" },
-                    { value: "POST", label: "POST" },
+                    { value: "GET", label: tr("GET") },
+                    { value: "POST", label: tr("POST") },
                   ]}
                 />
                 <Field
-                  label="Address"
+                  label={tr("Address")}
                   value={d.url_template}
                   onChange={(e) => setD({ ...d, url_template: e.target.value })}
                   placeholder="https://shop.example.com/orders/{order_id}"
                   className="vr-grow"
-                  help="https only. Put {placeholders} in the path for values from the chat; the host never changes."
+                  help={tr("https only. Put {placeholders} in the path for values from the chat; the host never changes.")}
                 />
               </div>
               {missing.length || extra.length ? (
                 <Banner tone="warn">
-                  {missing.length ? `Add a path parameter for ${missing.map((m) => `{${m}}`).join(", ")}. ` : ""}
-                  {extra.length ? `${extra.join(", ")} ${extra.length > 1 ? "aren’t" : "isn’t"} in the address.` : ""}
+                  {missing.length ? tr("Add a path parameter for {v}. ", { v: missing.map((m) => `{${m}}`).join(", ") }) : ""}
+                  {extra.length ? tr("{v} {v2} in the address.", { v: extra.join(", "), v2: extra.length > 1 ? "aren’t" : "isn’t" }) : ""}
                   {missing.length ? (
                     <Button
                       size="sm"
                       variant="ghost"
                       onClick={() => setD({ ...d, parameters: [...d.parameters, ...missing.map((m) => ({ ...emptyParam(m), location: "path" as const }))] })}
                     >
-                      Add them
+                      {tr("Add them")}
                     </Button>
                   ) : null}
                 </Banner>
               ) : holes.length ? (
                 <span className="vr-help">
                   <Badge tone="brand" dot>
-                    Placeholders match
+                    {tr("Placeholders match")}
                   </Badge>{" "}
                   {holes.map((h) => `{${h}}`).join(", ")}
                 </span>
               ) : null}
 
               <div className="vr-field">
-                <span className="vr-field-top">Parameters</span>
+                <span className="vr-field-top">{tr("Parameters")}</span>
                 {d.parameters.length ? (
-                  <div className="vr-params" aria-label="Parameters">
+                  <div className="vr-params" aria-label={tr("Parameters")}>
                     {d.parameters.map((p, i) => (
                       <div key={i} className="vr-param">
                         <div className="vr-grid3">
-                          <Field label="Key" value={p.key} onChange={(e) => setP(i, { key: e.target.value })} className="vr-mono-input" maxLength={40} />
+                          <Field label={tr("Key")} value={p.key} onChange={(e) => setP(i, { key: e.target.value })} className="vr-mono-input" maxLength={40} />
                           <Select
-                            label="Type"
+                            label={tr("Type")}
                             value={p.type}
                             onChange={(v) => setP(i, { type: v as ToolParam["type"] })}
                             options={[
-                              { value: "string", label: "Text" },
-                              { value: "integer", label: "Whole number" },
-                              { value: "number", label: "Number" },
-                              { value: "boolean", label: "Yes / no" },
+                              { value: "string", label: tr("Text") },
+                              { value: "integer", label: tr("Whole number") },
+                              { value: "number", label: tr("Number") },
+                              { value: "boolean", label: tr("Yes / no") },
                             ]}
                           />
                           <Select
-                            label="Sent"
+                            label={tr("Sent")}
                             value={p.location}
                             onChange={(v) => setP(i, { location: v as ToolParam["location"] })}
                             options={Object.entries(LOCATION_WORDS).map(([value, label]) => ({ value, label }))}
                           />
                         </div>
                         <div className="vr-grid3">
-                          <Field label="What it is" value={p.description} onChange={(e) => setP(i, { description: e.target.value })} placeholder="The order number" maxLength={300} />
+                          <Field label={tr("What it is")} value={p.description} onChange={(e) => setP(i, { description: e.target.value })} placeholder={tr("The order number")} maxLength={300} />
                           <Select
-                            label="Value comes from"
+                            label={tr("Value comes from")}
                             value={p.source}
                             onChange={(v) => setP(i, { source: v as ToolParam["source"], type: v === "ai" ? p.type : "string" })}
                             options={Object.entries(SOURCE_WORDS).map(([value, label]) => ({ value, label }))}
                           />
-                          <Field label="Pattern (optional)" value={p.pattern ?? ""} onChange={(e) => setP(i, { pattern: e.target.value || null })} placeholder="[0-9]{5,8}" className="vr-mono-input" />
+                          <Field label={tr("Pattern (optional)")} value={p.pattern ?? ""} onChange={(e) => setP(i, { pattern: e.target.value || null })} placeholder="[0-9]{5,8}" className="vr-mono-input" />
                         </div>
                         <div className="vr-actions">
-                          <Switch label="Required" checked={p.required || p.location === "path"} disabled={p.location === "path"} onChange={(on) => setP(i, { required: on })} />
+                          <Switch label={tr("Required")} checked={p.required || p.location === "path"} disabled={p.location === "path"} onChange={(on) => setP(i, { required: on })} />
                           <Button size="sm" variant="ghost" onClick={() => setD({ ...d, parameters: d.parameters.filter((_, j) => j !== i) })}>
-                            Remove
+                            {tr("Remove")}
                           </Button>
                         </div>
                       </div>
                     ))}
                   </div>
                 ) : (
-                  <span className="vr-help">No parameters yet.</span>
+                  <span className="vr-help">{tr("No parameters yet.")}</span>
                 )}
                 <div>
                   <Button size="sm" icon="plus" onClick={() => setD({ ...d, parameters: [...d.parameters, emptyParam()] })}>
-                    Add parameter
+                    {tr("Add parameter")}
                   </Button>
                 </div>
                 <span className="vr-help">
-                  Values from the visitor’s email or name are filled in by Verity, never by the AI, so your API can check that an order belongs to the person asking.
+                  {tr("Values from the visitor’s email or name are filled in by Verity, never by the AI, so your API can check that an order belongs to the person asking.")}
                 </span>
               </div>
 
               <div className="vr-field">
-                <span className="vr-field-top">Extra headers (optional)</span>
+                <span className="vr-field-top">{tr("Extra headers (optional)")}</span>
                 {d.headers.map(([k, v], i) => (
                   <div key={i} className="vr-actions">
-                    <Field label="Header" value={k} onChange={(e) => setD({ ...d, headers: d.headers.map((h, j) => (j === i ? [e.target.value, h[1]] : h)) })} />
-                    <Field label="Value" value={v} onChange={(e) => setD({ ...d, headers: d.headers.map((h, j) => (j === i ? [h[0], e.target.value] : h)) })} help="Not for secrets." />
+                    <Field label={tr("Header")} value={k} onChange={(e) => setD({ ...d, headers: d.headers.map((h, j) => (j === i ? [e.target.value, h[1]] : h)) })} />
+                    <Field label={tr("Value")} value={v} onChange={(e) => setD({ ...d, headers: d.headers.map((h, j) => (j === i ? [h[0], e.target.value] : h)) })} help={tr("Not for secrets.")} />
                     <Button size="sm" variant="ghost" onClick={() => setD({ ...d, headers: d.headers.filter((_, j) => j !== i) })}>
-                      Remove
+                      {tr("Remove")}
                     </Button>
                   </div>
                 ))}
                 <div>
                   <Button size="sm" variant="ghost" icon="plus" onClick={() => setD({ ...d, headers: [...d.headers, ["", ""]] })}>
-                    Add header
+                    {tr("Add header")}
                   </Button>
                 </div>
               </div>
             </div>
           </Card>
 
-          <Card title="Authentication">
+          <Card title={tr("Authentication")}>
             <div className="vr-form">
               <Segmented
-                label="Authentication"
+                label={tr("Authentication")}
                 value={d.auth_type}
                 onChange={(v) => setD({ ...d, auth_type: v as Draft["auth_type"] })}
                 options={[
-                  { value: "bearer", label: "Bearer token" },
-                  { value: "api_key", label: "API key header" },
-                  { value: "none", label: "None" },
+                  { value: "bearer", label: tr("Bearer token") },
+                  { value: "api_key", label: tr("API key header") },
+                  { value: "none", label: tr("None") },
                 ]}
               />
               {d.auth_type === "api_key" ? (
-                <Field label="Header name" value={d.auth_header} onChange={(e) => setD({ ...d, auth_header: e.target.value })} placeholder="X-Api-Key" />
+                <Field label={tr("Header name")} value={d.auth_header} onChange={(e) => setD({ ...d, auth_header: e.target.value })} placeholder={tr("X-Api-Key")} />
               ) : null}
               {d.auth_type !== "none" ? (
                 t?.has_secret && !replacing ? (
                   <div className="vr-actions">
                     <Badge tone="brand" dot>
-                      Saved · encrypted
+                      {tr("Saved · encrypted")}
                     </Badge>
-                    <span className="vr-help">The {d.auth_type === "bearer" ? "token" : "key"} can’t be shown again.</span>
+                    <span className="vr-help">{tr("The")} {d.auth_type === "bearer" ? "token" : "key"} {tr("can’t be shown again.")}</span>
                     <Button size="sm" variant="ghost" onClick={() => setReplacing(true)}>
-                      Replace
+                      {tr("Replace")}
                     </Button>
                   </div>
                 ) : (
                   <Field
-                    label={d.auth_type === "bearer" ? "Token" : "Key"}
+                    label={d.auth_type === "bearer" ? tr("Token") : tr("Key")}
                     type="password"
                     autoComplete="new-password"
                     value={secret}
                     onChange={(e) => setSecret(e.target.value)}
-                    help={d.auth_type === "bearer" ? "Sent as Authorization: Bearer …" : `Sent in the ${d.auth_header || "key"} header.`}
+                    help={d.auth_type === "bearer" ? tr("Sent as Authorization: Bearer …") : tr("Sent in the {v} header.", { v: d.auth_header || "key" })}
                   />
                 )
               ) : (
-                <span className="vr-help">The API is called without credentials.</span>
+                <span className="vr-help">{tr("The API is called without credentials.")}</span>
               )}
             </div>
           </Card>
 
-          <Card title="Limits">
+          <Card title={tr("Limits")}>
             <div className="vr-grid3">
-              <Field label="Timeout (seconds)" type="number" min={1} max={15} value={String(d.timeout_seconds)} onChange={(e) => setD({ ...d, timeout_seconds: Number(e.target.value) })} />
-              <Field label="Largest response (KB)" type="number" min={1} max={256} value={String(d.max_response_kb)} onChange={(e) => setD({ ...d, max_response_kb: Number(e.target.value) })} />
-              <Field label="Calls per minute" type="number" min={1} max={600} value={String(d.rate_limit_per_minute)} onChange={(e) => setD({ ...d, rate_limit_per_minute: Number(e.target.value) })} />
+              <Field label={tr("Timeout (seconds)")} type="number" min={1} max={15} value={String(d.timeout_seconds)} onChange={(e) => setD({ ...d, timeout_seconds: Number(e.target.value) })} />
+              <Field label={tr("Largest response (KB)")} type="number" min={1} max={256} value={String(d.max_response_kb)} onChange={(e) => setD({ ...d, max_response_kb: Number(e.target.value) })} />
+              <Field label={tr("Calls per minute")} type="number" min={1} max={600} value={String(d.rate_limit_per_minute)} onChange={(e) => setD({ ...d, rate_limit_per_minute: Number(e.target.value) })} />
             </div>
           </Card>
 
           <div className="vr-actions">
             <Button variant="primary" busy={busy === "save"} onClick={save}>
-              {isNew ? "Create tool" : "Save changes"}
+              {isNew ? tr("Create tool") : tr("Save changes")}
             </Button>
-            {isNew ? <span className="vr-help">New tools start as drafts: test one, then turn it on.</span> : null}
+            {isNew ? <span className="vr-help">{tr("New tools start as drafts: test one, then turn it on.")}</span> : null}
             {!isNew ? (
               confirmDelete ? (
                 <>
@@ -421,15 +422,15 @@ export default function ToolEditor() {
                       })
                     }
                   >
-                    Delete and erase the key
+                    {tr("Delete and erase the key")}
                   </Button>
                   <Button variant="ghost" onClick={() => setConfirmDelete(false)}>
-                    Keep
+                    {tr("Keep")}
                   </Button>
                 </>
               ) : (
                 <Button variant="ghost" onClick={() => setConfirmDelete(true)}>
-                  Delete
+                  {tr("Delete")}
                 </Button>
               )
             ) : null}
@@ -438,26 +439,26 @@ export default function ToolEditor() {
 
         <div className="vr-stack">
           {!isNew && t ? (
-            <Card title="Test this tool">
-              <div className="vr-form" aria-label="Test this tool">
-                <span className="vr-help">Runs the real call with these values. Uses no AI tokens.</span>
+            <Card title={tr("Test this tool")}>
+              <div className="vr-form" aria-label={tr("Test this tool")}>
+                <span className="vr-help">{tr("Runs the real call with these values. Uses no AI tokens.")}</span>
                 {t.parameters
                   .filter((p) => p.source === "ai")
                   .map((p) => (
                     <Field key={p.key} label={p.label || p.key} value={sample[p.key] ?? ""} onChange={(e) => setSample({ ...sample, [p.key]: e.target.value })} className="vr-mono-input" />
                   ))}
-                {needsEmail ? <Field label="Visitor’s email" type="email" value={sampleEmail} onChange={(e) => setSampleEmail(e.target.value)} /> : null}
+                {needsEmail ? <Field label={tr("Visitor’s email")} type="email" value={sampleEmail} onChange={(e) => setSampleEmail(e.target.value)} /> : null}
                 <div>
                   <Button icon="send" busy={busy === "test"} onClick={test}>
-                    Run test
+                    {tr("Run test")}
                   </Button>
                 </div>
                 {result ? (
-                  <div className="vr-tool-result" aria-label="Test result">
+                  <div className="vr-tool-result" aria-label={tr("Test result")}>
                     <div className="vr-actions">
                       <CallStatusBadge status={result.status} http={result.http_status} />
-                      <span className="vr-num">{result.latency_ms} ms</span>
-                      {result.response_bytes ? <span className="vr-num">{result.response_bytes.toLocaleString()} B</span> : null}
+                      <span className="vr-num">{result.latency_ms} {tr("ms")}</span>
+                      {result.response_bytes ? <span className="vr-num">{result.response_bytes.toLocaleString()} {tr("B")}</span> : null}
                     </div>
                     <span className="vr-mono vr-help">{result.request}</span>
                     {result.error ? <span className="vr-help vr-help-error">{result.error}</span> : null}
@@ -468,7 +469,7 @@ export default function ToolEditor() {
             </Card>
           ) : null}
           {!isNew && t ? (
-            <Card title="Chatbots using it">
+            <Card title={tr("Chatbots using it")}>
               {t.chatbots?.length ? (
                 <ul className="vr-bullets">
                   {t.chatbots.map((b) => (
@@ -478,38 +479,38 @@ export default function ToolEditor() {
                   ))}
                 </ul>
               ) : (
-                <span className="vr-help">{t.status === "active" ? "Link it under Chatbots → a chatbot → API tools." : "Turn the tool on, then link it to a chatbot."}</span>
+                <span className="vr-help">{t.status === "active" ? tr("Link it under Chatbots → a chatbot → API tools.") : tr("Turn the tool on, then link it to a chatbot.")}</span>
               )}
             </Card>
           ) : null}
           {!isNew ? (
-            <Card title="Recent calls" padded={false}>
+            <Card title={tr("Recent calls")} padded={false}>
               {calls.data?.items.length ? (
                 <table className="vr-table">
                   <thead>
                     <tr>
-                      <th>When</th>
-                      <th>From</th>
-                      <th>Result</th>
-                      <th>Time</th>
+                      <th>{tr("When")}</th>
+                      <th>{tr("From")}</th>
+                      <th>{tr("Result")}</th>
+                      <th>{tr("Time")}</th>
                     </tr>
                   </thead>
                   <tbody>
                     {calls.data.items.slice(0, 20).map((c) => (
                       <tr key={c.id}>
                         <td className="vr-sub">{dateTime(c.created_at)}</td>
-                        <td>{c.origin === "test" ? "Test" : c.conversation_id ? <Link href={`/conversations/${c.conversation_id}`}>Chat</Link> : "Chat"}</td>
+                        <td>{c.origin === "test" ? tr("Test") : c.conversation_id ? <Link href={`/conversations/${c.conversation_id}`}>{tr("Chat")}</Link> : tr("Chat")}</td>
                         <td>
                           <CallStatusBadge status={c.status} http={c.http_status} />
                         </td>
-                        <td className="vr-num">{c.latency_ms} ms</td>
+                        <td className="vr-num">{c.latency_ms} {tr("ms")}</td>
                       </tr>
                     ))}
                   </tbody>
                 </table>
               ) : (
                 <div className="vr-panel-body">
-                  <span className="vr-help">No calls yet.</span>
+                  <span className="vr-help">{tr("No calls yet.")}</span>
                 </div>
               )}
             </Card>

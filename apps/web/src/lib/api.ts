@@ -1,5 +1,6 @@
 "use client";
 
+import { t } from "@/i18n";
 export class ApiError extends Error {
   status: number;
   code: string;
@@ -28,7 +29,7 @@ async function request<T>(method: Method, path: string, body?: unknown): Promise
       cache: "no-store",
     });
   } catch {
-    throw new ApiError(0, { code: "network", message: "Can't reach Verity. Check your connection and try again." });
+    throw new ApiError(0, { code: "network", message: t("Can't reach Verity. Check your connection and try again.") });
   }
   if (res.status === 204) return undefined as T;
   const text = await res.text();
@@ -36,7 +37,7 @@ async function request<T>(method: Method, path: string, body?: unknown): Promise
   if (!res.ok) {
     const detail = json && typeof json === "object" && "detail" in json ? (json as { detail: unknown }).detail : null;
     if (detail && typeof detail === "object") throw new ApiError(res.status, detail as Record<string, unknown>);
-    throw new ApiError(res.status, { code: "error", message: res.status >= 500 ? "Verity had a problem. Try again in a moment." : "Request failed." });
+    throw new ApiError(res.status, { code: "error", message: res.status >= 500 ? t("Verity had a problem. Try again in a moment.") : t("Request failed.") });
   }
   return json as T;
 }
@@ -56,13 +57,13 @@ async function upload<T>(path: string, file: File, field = "file"): Promise<T> {
   try {
     res = await fetch(`/api${path}`, { method: "POST", credentials: "same-origin", body: form, cache: "no-store" });
   } catch {
-    throw new ApiError(0, { code: "network", message: "Can't reach Verity. Check your connection and try again." });
+    throw new ApiError(0, { code: "network", message: t("Can't reach Verity. Check your connection and try again.") });
   }
   const json = safeJson(await res.text());
   if (!res.ok) {
     const detail = json && typeof json === "object" && "detail" in json ? (json as { detail: unknown }).detail : null;
     if (detail && typeof detail === "object") throw new ApiError(res.status, detail as Record<string, unknown>);
-    throw new ApiError(res.status, { code: "error", message: res.status === 413 ? "This file is too large." : "Upload failed." });
+    throw new ApiError(res.status, { code: "error", message: res.status === 413 ? t("This file is too large.") : t("Upload failed.") });
   }
   return json as T;
 }
@@ -90,12 +91,12 @@ export async function streamEvents(
     });
   } catch (e) {
     if ((e as Error)?.name === "AbortError") return;
-    throw new ApiError(0, { code: "network", message: "Can't reach Verity. Check your connection and try again." });
+    throw new ApiError(0, { code: "network", message: t("Can't reach Verity. Check your connection and try again.") });
   }
   if (!res.ok || !res.body) {
     const json = safeJson(await res.text());
     const detail = json && typeof json === "object" && "detail" in json ? (json as { detail: unknown }).detail : null;
-    throw new ApiError(res.status, (detail && typeof detail === "object" ? detail : { message: "Request failed." }) as Record<string, unknown>);
+    throw new ApiError(res.status, (detail && typeof detail === "object" ? detail : { message: t("Request failed.") }) as Record<string, unknown>);
   }
   const reader = res.body.getReader();
   const decoder = new TextDecoder();

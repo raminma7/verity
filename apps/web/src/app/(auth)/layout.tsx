@@ -1,7 +1,17 @@
-import type { ReactNode } from "react";
+"use client";
 
-/** The split sign-in layout from the design system's WebAuth screen: teal story panel, form on the right. */
+import { useEffect, useState, type ReactNode } from "react";
+
+import { preferredLocale, setLocale, t } from "@/i18n";
+
+/** The split sign-in layout from the design system's WebAuth screen: teal story panel, form on the right.
+ *  Shown once the language remembered on this device (or the browser's) is loaded. */
 export default function AuthLayout({ children }: { children: ReactNode }) {
+  const [ready, setReady] = useState(false);
+  useEffect(() => {
+    setLocale(preferredLocale()).then(() => setReady(true));
+  }, []);
+  if (!ready) return <div className="vr-auth" />;
   return (
     <div className="vr-auth">
       <section className="vr-auth-story" aria-hidden="true">
@@ -17,8 +27,8 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
           <span style={{ width: "64%" }} />
         </div>
         <div className="vr-auth-pitch">
-          <h2 className="vr-display">Support answers you can check.</h2>
-          <p>Your knowledge base, chatbot and tickets in one workspace. Every AI answer cites the passage it came from.</p>
+          <h2 className="vr-display">{t("Support answers you can check.")}</h2>
+          <p>{t("Your knowledge base, chatbot and tickets in one workspace. Every AI answer cites the passage it came from.")}</p>
         </div>
       </section>
       <main className="vr-auth-form">

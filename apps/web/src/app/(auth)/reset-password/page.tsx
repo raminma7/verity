@@ -1,5 +1,6 @@
 "use client";
 
+import { t } from "@/i18n";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
@@ -21,11 +22,11 @@ function Reset() {
     return (
       <div className="vr-auth-box">
         <div className="vr-auth-title">
-          <h1 className="vr-display">Link not valid</h1>
-          <p className="vr-muted">Open the link from the reset email, or request a new one.</p>
+          <h1 className="vr-display">{t("Link not valid")}</h1>
+          <p className="vr-muted">{t("Open the link from the reset email, or request a new one.")}</p>
         </div>
         <Link className="vr-btn vr-btn-primary vr-btn-lg" href="/forgot-password">
-          Request a new link
+          {t("Request a new link")}
         </Link>
       </div>
     );
@@ -42,15 +43,15 @@ function Reset() {
       }}
     >
       <div className="vr-auth-title">
-        <span className="vr-eyebrow">Reset password</span>
-        <h1 className="vr-display">Choose a new password</h1>
-        <p className="vr-muted">You’ll be signed out on every other device.</p>
+        <span className="vr-eyebrow">{t("Reset password")}</span>
+        <h1 className="vr-display">{t("Choose a new password")}</h1>
+        <p className="vr-muted">{t("You’ll be signed out on every other device.")}</p>
       </div>
       {f.error ? <Banner tone="danger">{f.error}</Banner> : null}
-      <Field label="New password" name="password" type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} error={f.fieldErrors.password} help="At least 10 characters, with upper and lower case letters and a number." />
-      <Field label="Confirm new password" name="confirm" type="password" autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} error={mismatch ? "The passwords don’t match." : null} />
+      <Field label={t("New password")} name="password" type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} error={f.fieldErrors.password} help={t("At least 10 characters, with upper and lower case letters and a number.")} />
+      <Field label={t("Confirm new password")} name="confirm" type="password" autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} error={mismatch ? "The passwords don’t match." : null} />
       <Button type="submit" variant="primary" size="lg" busy={f.busy} disabled={!password || mismatch}>
-        Save password
+        {t("Save password")}
       </Button>
     </form>
   );

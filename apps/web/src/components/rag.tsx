@@ -1,5 +1,6 @@
 "use client";
 
+import { t as tr } from "@/i18n";
 /**
  * Verity design system: the Ask, Sources and Library components (QueryBar, AnswerCard, Citation,
  * SourceCard, RelevanceMeter, PipelineTrace, DocumentRow, FileTag), ported from the design system bundle
@@ -12,7 +13,7 @@ import { Badge, Button, cx, Icon } from "./ui";
 
 export function FileTag({ type }: { type?: string | null }) {
   const t = String(type || "doc").toLowerCase();
-  return <span className={cx("vr-filetag", `vr-filetag-${t === "web" ? "md" : t}`)}>{t === "web" ? "WEB" : t.toUpperCase().slice(0, 4)}</span>;
+  return <span className={cx("vr-filetag", `vr-filetag-${t === "web" ? "md" : t}`)}>{t === "web" ? tr("WEB") : t.toUpperCase().slice(0, 4)}</span>;
 }
 
 export function RelevanceMeter({ score, label = "Relevance" }: { score: number; label?: string }) {
@@ -30,7 +31,7 @@ export function RelevanceMeter({ score, label = "Relevance" }: { score: number; 
 
 export function Citation({ n, title, active, onClick }: { n: number; title?: string; active?: boolean; onClick?: () => void }) {
   return (
-    <button type="button" className={cx("vr-cite", active && "is-active")} onClick={onClick} title={title} aria-label={`Source ${n}${title ? `: ${title}` : ""}`}>
+    <button type="button" className={cx("vr-cite", active && "is-active")} onClick={onClick} title={title} aria-label={tr("Source {n}{v}", { n: n, v: title ? `: ${title}` : "" })}>
       {n}
     </button>
   );
@@ -151,8 +152,8 @@ export function AnswerCard({
       <footer className="vr-answer-foot">
         <span className="vr-answer-meta">{meta}</span>
         <span className="vr-answer-actions">
-          {onCopy ? <Button variant="ghost" size="sm" icon="copy" aria-label="Copy answer" onClick={onCopy} /> : null}
-          {onRegenerate ? <Button variant="ghost" size="sm" icon="refresh" aria-label="Ask again" onClick={onRegenerate} /> : null}
+          {onCopy ? <Button variant="ghost" size="sm" icon="copy" aria-label={tr("Copy answer")} onClick={onCopy} /> : null}
+          {onRegenerate ? <Button variant="ghost" size="sm" icon="refresh" aria-label={tr("Ask again")} onClick={onRegenerate} /> : null}
         </span>
       </footer>
     </article>
@@ -234,7 +235,7 @@ export function QueryBar({
         rows={rows}
         placeholder={placeholder}
         value={v}
-        aria-label="Question"
+        aria-label={tr("Question")}
         autoFocus={autoFocus}
         onChange={(e) => setV(e.target.value)}
         onKeyDown={(e) => {
@@ -251,7 +252,7 @@ export function QueryBar({
         </div>
         <div className="vr-query-meta">
           {hint ? <span className="vr-query-hint">{hint}</span> : null}
-          <button type="submit" className="vr-send" disabled={busy || !v.trim()} aria-label={busy ? "Retrieving" : "Ask"}>
+          <button type="submit" className="vr-send" disabled={busy || !v.trim()} aria-label={busy ? tr("Retrieving") : tr("Ask")}>
             {busy ? <span className="vr-spin" aria-hidden="true" /> : <Icon name="send" size={18} />}
           </button>
         </div>
@@ -276,11 +277,11 @@ export function PipelineTrace({ steps }: { steps: TraceStep[] }) {
               <span className="vr-trace-name">
                 {s.kind === "tool" ? <Icon name="link" size={12} className="vr-trace-kind" /> : null}
                 {s.name}
-                {s.kind === "tool" && state === "error" ? <span className="vr-trace-word"> · Failed</span> : null}
+                {s.kind === "tool" && state === "error" ? <span className="vr-trace-word"> {tr("· Failed")}</span> : null}
               </span>
               {s.detail ? <span className="vr-trace-detail">{s.detail}</span> : null}
             </span>
-            <span className="vr-trace-ms">{s.ms != null ? `${s.ms} ms` : state === "running" ? "…" : ""}</span>
+            <span className="vr-trace-ms">{s.ms != null ? tr("{ms} ms", { ms: s.ms }) : state === "running" ? "…" : ""}</span>
           </li>
         );
       })}
@@ -336,7 +337,7 @@ export function DocumentRow({
         )}
         <span className="vr-docrow-sub">{sub}</span>
       </span>
-      <span className="vr-docrow-chunks">{chunks ? `${chunks} chunk${chunks === 1 ? "" : "s"}` : "—"}</span>
+      <span className="vr-docrow-chunks">{chunks ? tr("{chunks} chunk{v}", { chunks: chunks, v: chunks === 1 ? "" : "s" }) : "—"}</span>
       <span className="vr-docrow-status">
         <StatusBadge status={status} />
         {status === "indexing" ? (

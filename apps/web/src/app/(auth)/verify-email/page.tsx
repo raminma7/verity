@@ -1,5 +1,6 @@
 "use client";
 
+import { t as tr } from "@/i18n";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
@@ -26,13 +27,13 @@ function CheckInbox({ email }: { email: string }) {
         <Icon name="mail" size={24} />
       </span>
       <div className="vr-auth-title">
-        <span className="vr-eyebrow">Create account · 2 of 2</span>
-        <h1 className="vr-display">Check your inbox</h1>
+        <span className="vr-eyebrow">{tr("Create account · 2 of 2")}</span>
+        <h1 className="vr-display">{tr("Check your inbox")}</h1>
         <p className="vr-muted">
-          We sent a verification link to <b style={{ color: "var(--ink)" }}>{email || "your email address"}</b>. Open it to finish setting up your workspace. The link expires in 24 hours.
+          {tr("We sent a verification link to")} <b style={{ color: "var(--ink)" }}>{email || tr("your email address")}</b>{tr(". Open it to finish setting up your workspace. The link expires in 24 hours.")}
         </p>
       </div>
-      {sent ? <Banner title="Sent again.">Only the newest link works.</Banner> : null}
+      {sent ? <Banner title={tr("Sent again.")}>{tr("Only the newest link works.")}</Banner> : null}
       {f.error ? <Banner tone="danger">{f.error}</Banner> : null}
       <Button
         variant="secondary"
@@ -48,12 +49,12 @@ function CheckInbox({ email }: { email: string }) {
           })
         }
       >
-        {cooldown > 0 ? `Resend in 0:${String(cooldown).padStart(2, "0")}` : "Resend email"}
+        {cooldown > 0 ? tr("Resend in 0:{v}", { v: String(cooldown).padStart(2, "0") }) : tr("Resend email")}
       </Button>
       <p className="vr-auth-foot vr-muted">
-        Wrong address?{" "}
+        {tr("Wrong address?")}{" "}
         <Link className="vr-link" href="/sign-up" onClick={() => api.post("/auth/logout").catch(() => {})}>
-          Start again
+          {tr("Start again")}
         </Link>
       </p>
     </div>
@@ -82,16 +83,16 @@ function Confirm({ token }: { token: string }) {
       .catch((e) => setError(e instanceof ApiError ? e : new ApiError(0, {})));
   }, [token, router]);
 
-  if (!error) return <Spinner label="Verifying your email" />;
+  if (!error) return <Spinner label={tr("Verifying your email")} />;
   return (
     <div className="vr-auth-box">
       <div className="vr-auth-title">
-        <h1 className="vr-display">{error.code === "expired_token" ? "Link expired" : "Link not valid"}</h1>
+        <h1 className="vr-display">{error.code === "expired_token" ? tr("Link expired") : tr("Link not valid")}</h1>
         <p className="vr-muted">{error.message}</p>
       </div>
-      <p className="vr-muted">Sign in and we’ll send you a fresh link, or request one below.</p>
+      <p className="vr-muted">{tr("Sign in and we’ll send you a fresh link, or request one below.")}</p>
       <Link className="vr-btn vr-btn-primary vr-btn-lg" href="/sign-in">
-        Go to sign in
+        {tr("Go to sign in")}
       </Link>
     </div>
   );

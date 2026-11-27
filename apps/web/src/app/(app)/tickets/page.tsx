@@ -1,5 +1,6 @@
 "use client";
 
+import { t as tr } from "@/i18n";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
@@ -59,56 +60,56 @@ function Tickets() {
   return (
     <>
       <PageHeader
-        title="Tickets"
-        subtitle="Requests from email, chatbot forms, chat conversations and your team. Work them from New to Resolved; customers who reply reopen them."
+        title={tr("Tickets")}
+        subtitle={tr("Requests from email, chatbot forms, chat conversations and your team. Work them from New to Resolved; customers who reply reopen them.")}
         actions={
           can("tickets.manage") ? (
             <Button variant="primary" icon="plus" onClick={() => router.push("/tickets/new")}>
-              New ticket
+              {tr("New ticket")}
             </Button>
           ) : null
         }
       />
       <Segmented
-        label="Status"
+        label={tr("Status")}
         value={status}
         onChange={setStatus}
         options={[
-          { value: "active", label: `Active${counts ? ` · ${active}` : ""}` },
+          { value: "active", label: tr("Active{v}", { v: counts ? ` · ${active}` : "" }) },
           ...STATUS_ORDER.map((s) => ({ value: s, label: `${STATUS[s].label}${counts ? ` · ${counts[s]}` : ""}` })),
-          { value: "all", label: "All" },
+          { value: "all", label: tr("All") },
         ]}
       />
       <div className="vr-filters">
         <div className="vr-grow">
-          <Field icon="search" placeholder="Search subject, email, order number or #ticket…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search tickets" />
+          <Field icon="search" placeholder={tr("Search subject, email, order number or #ticket…")} value={q} onChange={(e) => setQ(e.target.value)} aria-label={tr("Search tickets")} />
         </div>
         <Select
-          label="Assignee"
+          label={tr("Assignee")}
           value={assignee}
           onChange={setAssignee}
-          options={[{ value: "", label: "Anyone" }, { value: "me", label: "Assigned to me" }, { value: "none", label: "Unassigned" }, ...(people.data ?? []).map((p) => ({ value: p.id, label: p.name }))]}
+          options={[{ value: "", label: tr("Anyone") }, { value: "me", label: tr("Assigned to me") }, { value: "none", label: tr("Unassigned") }, ...(people.data ?? []).map((p) => ({ value: p.id, label: p.name }))]}
         />
         {teams.data?.items.length ? (
           <Select
-            label="Team"
+            label={tr("Team")}
             value={team}
             onChange={setTeam}
-            options={[{ value: "", label: "All teams" }, { value: "mine", label: "My teams" }, { value: "none", label: "No team" }, ...teams.data.items.map((t) => ({ value: t.id, label: t.name }))]}
+            options={[{ value: "", label: tr("All teams") }, { value: "mine", label: tr("My teams") }, { value: "none", label: tr("No team") }, ...teams.data.items.map((t) => ({ value: t.id, label: t.name }))]}
           />
         ) : null}
-        <Select label="Priority" value={priority} onChange={setPriority} options={[{ value: "", label: "Any priority" }, ...PRIORITY_ORDER.map((p) => ({ value: p, label: PRIORITY[p].label }))]} />
-        <Select label="Category" value={category} onChange={setCategory} options={[{ value: "", label: "All categories" }, ...(cats.data ?? []).map((c) => ({ value: c.id, label: c.name }))]} />
+        <Select label={tr("Priority")} value={priority} onChange={setPriority} options={[{ value: "", label: tr("Any priority") }, ...PRIORITY_ORDER.map((p) => ({ value: p, label: tr(PRIORITY[p].label) }))]} />
+        <Select label={tr("Category")} value={category} onChange={setCategory} options={[{ value: "", label: tr("All categories") }, ...(cats.data ?? []).map((c) => ({ value: c.id, label: c.name }))]} />
       </div>
       {data.loading && !data.data ? (
         <Spinner />
       ) : data.error ? (
         <Banner tone="danger">{data.error.message}</Banner>
       ) : !data.data?.items.length ? (
-        <EmptyState icon="tag" title={term || priority || category || assignee || team ? "No tickets match" : "No tickets here"}>
+        <EmptyState icon="tag" title={term || priority || category || assignee || team ? tr("No tickets match") : tr("No tickets here")}>
           {term || priority || category || assignee || team
-            ? "Try another search or clear a filter."
-            : "Tickets appear when customers send a chatbot form, when an agent turns a chat into a ticket, or when your team adds one."}
+            ? tr("Try another search or clear a filter.")
+            : tr("Tickets appear when customers send a chatbot form, when an agent turns a chat into a ticket, or when your team adds one.")}
         </EmptyState>
       ) : (
         <div className="vr-card vr-table-wrap">
@@ -116,13 +117,13 @@ function Tickets() {
             <thead>
               <tr>
                 <th>#</th>
-                <th>Subject</th>
-                <th>Requester</th>
-                <th>Category</th>
-                <th>Priority</th>
-                <th>Status</th>
-                <th>Assignee</th>
-                <th className="num">Updated</th>
+                <th>{tr("Subject")}</th>
+                <th>{tr("Requester")}</th>
+                <th>{tr("Category")}</th>
+                <th>{tr("Priority")}</th>
+                <th>{tr("Status")}</th>
+                <th>{tr("Assignee")}</th>
+                <th className="num">{tr("Updated")}</th>
               </tr>
             </thead>
             <tbody>
@@ -134,8 +135,8 @@ function Tickets() {
                       {t.subject}
                     </Link>
                     <div className="vr-muted" style={{ fontSize: 12 }}>
-                      {SOURCE[t.source] ?? t.source}
-                      {t.reopened_count ? ` · reopened ${t.reopened_count}×` : ""}
+                      {tr(SOURCE[t.source]) ?? t.source}
+                      {t.reopened_count ? tr(" · reopened {reopened_count}×", { reopened_count: t.reopened_count }) : ""}
                     </div>
                   </td>
                   <td className="vr-sub">{t.requester_email || t.requester_name || "—"}</td>
@@ -147,7 +148,7 @@ function Tickets() {
                     <StatusBadge status={t.status} />
                   </td>
                   <td className="vr-sub">
-                    {t.assignee ?? "Unassigned"}
+                    {t.assignee ?? tr("Unassigned")}
                     {t.team ? <div className="vr-muted" style={{ fontSize: 12 }}>{t.team}</div> : null}
                   </td>
                   <td className="num">{ago(t.last_activity_at)}</td>

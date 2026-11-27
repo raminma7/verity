@@ -1,5 +1,6 @@
 "use client";
 
+import { t } from "@/i18n";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -48,14 +49,14 @@ export default function Members() {
 
   return (
     <>
-      <PageHeader eyebrow="Members" title="People and roles" subtitle={`${seats} of ${limit < 0 ? "unlimited" : limit} seats used, including pending invitations.`} />
+      <PageHeader eyebrow={t("Members")} title={t("People and roles")} subtitle={t("{seats} of {limit} seats used, including pending invitations.", { seats: seats, limit: limit < 0 ? "unlimited" : limit })} />
       {msg ? <Banner tone={msg.tone}>{msg.text}</Banner> : null}
 
       {manage ? (
         !subscribed ? (
-          <Banner tone="warn" title="Inviting people needs an active plan." action={can("billing.manage") ? <Link className="vr-btn vr-btn-primary vr-btn-sm" href="/plans">See plans</Link> : null} />
+          <Banner tone="warn" title={t("Inviting people needs an active plan.")} action={can("billing.manage") ? <Link className="vr-btn vr-btn-primary vr-btn-sm" href="/plans">{t("See plans")}</Link> : null} />
         ) : (
-          <Card title="Invite someone">
+          <Card title={t("Invite someone")}>
             <form
               className="vr-form-row"
               style={{ gridTemplateColumns: "2fr 1fr auto", alignItems: "end" }}
@@ -65,31 +66,31 @@ export default function Members() {
                 act("invite", () => api.post("/workspace/invitations", { email, role_id: rid }), `Invitation sent to ${email}.`).then(() => setEmail(""));
               }}
             >
-              <Field label="Email" type="email" name="invite-email" placeholder="teammate@company.com" value={email} onChange={(e) => setEmail(e.target.value)} disabled={full} />
+              <Field label={t("Email")} type="email" name="invite-email" placeholder={t("teammate@company.com")} value={email} onChange={(e) => setEmail(e.target.value)} disabled={full} />
               <Select
-                label="Role"
+                label={t("Role")}
                 value={roleId || grantable.find((r) => r.key === "agent")?.id || ""}
                 onChange={setRoleId}
                 options={grantable.map((r) => ({ value: r.id, label: r.name }))}
               />
               <Button type="submit" variant="primary" icon="mail" busy={busy === "invite"} disabled={!email || full}>
-                Send invite
+                {t("Send invite")}
               </Button>
             </form>
-            {full ? <p className="vr-help" style={{ marginTop: 8 }}>Your plan’s member limit is reached. Upgrade or remove someone to invite more.</p> : null}
+            {full ? <p className="vr-help" style={{ marginTop: 8 }}>{t("Your plan’s member limit is reached. Upgrade or remove someone to invite more.")}</p> : null}
           </Card>
         )
       ) : null}
 
-      <Card title="Members" padded={false}>
+      <Card title={t("Members")} padded={false}>
         <div className="vr-table-wrap">
           <table className="vr-table">
             <thead>
               <tr>
-                <th>Person</th>
-                <th>Role</th>
-                <th>Joined</th>
-                {manage ? <th><span className="sr-only">Actions</span></th> : null}
+                <th>{t("Person")}</th>
+                <th>{t("Role")}</th>
+                <th>{t("Joined")}</th>
+                {manage ? <th><span className="sr-only">{t("Actions")}</span></th> : null}
               </tr>
             </thead>
             <tbody>
@@ -103,7 +104,7 @@ export default function Members() {
                         <span>
                           <b>
                             {m.full_name}
-                            {m.user_id === user.id ? <span className="vr-muted"> (you)</span> : null}
+                            {m.user_id === user.id ? <span className="vr-muted"> {t("(you)")}</span> : null}
                           </b>
                           <small>{m.email}</small>
                         </span>
@@ -122,13 +123,13 @@ export default function Members() {
                     {manage ? (
                       <td style={{ textAlign: "right" }}>
                         {editable ? (
-                          <Button variant="ghost" size="sm" busy={busy === `rm-${m.id}`} onClick={() => confirm(`Remove ${m.full_name} from ${current?.workspace.name}?`) && act(`rm-${m.id}`, () => api.del(`/workspace/members/${m.id}`), `${m.full_name} was removed.`)}>
-                            Remove
+                          <Button variant="ghost" size="sm" busy={busy === `rm-${m.id}`} onClick={() => confirm(t("Remove {full_name} from {name}?", { full_name: m.full_name, name: current?.workspace.name })) && act(`rm-${m.id}`, () => api.del(`/workspace/members/${m.id}`), `${m.full_name} was removed.`)}>
+                            {t("Remove")}
                           </Button>
                         ) : null}
                         {isOwner && !m.is_owner ? (
-                          <Button variant="ghost" size="sm" onClick={() => confirm(`Make ${m.full_name} the owner? You’ll become a Workspace Administrator.`) && act(`own-${m.id}`, () => api.post(`/workspace/transfer-ownership/${m.id}`), "Ownership transferred.")}>
-                            Make owner
+                          <Button variant="ghost" size="sm" onClick={() => confirm(t("Make {full_name} the owner? You’ll become a Workspace Administrator.", { full_name: m.full_name })) && act(`own-${m.id}`, () => api.post(`/workspace/transfer-ownership/${m.id}`), "Ownership transferred.")}>
+                            {t("Make owner")}
                           </Button>
                         ) : null}
                       </td>
@@ -141,18 +142,18 @@ export default function Members() {
         </div>
       </Card>
 
-      <Card title="Pending invitations" padded={false}>
+      <Card title={t("Pending invitations")} padded={false}>
         {data.data!.invitations.length === 0 ? (
-          <EmptyState icon="mail" title="No pending invitations" />
+          <EmptyState icon="mail" title={t("No pending invitations")} />
         ) : (
           <div className="vr-table-wrap">
             <table className="vr-table">
               <thead>
                 <tr>
-                  <th>Email</th>
-                  <th>Role</th>
-                  <th>Expires</th>
-                  {manage ? <th><span className="sr-only">Actions</span></th> : null}
+                  <th>{t("Email")}</th>
+                  <th>{t("Role")}</th>
+                  <th>{t("Expires")}</th>
+                  {manage ? <th><span className="sr-only">{t("Actions")}</span></th> : null}
                 </tr>
               </thead>
               <tbody>
@@ -166,7 +167,7 @@ export default function Members() {
                     {manage ? (
                       <td style={{ textAlign: "right" }}>
                         <Button variant="ghost" size="sm" busy={busy === `inv-${i.id}`} onClick={() => act(`inv-${i.id}`, () => api.del(`/workspace/invitations/${i.id}`), "Invitation revoked.")}>
-                          Revoke
+                          {t("Revoke")}
                         </Button>
                       </td>
                     ) : null}
@@ -178,13 +179,13 @@ export default function Members() {
         )}
       </Card>
 
-      <Card title="Roles" padded={false}>
+      <Card title={t("Roles")} padded={false}>
         <div className="vr-table-wrap">
           <table className="vr-table">
             <thead>
               <tr>
-                <th>Role</th>
-                <th>What it can do</th>
+                <th>{t("Role")}</th>
+                <th>{t("What it can do")}</th>
               </tr>
             </thead>
             <tbody>
@@ -192,7 +193,7 @@ export default function Members() {
                 <tr key={r.id}>
                   <td style={{ whiteSpace: "nowrap" }}>
                     <b style={{ fontWeight: 500 }}>{r.name}</b>
-                    {!r.is_system ? <span className="vr-muted"> · custom</span> : null}
+                    {!r.is_system ? <span className="vr-muted"> {t("· custom")}</span> : null}
                   </td>
                   <td className="vr-muted" style={{ fontSize: 13 }}>
                     {r.description}
@@ -205,8 +206,8 @@ export default function Members() {
       </Card>
       {!isOwner && current?.role ? (
         <div>
-          <Button variant="danger" size="sm" onClick={() => confirm(`Leave ${current.workspace.name}?`) && act("leave", async () => { await api.post("/workspace/leave"); window.location.href = "/dashboard"; })}>
-            Leave workspace
+          <Button variant="danger" size="sm" onClick={() => confirm(t("Leave {name}?", { name: current.workspace.name })) && act("leave", async () => { await api.post("/workspace/leave"); window.location.href = "/dashboard"; })}>
+            {t("Leave workspace")}
           </Button>
         </div>
       ) : null}
