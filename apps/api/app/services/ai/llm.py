@@ -301,6 +301,12 @@ class FakeLLM:
         convo = _section(prompt, "conversation")
         said = " ".join(line.split(":", 1)[1] for line in convo.splitlines() if line.lower().startswith("customer:"))
         props = schema.get("properties", {})
+        if list(props) == ["summary"]:
+            case = _section(prompt, "case")
+            first = case.strip().splitlines()[0] if case.strip() else "The case"
+            n = sum(1 for line in case.splitlines() if line.startswith(("Customer:", "Agent:", "Internal note:")))
+            text = f"{first}. {n} messages so far; the customer is waiting for an answer."
+            return Structured({"summary": text}, max(1, (len(system) + len(prompt)) // 4), max(1, len(text) // 4), model)
         if "category" in props:
             data = _fake_classify(prompt, props)
             out = json.dumps(data)

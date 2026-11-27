@@ -160,6 +160,14 @@ async def privacy_sweep(ctx) -> dict:
         return await sweep(db)
 
 
+async def summarize_conversation(ctx, *, conversation_id: str) -> str:
+    from app.services.summaries import summarize_conversation as run
+
+    async with SessionLocal() as db:
+        return "written" if await run(db, uuid.UUID(conversation_id)) else "skipped"
+
+
+FUNCTIONS.append(summarize_conversation)
 FUNCTIONS.append(billing_sync)
 FUNCTIONS.append(build_export)
 FUNCTIONS.append(privacy_sweep)

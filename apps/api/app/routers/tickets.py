@@ -469,6 +469,7 @@ async def get_ticket(ticket_id: uuid.UUID, db: Db, ctx: WorkspaceContext = READ)
     form_name = (await db.execute(select(Form.name).where(Form.id == t.form_id))).scalar_one_or_none() if t.form_id else None
     return {
         "ticket": await _out(db, t),
+        "summary": {"text": t.summary, "at": t.summary_at} if t.summary else None,
         "form": {
             "name": form_name,
             "version": t.form_version,
@@ -489,6 +490,18 @@ async def get_ticket(ticket_id: uuid.UUID, db: Db, ctx: WorkspaceContext = READ)
         "can_manage": ctx.can("tickets.manage"),
         "can_reply": ctx.can("tickets.manage") and (await _reply_channel(db, ctx, t, conversation)) is not None,
     }
+
+
+@router.post("/tickets/{ticket_id}/summary")
+async def summarize(ticket_id: uuid.UUID, db: Db, ctx: WorkspaceContext = READ):
+    """An AI summary for the team (operation "summary"). Needs tokens; rate limited per ticket."""
+    from app.core import ratelimit
+    from app.services.summaries import summarize_ticket
+
+    t = await _ticket(db, ctx, ticket_id)
+    await ratelimit.hit(f"summary:{t.id}", "10/600")
+    t = await summarize_ticket(db, t, language=ctx.user.locale)
+    return {"text": t.summary, "at": t.summary_at}
 
 
 async def _emails(db: AsyncSession, t: Ticket) -> list[dict]:

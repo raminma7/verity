@@ -97,6 +97,8 @@ def conversation_out(c: Conversation) -> dict:
         "message_count": c.message_count,
         "last_message_at": c.last_message_at,
         "created_at": c.created_at,
+        "summary": c.summary,  # for the team only: this is never sent to the widget
+        "summary_at": c.summary_at,
     }
 
 
@@ -339,6 +341,10 @@ async def escalate(
     await db.commit()
 
     if result.escalated:
+        from app.jobs import enqueue as _enqueue
+
+        # A short summary for whoever picks the chat up (skipped quietly without AI).
+        await _enqueue("summarize_conversation", key=f"summary:conv:{conv.id}", conversation_id=str(conv.id))
         for u in await responders(db, ws.id):
             if u.notification_prefs.get("escalations", True):
                 await mail.send_escalation(u.email, ws.name, bot.name if bot else "the assistant", conv.title, str(conv.id))
