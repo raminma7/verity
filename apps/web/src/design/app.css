@@ -448,7 +448,9 @@ a.vr-att:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 /* Tool editor: form + test rail */
 .vr-tool-edit { display: grid; grid-template-columns: minmax(0, 1fr) 380px; gap: var(--space-6); align-items: start; }
 .vr-tool-edit > .vr-stack { padding: 0; gap: var(--space-6); }
-.vr-tool-edit .vr-mono input { font-family: var(--font-mono); }
+.vr-mono-input input { font-family: var(--font-mono); }
+.vr-param .vr-grid3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.vr-team-add .vr-field { flex: 0 1 280px; }
 .vr-tool-url-row { display: flex; gap: var(--space-3); align-items: flex-start; flex-wrap: wrap; }
 .vr-tool-url-row .vr-seg { margin-top: 24px; }
 .vr-tool-url-row .vr-grow { flex: 1 1 320px; }

@@ -171,8 +171,8 @@ function UserMenu() {
             {current?.role.name ?? (user.is_system_admin ? "System administrator" : "No workspace")}
             {availability ? (
               <>
-                {" · "}
-                <span className="vr-avail" aria-label={`Your status: ${availability === "away" ? "Away" : "Available"}`}>
+                <br />
+                <span className="vr-avail" aria-label={availability === "away" ? "You are away" : "You are available"}>
                   <span className={availability === "away" ? "vr-avail-dot is-away" : "vr-avail-dot"} aria-hidden="true" />
                   {availability === "away" ? "Away" : "Available"}
                 </span>

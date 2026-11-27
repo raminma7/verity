@@ -42,8 +42,8 @@ export function CallStatusBadge({ status, http }: { status: ToolCallStatus; http
   );
 }
 
-export const SOURCE_WORDS: Record<string, string> = { ai: "The AI, from the chat", visitor_email: "The visitor’s email", visitor_name: "The visitor’s name" };
-export const LOCATION_WORDS: Record<string, string> = { path: "In the address", query: "Query string", body: "JSON body" };
+export const SOURCE_WORDS: Record<string, string> = { ai: "The chat (AI)", visitor_email: "Visitor’s email", visitor_name: "Visitor’s name" };
+export const LOCATION_WORDS: Record<string, string> = { path: "Address path", query: "Query string", body: "JSON body" };
 
 /** Placeholders in the URL's path, in order: https://shop.example.com/orders/{order_id} → ["order_id"]. */
 export function placeholders(url: string): string[] {

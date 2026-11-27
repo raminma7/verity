@@ -110,7 +110,7 @@ export default function RoutingSettingsPage() {
       c.keywords?.length ? `mentioning ${c.keywords.map((k) => `“${k}”`).join(" or ")}` : "",
       c.requester_domains?.length ? `from @${c.requester_domains.join(", @")}` : "",
     ].filter(Boolean);
-    const to = r.action.team_id ? `the ${teamName(r.action.team_id)} team` : personName(r.action.assignee_id);
+    const to = r.action.team_id ? `team “${teamName(r.action.team_id)}”` : personName(r.action.assignee_id);
     return `${parts.length ? `Tickets ${parts.join(", ")}` : "Every ticket"} → ${to}`;
   }
 
@@ -189,7 +189,7 @@ export default function RoutingSettingsPage() {
         )}
         {configure ? (
           <form
-            className="vr-actions"
+            className="vr-actions vr-team-add"
             style={{ alignItems: "flex-end", marginTop: 12 }}
             onSubmit={(e) => {
               e.preventDefault();

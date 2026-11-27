@@ -218,7 +218,7 @@ export default function ToolEditor() {
                   onChange={(e) => setD({ ...d, name: e.target.value })}
                   help="Lowercase letters, digits and _, like order_status."
                   maxLength={64}
-                  className="vr-mono"
+                  className="vr-mono-input"
                 />
               </div>
               <label className="vr-field">
@@ -282,7 +282,7 @@ export default function ToolEditor() {
                     {d.parameters.map((p, i) => (
                       <div key={i} className="vr-param">
                         <div className="vr-grid3">
-                          <Field label="Key" value={p.key} onChange={(e) => setP(i, { key: e.target.value })} className="vr-mono" maxLength={40} />
+                          <Field label="Key" value={p.key} onChange={(e) => setP(i, { key: e.target.value })} className="vr-mono-input" maxLength={40} />
                           <Select
                             label="Type"
                             value={p.type}
@@ -309,7 +309,7 @@ export default function ToolEditor() {
                             onChange={(v) => setP(i, { source: v as ToolParam["source"], type: v === "ai" ? p.type : "string" })}
                             options={Object.entries(SOURCE_WORDS).map(([value, label]) => ({ value, label }))}
                           />
-                          <Field label="Pattern (optional)" value={p.pattern ?? ""} onChange={(e) => setP(i, { pattern: e.target.value || null })} placeholder="[0-9]{5,8}" className="vr-mono" />
+                          <Field label="Pattern (optional)" value={p.pattern ?? ""} onChange={(e) => setP(i, { pattern: e.target.value || null })} placeholder="[0-9]{5,8}" className="vr-mono-input" />
                         </div>
                         <div className="vr-actions">
                           <Switch label="Required" checked={p.required || p.location === "path"} disabled={p.location === "path"} onChange={(on) => setP(i, { required: on })} />
@@ -444,7 +444,7 @@ export default function ToolEditor() {
                 {t.parameters
                   .filter((p) => p.source === "ai")
                   .map((p) => (
-                    <Field key={p.key} label={p.label || p.key} value={sample[p.key] ?? ""} onChange={(e) => setSample({ ...sample, [p.key]: e.target.value })} className="vr-mono" />
+                    <Field key={p.key} label={p.label || p.key} value={sample[p.key] ?? ""} onChange={(e) => setSample({ ...sample, [p.key]: e.target.value })} className="vr-mono-input" />
                   ))}
                 {needsEmail ? <Field label="Visitor’s email" type="email" value={sampleEmail} onChange={(e) => setSampleEmail(e.target.value)} /> : null}
                 <div>
