@@ -114,7 +114,7 @@ async def register(body: RegisterIn, request: Request, db: Db):
         if not existing.is_verified:
             token = await _issue_email_token(db, existing, "verify")
             await db.commit()
-            await mail.send_verification(existing.email, existing.full_name, token)
+            await mail.send_verification(existing.email, existing.full_name, token, locale=existing.locale)
         return GENERIC_SENT | {"email": email}
     user = User(full_name=body.full_name, email=email, password_hash=hash_password(body.password))
     db.add(user)
@@ -122,7 +122,7 @@ async def register(body: RegisterIn, request: Request, db: Db):
     token = await _issue_email_token(db, user, "verify")
     audit(db, "user.registered", actor_id=user.id, target_type="user", target_id=user.id, ip=client_ip(request))
     await db.commit()
-    await mail.send_verification(user.email, user.full_name, token)
+    await mail.send_verification(user.email, user.full_name, token, locale=user.locale)
     return GENERIC_SENT | {"email": email}
 
 
@@ -135,7 +135,7 @@ async def resend_verification(body: EmailIn, request: Request, db: Db):
     if user is not None and not user.is_verified:
         token = await _issue_email_token(db, user, "verify")
         await db.commit()
-        await mail.send_verification(user.email, user.full_name, token)
+        await mail.send_verification(user.email, user.full_name, token, locale=user.locale)
     return GENERIC_SENT
 
 
@@ -168,13 +168,18 @@ async def login(body: LoginIn, request: Request, response: Response, db: Db):
     if user.status != "active":
         raise ApiError(403, "account_suspended", "This account is suspended. Contact support.")
     await ratelimit.clear_login_failures(email)
+    deletion_cancelled = user.deletion_requested_at is not None
+    if deletion_cancelled:  # signing in within the grace period keeps the account
+        from app.services.privacy import cancel_account_deletion
+
+        await cancel_account_deletion(db, user, ip=client_ip(request))
     if needs_rehash(user.password_hash):
         user.password_hash = hash_password(body.password)
     user.last_login_at = utcnow()
     await _start_session(db, request, response, user, mfa_pending=user.totp_enabled)
     audit(db, "user.login", actor_id=user.id, target_type="user", target_id=user.id, ip=client_ip(request))
     await db.commit()
-    return {"user": UserOut.model_validate(user), "mfa_required": user.totp_enabled}
+    return {"user": UserOut.model_validate(user), "mfa_required": user.totp_enabled, "deletion_cancelled": deletion_cancelled}
 
 
 @router.post("/2fa")
@@ -220,7 +225,7 @@ async def forgot_password(body: EmailIn, request: Request, db: Db):
     if user is not None and user.status == "active":
         token = await _issue_email_token(db, user, "reset")
         await db.commit()
-        await mail.send_password_reset(user.email, user.full_name, token)
+        await mail.send_password_reset(user.email, user.full_name, token, locale=user.locale)
     return GENERIC_SENT
 
 

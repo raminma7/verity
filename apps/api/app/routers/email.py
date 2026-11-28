@@ -507,6 +507,12 @@ async def mark_not_spam(message_id: uuid.UUID, body: NotSpamIn, request: Request
 
 
 async def _delete(db: AsyncSession, ctx: WorkspaceContext, m: EmailRow, ip: str | None) -> None:
+    if m.status in ("spam", "promotion"):  # the team confirms it's unwanted: the workspace's model learns from it
+        from app.services.mail import spam_model
+
+        await spam_model.learn(
+            db, ctx.workspace.id, spam=True, subject=m.subject, text_body=m.text_body, html=m.html_body, from_addr=m.from_addr
+        )
     atts = (await db.execute(select(EmailAttachment).where(EmailAttachment.email_message_id == m.id))).scalars().all()
     for a in atts:
         if a.storage_key:

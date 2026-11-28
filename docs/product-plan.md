@@ -144,6 +144,7 @@ The chatbot has two ways to bring a person into a conversation. They solve diffe
 | Phase 4 | Email integration, spam detection, automatic responses, and email threading |
 | Phase 5A | External API integrations (tool calling) and intelligent ticket routing, plus the data Phase 5B reports on (ticket first-response times, a log of every API call) |
 | Phase 5B | Payment processing (Stripe), subscription purchases, automatic subscription activation, subscription upgrades, additional token packages, and advanced analytics |
+| Phase 6 | The gaps left after Phase 5: the interface and system email in six languages, data retention, deletion and export (GDPR), AI summaries, and spam decided by a trained model |
 
 Phase 5 is delivered in two parts so each can be built, tested and reviewed on its own. Analytics comes last because it reports on what the other parts produce (tool calls, routing, revenue).
 
@@ -171,3 +172,21 @@ Phase 5 is delivered in two parts so each can be built, tested and reviewed on i
   - Stripe keys and the webhook secret are environment variables (`VERITY_STRIPE_SECRET_KEY`, `VERITY_STRIPE_WEBHOOK_SECRET`).
   - A failed renewal leaves the workspace past due for 14 days: AI pauses, manual ticketing, email and forms keep working, payment is retried, then the subscription ends.
   - Client IPs: `X-Forwarded-For` is trusted only from configured proxies.
+
+### Phase 6: Languages, privacy, summaries and the spam model
+
+A check of this plan against the product after Phase 5 found five gaps, built together as Phase 6:
+
+- **Languages (§6).** The dashboard and system email in English, Spanish, German, French, Italian and Arabic (right to left). Each person picks their language; email follows the recipient's. A script checks in CI that every language has every string with the same placeholders. The translations need a native speaker's review before launch.
+- **Retention, deletion and export (§6, GDPR).** Each workspace sets how long it keeps closed tickets, resolved conversations, email content and held spam, within maximums the system administrator sets; an hourly job erases what is due. Deleting a workspace or an account has a 30-day grace period: the workspace closes at once and its subscription ends; the account signs out everywhere and is anonymized afterwards. Owners export a workspace and every member exports their own data, as a ZIP by a one-time link.
+- **Summaries (§7).** Ticket summaries on demand and a summary on every chat handed to a person, metered as `summary`; skipped without tokens.
+- **Spam (§5).** "Detect spam … using machine learning": a trained model replaces the LLM for spam, so spam never costs an AI call. A base model trained on a public corpus plus written support mail ships as weights; each workspace's own layer learns from its reviews.
+- **Stripe** checked against Stripe test mode.
+
+**Decided for Phase 6:**
+- Languages: en, es, de, fr, it, ar for now. Persian and Turkish, offered before, were dropped, and their users moved to English.
+- Retention: the workspace sets it; the system administrator caps it. Default: keep forever.
+- Deletion: 30 days to undo. Invoices are kept for accounting without the workspace's name.
+- Summaries: tickets (on demand) and handoffs (automatic).
+- Spam model: the Apache SpamAssassin public corpus (no formal licence, so only learned weights ship, never message text) plus support mail written for this project, and a per-workspace layer. Mail scoring ≥ 0.99 goes to Spam; uncertain mail is treated as legitimate and becomes a ticket marked "Possible spam", because a lost customer request costs more than a spam ticket.
+

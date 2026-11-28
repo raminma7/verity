@@ -1,5 +1,6 @@
 "use client";
 
+import { t } from "@/i18n";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
@@ -30,7 +31,7 @@ function Return() {
             return;
           }
           if (c.status === "expired" || c.status === "failed") {
-            setFailed(c.status === "expired" ? "This checkout expired before it was paid." : "The payment didn’t go through.");
+            setFailed(c.status === "expired" ? t("This checkout expired before it was paid.") : t("The payment didn’t go through."));
             return;
           }
         } catch {
@@ -49,18 +50,18 @@ function Return() {
 
   return (
     <>
-      <PageHeader eyebrow="Checkout" title="Confirming your payment" />
+      <PageHeader eyebrow={t("Checkout")} title={t("Confirming your payment")} />
       <Card>
         {failed ? (
           <Banner tone="danger" title={failed}>
-            Nothing was activated. <Link href="/plans">Choose a plan</Link> to try again.
+            {t("Nothing was activated.")} <Link href="/plans">{t("Choose a plan to try again.")}</Link>
           </Banner>
         ) : (
           <div className="vr-form">
-            <Spinner label="Waiting for the payment provider" />
+            <Spinner label={t("Waiting for the payment provider")} />
             {slow ? (
-              <Banner tone="warn" title="This is taking longer than usual.">
-                Some payment methods take a few minutes to confirm. You can leave this page: the plan activates on its own and a receipt is emailed. <Link href="/billing">Go to Billing</Link>
+              <Banner tone="warn" title={t("This is taking longer than usual.")}>
+                {t("Some payment methods take a few minutes to confirm. You can leave this page: the plan activates on its own and a receipt is emailed.")} <Link href="/billing">{t("Go to Billing")}</Link>
               </Banner>
             ) : null}
           </div>

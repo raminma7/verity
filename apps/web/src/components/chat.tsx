@@ -1,5 +1,6 @@
 "use client";
 
+import { t } from "@/i18n";
 import { useState } from "react";
 
 import type { ChatMessage, Citation as Cite } from "@/lib/api";
@@ -8,15 +9,21 @@ import { AnswerCard, CitedText, PipelineTrace, SourceCard } from "./rag";
 import { Badge, dateTime, Segmented } from "./ui";
 
 export const EVENT_TEXT: Record<string, (m: ChatMessage) => string> = {
-  escalated: (m) => `Handed to the team${m.data.reason === "no_answer" ? " (no answer found)" : m.data.reason === "ai_unavailable" ? " (AI unavailable)" : ""}. The assistant stays quiet until it’s resolved.`,
-  agent_joined: (m) => `${m.data.name ?? "A team member"} joined the conversation.`,
-  resolved: (m) => `${m.data.name ?? "The team"} resolved the conversation. The assistant answers new messages again.`,
+  escalated: (m) =>
+    m.data.reason === "no_answer"
+      ? t("Handed to the team (no answer found). The assistant stays quiet until it’s resolved.")
+      : m.data.reason === "ai_unavailable"
+        ? t("Handed to the team (AI unavailable). The assistant stays quiet until it’s resolved.")
+        : t("Handed to the team. The assistant stays quiet until it’s resolved."),
+  agent_joined: (m) => (m.data.name ? t("{name} joined the conversation.", { name: m.data.name }) : t("A team member joined the conversation.")),
+  resolved: (m) =>
+    m.data.name ? t("{name} resolved the conversation. The assistant answers new messages again.", { name: m.data.name }) : t("The team resolved the conversation. The assistant answers new messages again."),
   ticket_created: (m) =>
     m.data.reason === "agent_conversion"
-      ? `Turned into ticket #${m.data.ticket_number}.`
+      ? t("Turned into ticket #{n}.", { n: m.data.ticket_number })
       : m.data.reason === "handoff_timeout"
-        ? `Nobody replied in time: ticket #${m.data.ticket_number} opened with the visitor’s email. The assistant has the chat again.`
-        : `The customer sent a form: ticket #${m.data.ticket_number}. The assistant has the chat again.`,
+        ? t("Nobody replied in time: ticket #{n} opened with the visitor’s email. The assistant has the chat again.", { n: m.data.ticket_number })
+        : t("The customer sent a form: ticket #{n}. The assistant has the chat again.", { n: m.data.ticket_number }),
 };
 
 /** An assistant answer: AnswerCard with cited text; clicking a citation selects its source. */
@@ -26,7 +33,7 @@ export function AssistantAnswer({ m, active, onCite, onCopy }: { m: ChatMessage;
   return (
     <AnswerCard
       confidence={outcome === "answered" ? m.confidence : outcome === "fallback" ? undefined : "none"}
-      label={outcome === "fallback" ? "Fallback message" : "Answer"}
+      label={outcome === "fallback" ? t("Fallback message") : t("Answer")}
       sourceCount={outcome === "answered" ? m.citations.length : undefined}
       model={m.model}
       latencyMs={m.latency_ms}
@@ -56,12 +63,12 @@ export function SourcesRail({ m, active, onSelect }: { m: ChatMessage | null; ac
     <aside className="vr-rail">
       <Segmented
         block
-        label="Answer details"
+        label={t("Answer details")}
         value={tab}
         onChange={setTab}
         options={[
-          { value: "sources", label: `Sources · ${cites.length}` },
-          { value: "trace", label: "How it was answered" },
+          { value: "sources", label: t("Sources · {length}", { length: cites.length }) },
+          { value: "trace", label: t("How it was answered") },
         ]}
       />
       {tab === "sources" ? (
@@ -84,14 +91,14 @@ export function SourcesRail({ m, active, onSelect }: { m: ChatMessage | null; ac
         ) : (
           <div className="vr-card" style={{ padding: 16 }}>
             <Badge tone="danger" dot>
-              No sources found
+              {t("No sources found")}
             </Badge>
             <p className="vr-muted" style={{ margin: "8px 0 0" }}>
-              {m.data.outcome === "fallback" ? "The assistant couldn’t answer, so the fallback message was shown." : "No passage was relevant enough, so the model wasn’t called."}
+              {m.data.outcome === "fallback" ? t("The assistant couldn’t answer, so the fallback message was shown.") : t("No passage was relevant enough, so the model wasn’t called.")}
             </p>
             {m.data.sources?.length ? (
               <p className="vr-help" style={{ marginTop: 8 }}>
-                Closest: {m.data.sources.slice(0, 3).map((s) => `${s.title} (${s.score.toFixed(2)})`).join(", ")}
+                {t("Closest:")} {m.data.sources.slice(0, 3).map((s) => `${s.title} (${s.score.toFixed(2)})`).join(", ")}
               </p>
             ) : null}
           </div>
@@ -99,7 +106,7 @@ export function SourcesRail({ m, active, onSelect }: { m: ChatMessage | null; ac
       ) : (
         <div className="vr-card" style={{ padding: 20 }}>
           <div className="vr-eyebrow" style={{ marginBottom: 14 }}>
-            How it was answered
+            {t("How it was answered")}
           </div>
           <PipelineTrace steps={m.trace ?? []} />
         </div>

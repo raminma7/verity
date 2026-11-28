@@ -14,6 +14,7 @@ from app.models.chat import Chatbot, Conversation, Message
 from app.models.email import EmailAccount, EmailAttachment, EmailMessage
 from app.models.integrations import ApiTool, ApiToolCall, chatbot_tools
 from app.models.knowledge import KnowledgeChunk, KnowledgePage, KnowledgeSource
+from app.models.privacy import DataExport, SpamFeature, SpamModelStats
 from app.models.ticketing import (
     FIELD_TYPES,
     TICKET_PRIORITIES,
@@ -57,6 +58,9 @@ __all__ = [
     "chatbot_forms",
     "LIMIT_KEYS",
     "AuditLog",
+    "DataExport",
+    "SpamFeature",
+    "SpamModelStats",
     "BillingAccount",
     "BillingEvent",
     "TokenGrant",

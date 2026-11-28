@@ -1,5 +1,7 @@
 "use client";
 
+import { DeleteAccountCard, ExportCard } from "@/components/privacy";
+import { t } from "@/i18n";
 import { useState } from "react";
 
 import { Badge, Banner, Button, Card, dateTime, Field } from "@/components/ui";
@@ -10,7 +12,7 @@ import { useData } from "@/lib/use-data";
 type Sess = { id: string; ip: string | null; user_agent: string | null; created_at: string; last_seen_at: string; current: boolean };
 
 function browser(ua: string | null) {
-  if (!ua) return "Unknown device";
+  if (!ua) return t("Unknown device");
   const b = /Edg\//.test(ua) ? "Edge" : /Chrome\//.test(ua) ? "Chrome" : /Firefox\//.test(ua) ? "Firefox" : /Safari\//.test(ua) ? "Safari" : "Browser";
   const os = /Windows/.test(ua) ? "Windows" : /Mac OS X/.test(ua) ? "macOS" : /Android/.test(ua) ? "Android" : /iPhone|iPad/.test(ua) ? "iOS" : /Linux/.test(ua) ? "Linux" : "";
   return os ? `${b} on ${os}` : b;
@@ -22,7 +24,7 @@ function PasswordCard() {
   const [busy, setBusy] = useState(false);
   const [msg, setMsg] = useState<{ tone: "brand" | "danger"; text: string } | null>(null);
   return (
-    <Card title="Password">
+    <Card title={t("Password")}>
       <form
         className="vr-form"
         style={{ maxWidth: 520 }}
@@ -34,7 +36,7 @@ function PasswordCard() {
             await api.post("/me/password", { current_password: cur, new_password: next });
             setCur("");
             setNext("");
-            setMsg({ tone: "brand", text: "Password changed. Other devices were signed out." });
+            setMsg({ tone: "brand", text: t("Password changed. Other devices were signed out.") });
           } catch (err) {
             setMsg({ tone: "danger", text: errorText(err) });
           } finally {
@@ -43,11 +45,11 @@ function PasswordCard() {
         }}
       >
         {msg ? <Banner tone={msg.tone}>{msg.text}</Banner> : null}
-        <Field label="Current password" type="password" autoComplete="current-password" value={cur} onChange={(e) => setCur(e.target.value)} />
-        <Field label="New password" type="password" autoComplete="new-password" value={next} onChange={(e) => setNext(e.target.value)} help="At least 10 characters, with upper and lower case letters and a number." />
+        <Field label={t("Current password")} type="password" autoComplete="current-password" value={cur} onChange={(e) => setCur(e.target.value)} />
+        <Field label={t("New password")} type="password" autoComplete="new-password" value={next} onChange={(e) => setNext(e.target.value)} help={t("At least 10 characters, with upper and lower case letters and a number.")} />
         <div>
           <Button type="submit" variant="primary" busy={busy} disabled={!cur || !next}>
-            Change password
+            {t("Change password")}
           </Button>
         </div>
       </form>
@@ -77,12 +79,12 @@ function TwoFactorCard() {
   }
 
   return (
-    <Card title="Two-factor authentication" actions={user.totp_enabled ? <Badge tone="brand" dot>On</Badge> : <Badge>Off</Badge>}>
+    <Card title={t("Two-factor authentication")} actions={user.totp_enabled ? <Badge tone="brand" dot>{t("On")}</Badge> : <Badge>{t("Off")}</Badge>}>
       <div className="vr-form" style={{ maxWidth: 560 }}>
         {error ? <Banner tone="danger">{error}</Banner> : null}
         {codes ? (
           <>
-            <Banner title="Two-factor authentication is on.">Save these recovery codes somewhere safe. Each works once if you lose your device. They won’t be shown again.</Banner>
+            <Banner title={t("Two-factor authentication is on.")}>{t("Save these recovery codes somewhere safe. Each works once if you lose your device. They won’t be shown again.")}</Banner>
             <div className="vr-codes">
               {codes.map((c) => (
                 <span key={c}>{c}</span>
@@ -90,53 +92,53 @@ function TwoFactorCard() {
             </div>
             <div className="vr-actions">
               <Button icon="copy" onClick={() => navigator.clipboard?.writeText(codes.join("\n"))}>
-                Copy codes
+                {t("Copy codes")}
               </Button>
               <Button variant="primary" onClick={() => setCodes(null)}>
-                I’ve saved them
+                {t("I’ve saved them")}
               </Button>
             </div>
           </>
         ) : user.totp_enabled ? (
           <>
-            <p className="vr-muted">To turn it off, confirm your password and a current code.</p>
+            <p className="vr-muted">{t("To turn it off, confirm your password and a current code.")}</p>
             <div className="vr-form-row">
-              <Field label="Password" type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
-              <Field label="Code" inputMode="numeric" maxLength={6} value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} />
+              <Field label={t("Password")} type="password" value={password} onChange={(e) => setPassword(e.target.value)} />
+              <Field label={t("Code")} inputMode="numeric" maxLength={6} value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} />
             </div>
             <div>
               <Button variant="danger" busy={busy} disabled={!password || code.length !== 6} onClick={() => run(async () => { await api.post("/me/2fa/disable", { password, code }); setPassword(""); setCode(""); await refresh(); })}>
-                Turn off two-factor
+                {t("Turn off two-factor")}
               </Button>
             </div>
           </>
         ) : setup ? (
           <>
             <p className="vr-muted">
-              Add Verity to your authenticator app (1Password, Google Authenticator, Authy…) with this key, then enter the 6-digit code it shows.
+              {t("Add Verity to your authenticator app (1Password, Google Authenticator, Authy…) with this key, then enter the 6-digit code it shows.")}
             </p>
             <div className="vr-codes" style={{ gridTemplateColumns: "1fr" }}>
               <span style={{ wordBreak: "break-all" }}>{setup.secret.match(/.{1,4}/g)?.join(" ")}</span>
             </div>
             <a className="vr-link" href={setup.otpauth_uri} style={{ fontSize: 13 }}>
-              Open in authenticator app
+              {t("Open in authenticator app")}
             </a>
-            <Field label="Code from the app" inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} />
+            <Field label={t("Code from the app")} inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code} onChange={(e) => setCode(e.target.value.replace(/\D/g, ""))} />
             <div className="vr-actions">
               <Button variant="primary" busy={busy} disabled={code.length !== 6} onClick={() => run(async () => { const r = await api.post<{ recovery_codes: string[] }>("/me/2fa/enable", { code }); setCodes(r.recovery_codes); setSetup(null); setCode(""); await refresh(); })}>
-                Turn on
+                {t("Turn on")}
               </Button>
               <Button variant="ghost" onClick={() => setSetup(null)}>
-                Cancel
+                {t("Cancel")}
               </Button>
             </div>
           </>
         ) : (
           <>
-            <p className="vr-muted">Ask for a code from an authenticator app each time you sign in, so a stolen password isn’t enough.</p>
+            <p className="vr-muted">{t("Ask for a code from an authenticator app each time you sign in, so a stolen password isn’t enough.")}</p>
             <div>
               <Button icon="shield" busy={busy} onClick={() => run(async () => setSetup(await api.post("/me/2fa/setup")))}>
-                Set up two-factor
+                {t("Set up two-factor")}
               </Button>
             </div>
           </>
@@ -149,22 +151,22 @@ function TwoFactorCard() {
 function SessionsCard() {
   const s = useData<Sess[]>("/me/sessions");
   return (
-    <Card title="Signed-in devices" padded={false}>
+    <Card title={t("Signed-in devices")} padded={false}>
       <div className="vr-table-wrap">
         <table className="vr-table">
           <thead>
             <tr>
-              <th>Device</th>
-              <th>IP address</th>
-              <th>Last active</th>
-              <th><span className="sr-only">Actions</span></th>
+              <th>{t("Device")}</th>
+              <th>{t("IP address")}</th>
+              <th>{t("Last active")}</th>
+              <th><span className="sr-only">{t("Actions")}</span></th>
             </tr>
           </thead>
           <tbody>
             {(s.data ?? []).map((x) => (
               <tr key={x.id}>
                 <td>
-                  {browser(x.user_agent)} {x.current ? <Badge tone="brand">This device</Badge> : null}
+                  {browser(x.user_agent)} {x.current ? <Badge tone="brand">{t("This device")}</Badge> : null}
                 </td>
                 <td className="vr-mono" style={{ fontSize: 13 }}>
                   {x.ip ?? "—"}
@@ -173,7 +175,7 @@ function SessionsCard() {
                 <td style={{ textAlign: "right" }}>
                   {!x.current ? (
                     <Button variant="ghost" size="sm" onClick={async () => { await api.del(`/me/sessions/${x.id}`); s.reload(); }}>
-                      Sign out
+                      {t("Sign out")}
                     </Button>
                   ) : null}
                 </td>
@@ -192,6 +194,8 @@ export default function Security() {
       <PasswordCard />
       <TwoFactorCard />
       <SessionsCard />
+      <ExportCard kind="personal" />
+      <DeleteAccountCard />
     </>
   );
 }

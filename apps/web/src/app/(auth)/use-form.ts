@@ -1,5 +1,6 @@
 "use client";
 
+import { t } from "@/i18n";
 import { useState } from "react";
 
 import { ApiError } from "@/lib/api";
@@ -18,7 +19,7 @@ export function useForm() {
       await fn();
     } catch (e) {
       if (e instanceof ApiError && e.field && e.field !== "body") setFieldErrors({ [e.field]: e.message });
-      else setError(e instanceof ApiError ? e.message : "Something went wrong.");
+      else setError(e instanceof ApiError ? e.message : t("Something went wrong."));
     } finally {
       setBusy(false);
     }

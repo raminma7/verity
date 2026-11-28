@@ -15,6 +15,7 @@ from app.routers import (
     forms,
     knowledge,
     me,
+    privacy,
     routing,
     tickets,
     tools,
@@ -82,6 +83,7 @@ def create_app() -> FastAPI:
         email.router,
         tools.router,
         widget.router,
+        privacy.router,
     ):
         api.include_router(r)
 
@@ -94,8 +96,16 @@ def create_app() -> FastAPI:
 
         @dev.get("/outbox")
         async def outbox(to: str | None = None):
-            items = [m for m in mail.OUTBOX if to is None or m.to == to.lower()]
-            return [{"to": m.to, "subject": m.subject, "text": m.text, "links": m.links, "headers": m.headers} for m in items[-20:]]
+            """Mail sent by any process (API or worker) with the memory backend, newest last."""
+            import json
+
+            from app.core.ratelimit import get_redis
+
+            try:
+                rows = [json.loads(x) for x in await get_redis().lrange(mail.DEV_OUTBOX_KEY, 0, -1)]
+            except Exception:  # noqa: BLE001 - no Redis: this process's own mail
+                rows = [{"to": m.to, "subject": m.subject, "text": m.text, "links": m.links, "headers": m.headers} for m in mail.OUTBOX]
+            return [m for m in rows if to is None or m["to"] == to.lower()][-20:]
 
         @dev.post("/mailbox/{address}/deliver")
         async def deliver_mail(address: str, request: Request, fetch: bool = True):

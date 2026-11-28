@@ -1,5 +1,6 @@
 "use client";
 
+import { t as tr } from "@/i18n";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -45,45 +46,45 @@ export default function NewTicket() {
     <>
       <div>
         <Link className="vr-link" href="/tickets" style={{ fontSize: 13 }}>
-          ← Tickets
+          {tr("← Tickets")}
         </Link>
       </div>
-      <PageHeader title="New ticket" subtitle="For requests that reach you outside the chat, such as a phone call. Email tickets arrive automatically with the email integration." />
+      <PageHeader title={tr("New ticket")} subtitle={tr("For requests that reach you outside the chat, such as a phone call. Email tickets arrive automatically with the email integration.")} />
       {err && !err.field ? <Banner tone="danger">{err.text}</Banner> : null}
       <Card>
         <form className="vr-form" style={{ maxWidth: 640 }} onSubmit={submit}>
-          <Field label="Subject" value={f.subject} onChange={(e) => set("subject")(e.target.value)} required maxLength={200} error={err?.field === "subject" ? err.text : null} />
+          <Field label={tr("Subject")} value={f.subject} onChange={(e) => set("subject")(e.target.value)} required maxLength={200} error={err?.field === "subject" ? err.text : null} />
           <label className="vr-field">
-            <span className="vr-field-top">Description</span>
+            <span className="vr-field-top">{tr("Description")}</span>
             <span className="vr-input vr-textarea">
               <textarea rows={5} value={f.description} onChange={(e) => set("description")(e.target.value)} />
             </span>
           </label>
           <div className="vr-form-row">
-            <Field label="Customer name" value={f.requester_name} onChange={(e) => set("requester_name")(e.target.value)} />
-            <Field label="Customer email" type="email" value={f.requester_email} onChange={(e) => set("requester_email")(e.target.value)} error={err?.field === "requester_email" ? err.text : null} />
+            <Field label={tr("Customer name")} value={f.requester_name} onChange={(e) => set("requester_name")(e.target.value)} />
+            <Field label={tr("Customer email")} type="email" value={f.requester_email} onChange={(e) => set("requester_email")(e.target.value)} error={err?.field === "requester_email" ? err.text : null} />
           </div>
           <div className="vr-form-row">
-            <Select label="Category" value={f.category_id} onChange={set("category_id")} options={[{ value: "", label: "No category" }, ...(cats.data ?? []).map((c) => ({ value: c.id, label: c.name }))]} />
-            <Select label="Priority" value={f.priority} onChange={set("priority")} options={PRIORITY_ORDER.map((p) => ({ value: p, label: PRIORITY[p].label }))} />
+            <Select label={tr("Category")} value={f.category_id} onChange={set("category_id")} options={[{ value: "", label: tr("No category") }, ...(cats.data ?? []).map((c) => ({ value: c.id, label: c.name }))]} />
+            <Select label={tr("Priority")} value={f.priority} onChange={set("priority")} options={PRIORITY_ORDER.map((p) => ({ value: p, label: tr(PRIORITY[p].label) }))} />
           </div>
           <Select
-            label="Assignee"
+            label={tr("Assignee")}
             value={f.assignee_id}
             onChange={set("assignee_id")}
-            help={f.assignee_id ? undefined : "Left unassigned, routing picks someone when it’s on."}
-            options={[{ value: "", label: "Unassigned" }, ...(people.data ?? []).map((p) => ({ value: p.id, label: p.name }))]}
+            help={f.assignee_id ? undefined : tr("Left unassigned, routing picks someone when it’s on.")}
+            options={[{ value: "", label: tr("Unassigned") }, ...(people.data ?? []).map((p) => ({ value: p.id, label: p.name }))]}
           />
           {teams.data?.items.length ? (
-            <Select label="Team" value={f.team_id} onChange={set("team_id")} options={[{ value: "", label: "Let routing decide" }, ...teams.data.items.map((t) => ({ value: t.id, label: t.name }))]} />
+            <Select label={tr("Team")} value={f.team_id} onChange={set("team_id")} options={[{ value: "", label: tr("Let routing decide") }, ...teams.data.items.map((t) => ({ value: t.id, label: t.name }))]} />
           ) : null}
           {err?.field && err.field !== "subject" && err.field !== "requester_email" ? <Banner tone="danger">{err.text}</Banner> : null}
           <div className="vr-actions">
             <Button type="submit" variant="primary" busy={busy} disabled={!f.subject.trim()}>
-              Create ticket
+              {tr("Create ticket")}
             </Button>
             <Button variant="ghost" onClick={() => router.push("/tickets")}>
-              Cancel
+              {tr("Cancel")}
             </Button>
           </div>
         </form>

@@ -1,0 +1,69 @@
+# Spam aimed at support inboxes, written for Verity's spam model (no corpus text). One message per line:
+# subject<TAB>body. It balances support_ham.txt: the same vocabulary (invoice, account, delivery, payment)
+# used for phishing, fake invoices, fake delivery fees, cold sales pitches and coupon blasts.
+Action required: confirm your account	Dear user, unusual activity was detected on your account. To avoid suspension, confirm your login details within 12 hours here: http://secure-account-check.example/login
+Your mailbox is almost full	Your email storage quota has been exceeded. Click below to upgrade your mailbox for free or you will stop receiving messages today. http://mail-quota-upgrade.example
+Password expires today	Your password will expire in 2 hours. Keep your current password by verifying it here: http://password-keep.example. IT Helpdesk
+Unusual sign-in attempt	We blocked a sign-in attempt from Russia. If this was not you, secure your account immediately by entering your username and password at the link below.
+Your payment was declined	Dear customer, your recent payment could not be processed. Update your card details now to avoid service interruption: http://billing-update-now.example
+Billing problem with your subscription	We could not charge your card for this month. Your account will be deleted in 24 hours unless you re-enter your payment information here.
+Refund pending - claim now	You are eligible for a tax refund of $412.80. To receive the money, submit your bank account and card number through our secure form today.
+You have a pending refund	Our records show an overpayment on your account. Click here and enter your card details to receive your refund of 189.00 EUR within 24 hours.
+Invoice 4471 attached	Hello, please see the attached invoice and pay at your earliest convenience. Open the Excel file and click enable content to view the invoice.
+Unpaid invoice - final notice	This is the final notice for unpaid invoice INV-99812. Failure to pay within 24 hours will result in collection. Download the invoice from the secure link.
+Payment remittance advice	Please find remittance advice for your payment in the attached zip file. Password for the archive is 1234.
+Purchase order from our company	Kindly find our new purchase order attached. Confirm the prices and delivery date by opening the document and logging in with your email password.
+Wire transfer request - urgent	Hi, I need you to process an urgent wire transfer for a confidential acquisition today. Reply with your direct number. Sent from my iPhone, CEO
+Gift cards for the team	Are you available? I need you to buy six Apple gift cards for a client meeting and send me the codes. I'll reimburse you later. Keep this between us.
+Your parcel could not be delivered	We attempted to deliver your package but no one was home. Pay the redelivery fee of 1.99 via the link to choose a new delivery date.
+Delivery on hold - address incomplete	Your shipment is on hold because the address is incomplete. Confirm your address and pay the small handling charge here within 48 hours.
+Customs payment required for your order	Your order is held at customs. A duty fee of 3.49 must be paid today or the parcel will be returned to sender. Pay securely at the link.
+Track your package now	Your order has shipped! Track your package and claim your free gift by entering your card details for the 1 cent verification charge.
+Your Amazon order was cancelled	We cancelled your order because of a billing issue. Log in through the link below to verify your account and restore your order.
+Netflix account suspended	We were unable to validate your billing information. Your membership is suspended. Restart your membership by updating your details today.
+Microsoft 365 licence expired	Your Office licence expired today. Renew now for free by signing in with your work email and password at the portal below.
+Shared document for you	A secure document was shared with you via OneDrive. Click to view and sign in with your email account to access the file.
+DocuSign: please review and sign	You have received a document to review and sign. Click review document and enter your email credentials to continue.
+Voicemail received	You have a new voicemail message (0:47). Listen to the message by logging in to the voicemail portal with your email password.
+Your domain is about to expire	Your domain registration expires in 3 days. Renew immediately to avoid losing your website and email. Pay the renewal fee here.
+SEO services for your website	Hello, I was checking your website and noticed it is not ranking well on Google. We can bring you to page one guaranteed. Shall I send our price list?
+More leads for your business	Hi, we generate 50 qualified leads per week for companies like yours. Book a free 15 minute call and we'll show you how. Reply STOP to unsubscribe.
+Website redesign proposal	Dear business owner, your website looks outdated and is losing customers. We offer a complete redesign for only 299. Reply now for a free mockup.
+Guest post opportunity	Hi, I'm a content writer and would love to publish a guest post on your blog with a link to our client. We pay 50 per article.
+App development offer	Hello, we are a top rated offshore team. We build mobile apps at very low cost. Please share your requirement and get a free quote today.
+Your listing on Google Maps	Your business is not verified on Google Maps and customers can't find you. Call us now to verify your listing for a one time fee.
+Get 10,000 followers today	Boost your brand! Buy real Instagram followers and likes at the cheapest price. Instant delivery, money back guarantee. Order now.
+Exclusive offer for valued customers	As a valued customer you have been selected for an exclusive offer: 80% off everything today only. Click here to shop now before it ends!
+Flash sale ends tonight	Huge flash sale! Up to 90% off top brands. Free shipping on all orders. Shop now, limited stock, offer ends at midnight!!!
+You've been chosen for a free reward	Congratulations, you have been chosen to receive a free reward for being a loyal customer. Complete a short survey and pay shipping to claim it.
+Claim your free iPhone	You are today's lucky visitor! Claim your free iPhone 16 now. Just pay 1.95 for shipping. Only 3 left!
+Survey reward waiting	Thank you for shopping with us. Complete our 30 second survey and receive a 100 dollar voucher. Enter your card for verification.
+Your loyalty points expire today	You have 12,500 points that expire tonight. Redeem them now for gifts by logging in with your card details.
+Cheap software licences	Genuine Windows and Office licences at 90% off retail price. Instant download, lifetime activation. Order today.
+Business loan approved	Your business has been pre-approved for a loan of up to 250,000 with no credit check. Get funds in 24 hours. Apply now.
+Lower your merchant fees	We can cut your credit card processing fees by 40%. No contract, no setup fee. Reply with your last statement for a free analysis.
+Bitcoin investment opportunity	Turn 250 into 5,000 in one week with our automated crypto trading platform. Guaranteed returns. Register now with your card.
+Work from home and earn	Earn up to 500 per day working from home. No experience needed. Click here to start today and get paid weekly.
+Re: your inquiry	Hello dear, thank you for your inquiry. Kindly check the attached quotation and confirm the order by logging in to view our price offer.
+Re: Order confirmation	Dear sir, please confirm the attached order and bank details for the payment. Open the attachment and enable editing to view.
+Re: payment	Hi, the payment has been made, please check the attached transfer slip and confirm receipt by logging in with your email.
+Your account will be closed	Final warning: your account will be permanently closed today due to a violation of our terms. Appeal now by verifying your identity.
+Security alert: new device	A new device was added to your account. If you did not do this, cancel the request by confirming your password and card number below.
+Confirm your email address	Your email address must be re-verified to keep receiving messages. Click the button and enter your password to confirm.
+Important notice from HR	Please review the updated salary adjustment document. Sign in with your corporate email and password to view your new salary.
+Inheritance claim	I am a lawyer representing a late client who shares your surname. He left 7.5 million dollars. Contact me to claim your share of the inheritance.
+Dear beneficiary	Your compensation payment of 1.5 million dollars has been approved by the United Nations. Send your full name, address and a processing fee.
+Partnership proposal	Dear friend, I have a profitable business proposal that will benefit us both. I need a trusted partner to receive funds. Reply for details.
+Last chance to save	Last chance! Save 70% on our bestselling products. Use code SAVE70 at checkout. Unsubscribe here if you no longer wish to receive offers.
+Free trial of our CRM	Start your free trial of the best CRM on the market. No credit card required. Click here to sign up and get 3 months free!
+Weight loss miracle	Doctors hate this! Lose 10 kg in two weeks with this one simple trick. Order your free sample today, just pay shipping.
+Cheap medication online	Buy medication online without prescription. Lowest prices, discreet delivery worldwide. Order now and save.
+Replica watches sale	Luxury replica watches at 95% off. Rolex, Omega, Cartier. Free worldwide shipping. Order today.
+Casino bonus for you	Get a 500 welcome bonus and 200 free spins! Play now at the best online casino. Click here to claim your bonus.
+Meet singles tonight	Thousands of singles near you are waiting to chat. Sign up free today and meet someone tonight.
+Unclaimed package notification	We have an unclaimed package registered to your email. Confirm your details and pay a small release fee to receive it.
+Your subscription renewal of 399.99	Thank you for renewing your antivirus subscription for 399.99. If you did not authorize this charge, call our refund line immediately.
+Order receipt - Norton renewal	Your order has been processed and 299.00 will be charged to your account. To cancel and get a refund, call our support number now.
+PayPal: you sent a payment	You sent a payment of 750.00 USD to an unknown merchant. If you did not make this transaction, click here to dispute and log in.
+Your Apple invoice	Your purchase of 1,299.00 has been completed. If you did not make this purchase, click to cancel and verify your Apple ID.
+Bank account verification needed	Our bank is upgrading its security. All customers must verify their online banking login within 24 hours to avoid account suspension.

@@ -1,0 +1,219 @@
+{
+ "note": "Written for Verity's tests (not from any corpus). Each example: subject, body, optional html, sender. The legitimate list ends with everyday support requests (refunds, pricing, invoices) that the corpus alone mistook for spam; they are never used for training. The spam list likewise ends with spam that imitates support mail (phishing, fake invoices and delivery fees, cold pitches). Neither is in the training data, but they were used to choose the weight of scripts/support_*.txt, so they guard regressions rather than estimate accuracy. \"uncertain\" holds a message the base model scores between the two thresholds, for the possible-spam path.",
+ "spam": [
+  {
+   "from": "winner2931@lotto-intl.biz",
+   "subject": "CONGRATULATIONS!!! YOU HAVE WON $1,000,000",
+   "body": "Dear Winner, your email was selected in our international lottery. To claim your prize of $1,000,000 send your full name, bank account and a processing fee of $250 today! Click here http://claim-now.biz to receive your money. Act now, offer expires!!!"
+  },
+  {
+   "from": "deals77@cheap-meds.ru",
+   "subject": "Cheap meds online - no prescription",
+   "body": "Buy viagra cialis and more at 80% off! No prescription needed, discreet shipping worldwide. Order now at http://pharma-best.ru and save $$$. Click here to unsubscribe."
+  },
+  {
+   "from": "info8812@money-fast.com",
+   "subject": "Make money fast from home",
+   "body": "Earn $5000 per week working from home!!! No experience required. This is not a scam. Free money guaranteed. Click here http://www.money-fast.com now and start earning cash today. Limited time offer, act now!"
+  },
+  {
+   "from": "security@paypa1-verify.com",
+   "subject": "URGENT: Your account has been suspended",
+   "body": "Dear customer, we detected unusual activity. Your account will be closed unless you verify your password and credit card within 24 hours. Click here http://paypa1-verify.com/login to confirm your identity."
+  },
+  {
+   "from": "prince.okafor@mail-ng.biz",
+   "subject": "Confidential business proposal",
+   "body": "Dear friend, I am a prince and I need your assistance to transfer $25,500,000 USD out of my country. You will receive 30% of the total sum. Reply with your bank details and phone number. This transaction is 100% risk free."
+  },
+  {
+   "from": "promo4421@casino-royal.win",
+   "subject": "FREE $500 casino bonus - claim now!!!",
+   "body": "Get your FREE $500 bonus at our online casino! Play slots, poker and win real cash. Deposit now and double your money. Click here http://casino-royal.win/bonus. Remove me from this list."
+  },
+  {
+   "from": "seo8090@rank-boost.biz",
+   "subject": "Get #1 on Google guaranteed",
+   "body": "We guarantee first page Google ranking for your website! Thousands of backlinks for just $99. Increase your traffic 1000%! Order today http://rank-boost.biz. Click here to be removed from our mailing list."
+  },
+  {
+   "from": "girls2345@hot-dating.xyz",
+   "subject": "Hot singles in your area want to meet you",
+   "body": "Lonely tonight? Thousands of hot singles near you are waiting. Sign up free now at http://hot-dating.xyz and meet them today!!! 100% free, no credit card."
+  },
+  {
+   "from": "crypto5512@btc-double.io",
+   "subject": "Double your bitcoin in 24 hours",
+   "body": "Send any amount of BTC to our wallet and receive double back within 24 hours! Guaranteed profit, limited time investment opportunity. Click here to invest now http://btc-double.io. Act fast!"
+  },
+  {
+   "from": "replica311@watches-sale.cn",
+   "subject": "Rolex replica watches 90% off",
+   "body": "Luxury replica watches Rolex Omega Cartier at 90% discount! Free shipping, order now http://watches-sale.cn. Best prices guaranteed. Click here to unsubscribe from this list."
+  },
+  {
+   "from": "loan7731@fast-credit.biz",
+   "subject": "Pre-approved loan $50,000 - bad credit OK",
+   "body": "You have been pre-approved for a $50,000 loan! Bad credit no problem, no credit check. Get cash fast, apply now at http://fast-credit.biz. Lowest rates guaranteed. Reply STOP to be removed."
+  },
+  {
+   "from": "diet1188@slim-fast-pills.net",
+   "subject": "Lose 30 pounds in 30 days!!!",
+   "body": "Amazing new diet pill burns fat while you sleep! Lose weight fast, guaranteed results or your money back. Order now at http://slim-fast-pills.net, special price $19.95 today only!!!"
+  },
+  {
+   "from": "billing@paypa1-secure.example",
+   "subject": "Your account is on hold - verify your payment details",
+   "body": "Dear customer, we were unable to process your last payment. Your account has been limited. Click here to verify your billing information within 24 hours or your account will be closed: http://paypa1-secure.example/verify"
+  },
+  {
+   "from": "noreply@dhl-track.example",
+   "subject": "Your parcel is waiting - pay customs fee",
+   "body": "Your package could not be delivered. A customs fee of $2.99 is required. Click the link to pay now and schedule your delivery: http://dhl-track.example/pay"
+  },
+  {
+   "from": "accounts@invoice-center.example",
+   "subject": "Overdue invoice #88412 - immediate action required",
+   "body": "Please find attached the overdue invoice. Payment must be made today to avoid legal action. Open the attached document and enable macros to view."
+  },
+  {
+   "from": "john@growthhackers.example",
+   "subject": "Quick question about your website",
+   "body": "Hi, I noticed your website isn't ranking on the first page of Google. We can get you more traffic and leads. Can I send you a free proposal? Reply YES."
+  },
+  {
+   "from": "deals@superstore.example",
+   "subject": "Your exclusive discount inside",
+   "body": "Congratulations! You've been selected for an exclusive 70% discount on all orders this weekend only. Click here to claim your coupon before it expires!"
+  },
+  {
+   "from": "support@apple-id-help.example",
+   "subject": "Your Apple ID was used to sign in",
+   "body": "Someone signed in to your account from a new device. If this wasn't you, confirm your identity now by entering your password and card details at http://apple-id-help.example"
+  },
+  {
+   "from": "winner@prize.example",
+   "subject": "You have won a gift card",
+   "body": "You are our lucky winner of a $1000 gift card! To claim your prize, fill in your details and pay a small shipping fee."
+  }
+ ],
+ "legitimate": [
+  {
+   "from": "jane.doe@gmail.com",
+   "subject": "My order hasn't arrived",
+   "body": "Hello, I ordered a blue jacket two weeks ago (order 48213) and it still hasn't arrived. The tracking page hasn't changed since last Monday. Could you check what happened? Thanks, Jane"
+  },
+  {
+   "from": "m.rossi@studio-rossi.it",
+   "subject": "Question about invoice 2026-114",
+   "body": "Hi team, our accountant noticed that invoice 2026-114 lists 12 seats but we only have 10 users. Can you send a corrected invoice? We'd also like to add our VAT number. Best regards, Marco"
+  },
+  {
+   "from": "tom@acme-logistics.com",
+   "subject": "Password reset email not arriving",
+   "body": "Hi, I tried to reset my password three times this morning but the email never arrives. I checked the spam folder too. My username is tom.becker. Can you help me get back into my account?"
+  },
+  {
+   "from": "sarah.k@outlook.com",
+   "subject": "Return request for damaged item",
+   "body": "Hello, the coffee grinder I received yesterday has a cracked lid. I'd like to return it or get a replacement. I attached a photo. Order number 77120. What are the next steps? Thank you, Sarah"
+  },
+  {
+   "from": "ops@northwind.example",
+   "subject": "API returns 500 since this morning",
+   "body": "Hi support, since about 09:40 UTC our integration gets HTTP 500 from the orders endpoint. Request id 7f3a9c. Nothing changed on our side. Could you look into it? It's blocking our warehouse shipments."
+  },
+  {
+   "from": "lena.schmidt@web.de",
+   "subject": "Cancel my subscription",
+   "body": "Hello, please cancel my subscription at the end of the current billing period. I'm moving abroad and won't need the service anymore. Thanks for everything. Lena Schmidt"
+  },
+  {
+   "from": "pierre.martin@orange.fr",
+   "subject": "Wrong size delivered",
+   "body": "Bonjour, I ordered the running shoes in size 43 but received size 41. Can you exchange them? I still have the original box and receipt. Order 55309. Merci, Pierre"
+  },
+  {
+   "from": "ahmed.saleh@company.ae",
+   "subject": "Meeting about the enterprise plan",
+   "body": "Hi, we are evaluating your enterprise plan for 60 agents. Could we schedule a call next week to discuss SSO, data retention and pricing? Tuesday or Thursday afternoon works for us. Regards, Ahmed"
+  },
+  {
+   "from": "billing@smallbakery.example",
+   "subject": "Charged twice this month",
+   "body": "Hi, my card statement shows two charges of 29.00 on November 3rd for the same subscription. Could you refund the duplicate charge? Account email is billing@smallbakery.example. Thanks"
+  },
+  {
+   "from": "kevin.obrien@gmail.com",
+   "subject": "How do I export my contacts?",
+   "body": "Hi there, I'm trying to export all my contacts to a CSV file but can't find the option in settings. Is this possible on the basic plan? If not, which plan includes it? Cheers, Kevin"
+  },
+  {
+   "from": "maria.garcia@empresa.es",
+   "subject": "Shipping to the Canary Islands",
+   "body": "Hola, do you ship to the Canary Islands? I want to order two chairs but the checkout doesn't show my postal code 35001. If you do ship there, how long does it take and are there customs fees? Gracias, Maria"
+  },
+  {
+   "from": "it-admin@hospital-north.example",
+   "subject": "Adding new users to our account",
+   "body": "Hello, we need to add five new nurses to our account and give two of them admin rights. Is there a bulk import, or should I invite them one by one? Our contract number is HN-2231. Thank you."
+  },
+  {
+   "from": "customer@gmail.com",
+   "subject": "Invoice question for order 4411",
+   "body": "Hi, I was charged twice for order 4411 last week. Could you check the invoice and refund the duplicate payment? Thanks, Mark"
+  },
+  {
+   "from": "customer@gmail.com",
+   "subject": "My parcel hasn't arrived",
+   "body": "Hello, my order 55123 hasn't arrived yet. Can you check the delivery?"
+  },
+  {
+   "from": "customer@gmail.com",
+   "subject": "Can't log in",
+   "body": "Hi team, since yesterday I can't log in to my account. It says my password is wrong but I reset it twice. Can you help?"
+  },
+  {
+   "from": "customer@gmail.com",
+   "subject": "Refund request",
+   "body": "Hello, I returned the jacket two weeks ago and haven't received my refund yet. Order number 88123. Thank you."
+  },
+  {
+   "from": "customer@gmail.com",
+   "subject": "Change my shipping address",
+   "body": "Hi, can I still change the shipping address for order 7712? I moved last week. Thanks, Lisa"
+  },
+  {
+   "from": "customer@gmail.com",
+   "subject": "Question about pricing",
+   "body": "Hello, do you offer a discount for annual billing? We are a team of 12 and want to upgrade our plan."
+  },
+  {
+   "from": "customer@gmail.com",
+   "subject": "Broken item",
+   "body": "The mug I received was broken in the box. Can you send a replacement? Photos attached."
+  },
+  {
+   "from": "customer@gmail.com",
+   "subject": "Cancel subscription",
+   "body": "Please cancel my subscription at the end of this month. I no longer need the service. Regards, Tom"
+  },
+  {
+   "from": "customer@gmail.com",
+   "subject": "Where is my money back?",
+   "body": "I was promised a refund 10 days ago for my cancelled order and still nothing on my card. Please check today."
+  },
+  {
+   "from": "customer@gmail.com",
+   "subject": "Thanks!",
+   "body": "Just wanted to say thanks for the quick help yesterday, everything works now."
+  }
+ ],
+ "uncertain": [
+  {
+   "from": "anna@studio.example",
+   "subject": "Collaboration idea",
+   "body": "Hi, I run a small design studio and love your products. Would you be open to a collaboration or a discount for our clients? Happy to talk."
+  }
+ ]
+}

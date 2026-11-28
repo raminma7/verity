@@ -1,5 +1,6 @@
 "use client";
 
+import { t } from "@/i18n";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -33,29 +34,29 @@ export default function SignUp() {
       }}
     >
       <div className="vr-auth-title">
-        <span className="vr-eyebrow">Create account · 1 of 2</span>
-        <h1 className="vr-display">Set up your workspace</h1>
-        <p className="vr-muted">We’ll create a private workspace for your support team once you confirm your email.</p>
+        <span className="vr-eyebrow">{t("Create account · 1 of 2")}</span>
+        <h1 className="vr-display">{t("Set up your workspace")}</h1>
+        <p className="vr-muted">{t("We’ll create a private workspace for your support team once you confirm your email.")}</p>
       </div>
       {f.error ? <Banner tone="danger">{f.error}</Banner> : null}
-      <Field label="Full name" name="full_name" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} error={f.fieldErrors.full_name} required />
-      <Field label="Work email" name="email" type="email" autoComplete="email" placeholder="you@company.com" value={email} onChange={(e) => setEmail(e.target.value)} error={f.fieldErrors.email} required />
+      <Field label={t("Full name")} name="full_name" autoComplete="name" value={name} onChange={(e) => setName(e.target.value)} error={f.fieldErrors.full_name} required />
+      <Field label={t("Work email")} name="email" type="email" autoComplete="email" placeholder={t("you@company.com")} value={email} onChange={(e) => setEmail(e.target.value)} error={f.fieldErrors.email} required />
       <Field
-        label="Password"
+        label={t("Password")}
         name="password"
         type="password"
         autoComplete="new-password"
         value={password}
         onChange={(e) => setPassword(e.target.value)}
         error={f.fieldErrors.password}
-        help="At least 10 characters, with upper and lower case letters and a number."
+        help={t("At least 10 characters, with upper and lower case letters and a number.")}
         required
       />
       <Button type="submit" variant="primary" size="lg" iconRight="arrow" busy={f.busy}>
-        Continue
+        {t("Continue")}
       </Button>
       <p className="vr-auth-foot vr-muted">
-        Already have an account? <Link className="vr-link" href="/sign-in">Sign in</Link>
+        {t("Already have an account?")} <Link className="vr-link" href="/sign-in">{t("Sign in")}</Link>
       </p>
     </form>
   );

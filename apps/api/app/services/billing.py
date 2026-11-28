@@ -24,6 +24,7 @@ from app.models import (
     Subscription,
     TokenGrant,
     TokenPackage,
+    User,
     Workspace,
 )
 from app.models.base import utcnow
@@ -156,11 +157,11 @@ def _notify(db: AsyncSession, ws: Workspace, kind: str, title: str, body: str, d
     db.add(Notification(workspace_id=ws.id, kind=kind, title=title, body=body, data=data or {}, created_at=utcnow()))
 
 
-def _mail_contacts(db: AsyncSession, ws: Workspace, after: After, send: Callable[[str], Awaitable[None]]) -> None:
+def _mail_contacts(db: AsyncSession, ws: Workspace, after: After, send: Callable[[User], Awaitable[None]]) -> None:
     async def run() -> None:
         for u in await billing_contacts(db, ws.id):
             if u.notification_prefs.get("billing", True):
-                await send(u.email)
+                await send(u)
 
     after.append(run)
 
@@ -222,7 +223,7 @@ async def payment_failed(
         db,
         ws,
         after,
-        lambda to: mail.send_payment_failed(to, ws.name, plan.name, amount, p.failure_message, _day(p.next_retry_at), _day(grace)),
+        lambda u: mail.send_payment_failed(u.email, ws.name, plan.name, amount, p.failure_message, p.next_retry_at, grace, locale=u.locale),
     )
     return p
 
@@ -234,7 +235,7 @@ def add_days(dt: datetime, days: int) -> datetime:
 def notify_recovered(db: AsyncSession, ws: Workspace, sub: Subscription, after: After) -> None:
     audit(db, "subscription.payment_recovered", workspace_id=ws.id, target_type="subscription", target_id=sub.id)
     _notify(db, ws, "payment_recovered", "Payment received", f"{sub.terms['plan_name']} is active again, and AI answers are back on.")
-    _mail_contacts(db, ws, after, lambda to: mail.send_payment_recovered(to, ws.name, sub.terms["plan_name"]))
+    _mail_contacts(db, ws, after, lambda u: mail.send_payment_recovered(u.email, ws.name, sub.terms["plan_name"], locale=u.locale))
 
 
 def notify_ended_unpaid(db: AsyncSession, ws: Workspace, sub: Subscription, after: After) -> None:
@@ -245,7 +246,7 @@ def notify_ended_unpaid(db: AsyncSession, ws: Workspace, sub: Subscription, afte
         "Subscription ended",
         f"{sub.terms['plan_name']} ended because the renewal couldn't be charged. Choose a plan to start again.",
     )
-    _mail_contacts(db, ws, after, lambda to: mail.send_subscription_ended(to, ws.name, sub.terms["plan_name"]))
+    _mail_contacts(db, ws, after, lambda u: mail.send_subscription_ended(u.email, ws.name, sub.terms["plan_name"], locale=u.locale))
 
 
 async def align_period(db: AsyncSession, sub: Subscription, start: datetime | None, end: datetime | None) -> None:
@@ -365,7 +366,9 @@ async def complete_checkout(
         await grant_package(db, ws, package, p)
         audit(db, "billing.package_paid", actor_id=actor_id, workspace_id=ws.id, target_type="token_package", target_id=package.key)
         amount = format_money(p.amount_cents, p.currency)
-        _mail_contacts(db, ws, after, lambda to: mail.send_package_receipt(to, ws.name, package.name, package.tokens, amount))
+        _mail_contacts(
+            db, ws, after, lambda u: mail.send_package_receipt(u.email, ws.name, package.name, package.tokens, amount, locale=u.locale)
+        )
         return c
     plan = await db.get(Plan, c.plan_id)
     sub = await start_period(db, ws, plan)

@@ -33,20 +33,20 @@ a.vr-btn { text-decoration: none; }
 .vr-content { width: 100%; max-width: 1080px; margin: 0 auto; display: flex; flex-direction: column; gap: var(--space-8); }
 .vr-side-nav a, .vr-side-nav button.vr-navbtn { cursor: pointer; }
 .vr-side-nav a:hover:not(.is-on) { background: var(--surface-sunken); }
-.vr-navbtn { display: flex; align-items: center; gap: 12px; height: 38px; padding: 0 12px; border: 0; border-radius: var(--radius-md); background: transparent; color: var(--ink); font-size: 14px; text-align: left; width: 100%; }
+.vr-navbtn { display: flex; align-items: center; gap: 12px; height: 38px; padding: 0 12px; border: 0; border-radius: var(--radius-md); background: transparent; color: var(--ink); font-size: 14px; text-align: start; width: 100%; }
 .vr-navbtn:hover { background: var(--surface-sunken); }
-.vr-side-nav .vr-soon { margin-left: auto; font-size: 11px; color: var(--ink-muted); }
+.vr-side-nav .vr-soon { margin-inline-start: auto; font-size: 11px; color: var(--ink-muted); }
 .vr-side-nav a.is-disabled { color: var(--ink-muted); cursor: default; }
 .vr-side-nav a.is-disabled:hover { background: transparent; }
 .vr-ws { position: relative; }
-.vr-ws-btn { width: 100%; display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); color: var(--ink); cursor: pointer; text-align: left; }
+.vr-ws-btn { width: 100%; display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); color: var(--ink); cursor: pointer; text-align: start; }
 .vr-ws-btn:hover { background: var(--surface-sunken); }
 .vr-ws-mark { width: 28px; height: 28px; flex: none; border-radius: 7px; display: grid; place-items: center; background: var(--brand-soft); color: var(--brand); font-weight: 600; font-size: 13px; }
 .vr-ws-text { flex: 1; min-width: 0; display: flex; flex-direction: column; }
 .vr-ws-text b { font-weight: 500; font-size: 13px; line-height: 18px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .vr-ws-text span { font-size: 12px; line-height: 16px; color: var(--ink-muted); }
 .vr-menu { position: absolute; z-index: 20; left: 0; right: 0; top: calc(100% + 6px); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md); box-shadow: var(--shadow-pop); padding: 6px; display: flex; flex-direction: column; gap: 2px; }
-.vr-menu button, .vr-menu a { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 0; border-radius: 7px; background: transparent; color: var(--ink); font-size: 13px; text-align: left; cursor: pointer; text-decoration: none; }
+.vr-menu button, .vr-menu a { display: flex; align-items: center; gap: 10px; padding: 8px 10px; border: 0; border-radius: 7px; background: transparent; color: var(--ink); font-size: 13px; text-align: start; cursor: pointer; text-decoration: none; }
 .vr-menu button:hover, .vr-menu a:hover { background: var(--surface-sunken); }
 .vr-menu hr { border: 0; border-top: 1px solid var(--line); margin: 4px 0; }
 .vr-topbar { display: none; }
@@ -113,10 +113,10 @@ a.vr-btn { text-decoration: none; }
 /* Tables ----------------------------------------------------------------------------------------- */
 .vr-table-wrap { overflow-x: auto; }
 .vr-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-.vr-table th { text-align: left; font-size: 11px; line-height: 16px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-muted); background: var(--surface-sunken); padding: 10px var(--space-4); white-space: nowrap; }
+.vr-table th { text-align: start; font-size: 11px; line-height: 16px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--ink-muted); background: var(--surface-sunken); padding: 10px var(--space-4); white-space: nowrap; }
 .vr-table td { padding: 12px var(--space-4); border-top: 1px solid var(--line); vertical-align: middle; }
 .vr-table tr:hover td { background: color-mix(in srgb, var(--surface-sunken) 40%, transparent); }
-.vr-table .num { text-align: right; font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 13px; }
+.vr-table .num { text-align: end; font-family: var(--font-mono); font-variant-numeric: tabular-nums; font-size: 13px; }
 .vr-table th.num { font-family: var(--font-sans); font-size: 11px; }
 .vr-person { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .vr-person > span:last-child { display: flex; flex-direction: column; min-width: 0; }
@@ -182,7 +182,7 @@ a.vr-btn { text-decoration: none; }
   .vr-auth-story { display: none; }
   .vr-auth-form { padding: var(--space-8) 16px; justify-content: flex-start; }
   .vr-auth-mobile-logo { display: inline-flex; align-self: flex-start; width: 100%; max-width: 380px; margin: 0 auto; }
-  .vr-panel-head, .vr-panel-body { padding-left: 16px; padding-right: 16px; }
+  .vr-panel-head, .vr-panel-body { padding-inline-start: 16px; padding-inline-end: 16px; }
   .vr-kv { grid-template-columns: 1fr; gap: 2px; }
   .vr-kv dd { margin-bottom: 10px; }
   .vr-stat-num { font-size: 32px; line-height: 36px; }
@@ -218,9 +218,9 @@ a.vr-docrow-name:hover { color: var(--brand); }
 
 .vr-doc-layout { display: grid; grid-template-columns: minmax(0, 1fr) 320px; gap: var(--space-6); align-items: start; }
 .vr-paper { display: flex; flex-direction: column; gap: 2px; padding: var(--space-6); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md); }
-.vr-chunk { display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; text-align: left; font: inherit; color: var(--ink); background: transparent; border: 0; border-left: 3px solid transparent; border-radius: 0 var(--radius-sm) var(--radius-sm) 0; cursor: pointer; }
+.vr-chunk { display: flex; flex-direction: column; gap: 4px; padding: 10px 12px; text-align: start; font: inherit; color: var(--ink); background: transparent; border: 0; border-inline-start: 3px solid transparent; border-radius: 0 var(--radius-sm) var(--radius-sm) 0; cursor: pointer; }
 .vr-chunk:hover { background: var(--surface-sunken); }
-.vr-chunk.is-on { background: var(--highlight-soft); border-left-color: var(--highlight); }
+.vr-chunk.is-on { background: var(--highlight-soft); border-inline-start-color: var(--highlight); }
 .vr-chunk-id { font-size: 11px; line-height: 16px; color: var(--ink-muted); }
 .vr-chunk-text { white-space: pre-line; font-size: var(--text-answer-size); line-height: var(--text-answer-line); }
 
@@ -260,7 +260,7 @@ a.vr-source-name:hover { color: var(--brand); text-decoration: underline; }
 .vr-wmsg.is-me { align-self: flex-end; background: var(--ink); color: var(--ground); border-radius: 16px 16px 6px 16px; white-space: pre-line; }
 .vr-wmsg.is-agent { align-self: flex-start; background: var(--brand-soft); border: 1px solid var(--line); border-radius: 16px 16px 16px 6px; white-space: pre-line; }
 .vr-wmsg-author { display: block; font-size: 11px; line-height: 16px; font-weight: 600; color: var(--ink-muted); }
-.vr-wmsg .vr-cite { margin-left: 3px; text-decoration: none; }
+.vr-wmsg .vr-cite { margin-inline-start: 3px; text-decoration: none; }
 .vr-wsources { display: flex; flex-direction: column; gap: 2px; margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--line); font-size: 12px; line-height: 17px; color: var(--ink-muted); }
 .vr-wsources a { color: var(--ink-muted); }
 .vr-wsources-label { font-size: 10px; letter-spacing: 0.06em; text-transform: uppercase; font-weight: 600; }
@@ -359,7 +359,7 @@ textarea.vr-winput { resize: vertical; }
 /* Form builder: field list, editor, live preview */
 .vr-builder { display: grid; grid-template-columns: minmax(0, 1fr) 360px; gap: var(--space-6); align-items: start; }
 .vr-fieldlist { display: flex; flex-direction: column; }
-.vr-fieldrow { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-top: 1px solid var(--line); cursor: pointer; background: var(--surface); text-align: left; font: inherit; color: var(--ink); border-left: 0; border-right: 0; border-bottom: 0; width: 100%; }
+.vr-fieldrow { display: flex; align-items: center; gap: 10px; padding: 10px 12px; border-top: 1px solid var(--line); cursor: pointer; background: var(--surface); text-align: start; font: inherit; color: var(--ink); border-inline-start: 0; border-inline-end: 0; border-bottom: 0; width: 100%; }
 .vr-fieldrow:first-child { border-top: 0; }
 .vr-fieldrow:hover { background: var(--surface-sunken); }
 .vr-fieldrow.is-on { background: var(--brand-soft); }
@@ -395,7 +395,7 @@ textarea.vr-winput { resize: vertical; }
 .vr-spam-list li:first-child { border-top: 0; }
 .vr-spam-list li.is-on { background: var(--brand-soft); }
 .vr-spam-list input { margin-top: 4px; accent-color: var(--brand); }
-.vr-spam-row { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; padding: 0; border: 0; background: transparent; color: var(--ink); text-align: left; font: inherit; cursor: pointer; }
+.vr-spam-row { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 4px; padding: 0; border: 0; background: transparent; color: var(--ink); text-align: start; font: inherit; cursor: pointer; }
 .vr-spam-row:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; border-radius: var(--radius-sm); }
 .vr-spam-top { display: flex; justify-content: space-between; gap: 8px; font-size: 13px; }
 .vr-spam-top b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -433,7 +433,7 @@ a.vr-att:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
    Not in the design system yet: built only from its tokens and rules. Teal acts, lime stays for evidence
    (never used here), status always has a word, cards sit on a line border, nothing is raised. */
 
-.vr-bullets { margin: 0 0 var(--space-3); padding-left: 18px; display: flex; flex-direction: column; gap: 6px; color: var(--ink); }
+.vr-bullets { margin: 0 0 var(--space-3); padding-inline-start: 18px; display: flex; flex-direction: column; gap: 6px; color: var(--ink); }
 .vr-bullets li::marker { color: var(--ink-muted); }
 
 /* Tools list */
@@ -546,7 +546,7 @@ a.vr-att:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 .vr-barlist-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .vr-barlist-track { height: 8px; border-radius: 4px; background: var(--surface-sunken); overflow: hidden; }
 .vr-barlist-track span { display: block; height: 100%; border-radius: 0 4px 4px 0; min-width: 2px; }
-.vr-barlist-value { font-size: 12px; text-align: right; white-space: nowrap; }
+.vr-barlist-value { font-size: 12px; text-align: end; white-space: nowrap; }
 .vr-barlist-note { grid-column: 1 / -1; font-size: 12px; line-height: 16px; margin-top: -6px; }
 .vr-range { display: flex; flex-wrap: wrap; gap: var(--space-3); align-items: flex-end; margin-bottom: var(--space-2); }
 .vr-range-note { align-self: center; }
@@ -559,7 +559,7 @@ a.vr-att:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 @media (max-width: 720px) {
   .vr-chart-plot, .vr-chart-axis { margin-left: 36px; }
   .vr-barlist li { grid-template-columns: minmax(80px, 1fr) minmax(0, 1fr); }
-  .vr-barlist-value { grid-column: 2; text-align: left; }
+  .vr-barlist-value { grid-column: 2; text-align: start; }
 }
 
 /* Billing */
@@ -573,3 +573,40 @@ a.vr-att:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 .vr-package { display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-6); background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md); }
 .vr-package .vr-display { font-size: 32px; line-height: 36px; }
 .vr-test-portal { max-width: 640px; }
+
+
+/* ---- Phase 6: languages (right-to-left), privacy, summaries ------------------------------------------
+   Arabic reads right to left: app.css uses logical properties; the few physical rules of the design system's
+   own stylesheet are mirrored here. Charts keep time running left to right in every language. */
+[dir="rtl"] .vr-side { border-right: 0; border-left: 1px solid var(--line); }
+[dir="rtl"] .vr-side-nav a .vr-mono { margin-left: 0; margin-right: auto; }
+[dir="rtl"] .vr-trace-step:not(:last-child)::before { left: auto; right: 9.5px; }
+[dir="rtl"] .vr-switch::after { left: auto; right: 3px; }
+[dir="rtl"] .vr-switch.is-on::after { transform: translateX(-14px); }
+[dir="rtl"] .vr-auth-sheet { right: auto; left: -40px; transform: rotate(4deg); }
+[dir="rtl"] .vr-chunk { border-radius: var(--radius-sm) 0 0 var(--radius-sm); }
+@media (max-width: 860px) {
+  [dir="rtl"] .vr-shell .vr-side { inset: 0 0 0 auto; transform: translateX(100%); }
+  [dir="rtl"] .vr-shell.is-open .vr-side { transform: none; }
+}
+.vr-chart { direction: ltr; }
+.vr-chart .vr-legend, .vr-chart-tip { direction: inherit; }
+[dir="rtl"] .vr-chart-tip { direction: rtl; }
+[dir="rtl"] .vr-barlist-track span { border-radius: 4px 0 0 4px; }
+
+.vr-summary { display: flex; flex-direction: column; gap: 6px; padding: var(--space-4); border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); }
+.vr-summary-head { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
+.vr-summary-head .vr-btn { margin-inline-start: auto; }
+.vr-summary p { margin: 0; font-size: 14px; line-height: 22px; }
+.vr-ask-main .vr-summary { margin-top: var(--space-3); }
+.vr-export-list { display: flex; flex-direction: column; gap: 8px; margin: 0; padding: 0; list-style: none; font-size: 13px; }
+.vr-export-list li { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
+.vr-danger-zone { border-color: color-mix(in srgb, var(--danger) 40%, var(--line)); }
+.vr-danger-zone .vr-panel-head .vr-h { color: var(--danger); }
+
+/* Right to left: what customers and the AI wrote keeps its own direction (an English email stays left to right,
+   with its punctuation in place), and Arabic is never set in the monospace face, whose fallback spaces it out. */
+[dir="rtl"] :is(.vr-mailbody, .vr-bubble, .vr-summary) :is(p, div, li, pre, blockquote, h1, h2, h3, h4, td),
+[dir="rtl"] :is(.vr-mailbody, .vr-bubble, .vr-mail-addr, .vr-title, input, textarea),
+[dir="rtl"] .vr-kv dd { unicode-bidi: plaintext; }
+[lang="ar"] .vr-mono:not(pre):not(code) { font-family: var(--font-sans); }

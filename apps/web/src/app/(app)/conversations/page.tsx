@@ -1,5 +1,6 @@
 "use client";
 
+import { t as tr, tp } from "@/i18n";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
@@ -19,9 +20,9 @@ export default function ConversationsPage() {
 }
 
 function StatusPill({ c }: { c: Conversation }) {
-  if (c.status === "escalated") return <Badge tone="warn" dot>Needs a person</Badge>;
-  if (c.status === "resolved") return <Badge dot>Resolved</Badge>;
-  return <Badge tone="brand" dot>With the assistant</Badge>;
+  if (c.status === "escalated") return <Badge tone="warn" dot>{tr("Needs a person")}</Badge>;
+  if (c.status === "resolved") return <Badge dot>{tr("Resolved")}</Badge>;
+  return <Badge tone="brand" dot>{tr("With the assistant")}</Badge>;
 }
 
 function dayLabel(iso: string | null) {
@@ -65,25 +66,25 @@ function Conversations() {
 
   return (
     <>
-      <PageHeader title="Conversations" subtitle="Every chatbot conversation, with the evidence behind each answer. Conversations handed to the team wait here for a reply." />
+      <PageHeader title={tr("Conversations")} subtitle={tr("Every chatbot conversation, with the evidence behind each answer. Conversations handed to the team wait here for a reply.")} />
       {data.data?.waiting ? (
-        <Banner tone="warn" title={`${data.data.waiting} customer${data.data.waiting === 1 ? " is" : "s are"} waiting for a person`}>
-          The assistant stays quiet in these conversations until someone resolves them.
+        <Banner tone="warn" title={tp("{n} customer is waiting for a person", "{n} customers are waiting for a person", data.data.waiting)}>
+          {tr("The assistant stays quiet in these conversations until someone resolves them.")}
         </Banner>
       ) : null}
       <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
         <div style={{ flex: "1 1 260px", maxWidth: 420 }}>
-          <Field icon="search" placeholder="Search questions or emails…" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search conversations" />
+          <Field icon="search" placeholder={tr("Search questions or emails…")} value={q} onChange={(e) => setQ(e.target.value)} aria-label={tr("Search conversations")} />
         </div>
         <Segmented
-          label="Status"
+          label={tr("Status")}
           value={status}
           onChange={setStatus}
           options={[
-            { value: "all", label: "All" },
-            { value: "escalated", label: `Needs a person${data.data?.waiting ? ` · ${data.data.waiting}` : ""}` },
-            { value: "open", label: "With the assistant" },
-            { value: "resolved", label: "Resolved" },
+            { value: "all", label: tr("All") },
+            { value: "escalated", label: data.data?.waiting ? tr("Needs a person · {n}", { n: data.data.waiting }) : tr("Needs a person") },
+            { value: "open", label: tr("With the assistant") },
+            { value: "resolved", label: tr("Resolved") },
           ]}
         />
       </div>
@@ -92,8 +93,8 @@ function Conversations() {
       ) : data.error ? (
         <Banner tone="danger">{data.error.message}</Banner>
       ) : groups.length === 0 ? (
-        <EmptyState icon="chat" title="No conversations">
-          Conversations appear here once customers use a chatbot on your site.
+        <EmptyState icon="chat" title={tr("No conversations")}>
+          {tr("Conversations appear here once customers use a chatbot on your site.")}
         </EmptyState>
       ) : (
         groups.map(([label, items]) => (
@@ -103,12 +104,12 @@ function Conversations() {
               {items.map((c) => (
                 <Link key={c.id} href={`/conversations/${c.id}`} style={{ display: "flex", alignItems: "center", gap: 14 }}>
                   <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column", gap: 2 }}>
-                    <span style={{ fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.title || "New conversation"}</span>
+                    <span style={{ fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.title || tr("New conversation")}</span>
                     <span className="vr-muted" style={{ fontSize: 12 }}>
                       {[c.visitor_email || c.visitor_name || "Anonymous visitor", c.origin?.replace(/^https?:\/\//, ""), `${c.message_count} messages`].filter(Boolean).join(" · ")}
                     </span>
                   </span>
-                  {c.ticket_number ? <span className="vr-num">Ticket #{c.ticket_number}</span> : null}
+                  {c.ticket_number ? <span className="vr-num">{tr("Ticket #")}{c.ticket_number}</span> : null}
                   {c.confidence ? <ConfidenceBadge confidence={c.confidence as "high"} /> : null}
                   <StatusPill c={c} />
                   <span className="vr-mono vr-muted" style={{ fontSize: 12, width: 80, textAlign: "right" }}>

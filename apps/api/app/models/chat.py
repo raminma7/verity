@@ -69,6 +69,8 @@ class Conversation(IdMixin, TimestampMixin, Base):
     title: Mapped[str] = mapped_column(String(200), default="")
     message_count: Mapped[int] = mapped_column(Integer, default=0)
     last_message_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    summary: Mapped[str | None] = mapped_column(Text)  # written for the agent when the chat is handed over
+    summary_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
 class Message(IdMixin, Base):

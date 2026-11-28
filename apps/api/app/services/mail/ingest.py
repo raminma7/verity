@@ -34,7 +34,7 @@ from app.models.base import utcnow
 from app.services import email as platform_mail
 from app.services import tickets as tk
 from app.services.forms import default_category
-from app.services.mail import attachments, auto_reply, loops, spam
+from app.services.mail import attachments, auto_reply, loops, spam, spam_model
 from app.services.mail.accounts import email_settings, workspace_addresses
 from app.services.mail.classify import classify
 from app.services.mail.parse import ParsedMail, parse, strip_quoted
@@ -199,7 +199,7 @@ async def create_ticket(
 
     for u in await responders(db, ws.id, "tickets.manage"):
         if u.notification_prefs.get("tickets", True):
-            await platform_mail.send_ticket_created(u.email, ws.name, t.number, t.subject, str(t.id))
+            await platform_mail.send_ticket_created(u.email, ws.name, t.number, t.subject, str(t.id), locale=u.locale)
     if not suppress_reply:
         await auto_reply.send(db, ws, account, t, row)
     return t
@@ -232,7 +232,7 @@ async def classify_and_ticket(
         row.verdict["ai_note"] = cls.note
     if with_verdict and cls.verdict in ("spam", "promotion"):
         return await _finish(db, row, cls.verdict, decided_by="ai")
-    row.verdict["decided_by"] = "ai" if cls.ai_used else "rules"
+    row.verdict["decided_by"] = row.verdict.get("decided_by") or ("ai" if cls.ai_used else "rules")
     await create_ticket(db, ws, account, row, cls.category_id, suppress_reply=suppress_reply)
     return "ticketed"
 
@@ -306,16 +306,24 @@ async def process_incoming(db: AsyncSession, account: EmailAccount, raw: RawMail
     await db.commit()
     if rules.strong and rules.verdict in ("spam", "promotion"):
         return await _finish(db, row, rules.verdict, decided_by="rules")
-    return await classify_and_ticket(
-        db,
-        ws,
-        account,
-        row,
-        p,
-        with_verdict=not (rules.strong and rules.verdict == "legitimate"),
-        suppress_reply=loop.suppress_reply,
-        hints=rules.hits,
-    )
+    if not (rules.strong and rules.verdict == "legitimate"):
+        # The trained model decides spam: no AI call. Uncertain mail becomes a ticket marked "possible spam".
+        s = await spam_model.score(db, ws.id, p.subject, p.text, p.html, p.from_addr)
+        row.verdict = {**row.verdict, "model": s}
+        pz = s["p_spam"]
+        # Bulk-mail headers (lists, newsletter services) mark a promotion: held in Spam either way, but filed as what
+        # it is. Promotional words alone need the model too.
+        if rules.verdict == "promotion" and any(not h.startswith("word:") for h in rules.hits):
+            return await _finish(db, row, "promotion", decided_by="rules")
+        if pz >= spam_model.SPAM_AT or (rules.verdict == "spam" and pz >= spam_model.WEAK_RULE_SPAM_AT):
+            return await _finish(db, row, "spam", decided_by="model")
+        if rules.verdict == "promotion" and pz > spam_model.HAM_AT:
+            return await _finish(db, row, "promotion", decided_by="model")
+        row.verdict["decided_by"] = "model"
+        if pz > spam_model.HAM_AT:
+            row.verdict["possible_spam"] = True
+    # Legitimate: one AI call at most, for the ticket category (the default category without tokens).
+    return await classify_and_ticket(db, ws, account, row, p, with_verdict=False, suppress_reply=loop.suppress_reply, hints=rules.hits)
 
 
 async def not_spam(db: AsyncSession, row: EmailRow, *, actor_id: uuid.UUID) -> Ticket | None:
@@ -327,6 +335,7 @@ async def not_spam(db: AsyncSession, row: EmailRow, *, actor_id: uuid.UUID) -> T
     p = _parsed_from_row(row)
     loop = loops.check(p, await workspace_addresses(db, ws.id))
     row.verdict = {**(row.verdict or {}), "reviewed_by": str(actor_id), "reviewed": "not_spam"}
+    await spam_model.learn(db, ws.id, spam=False, subject=row.subject, text_body=row.text_body, html=row.html_body, from_addr=row.from_addr)
     await classify_and_ticket(db, ws, account, row, p, with_verdict=False, suppress_reply=loop.suppress_reply, hints=[])
     await db.refresh(row)
     return await db.get(Ticket, row.ticket_id) if row.ticket_id else None

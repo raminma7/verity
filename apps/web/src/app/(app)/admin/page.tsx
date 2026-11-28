@@ -1,5 +1,6 @@
 "use client";
 
+import { t as tr, msg } from "@/i18n";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 
@@ -12,7 +13,7 @@ import { useData } from "@/lib/use-data";
 
 const TABS = ["overview", "reports", "users", "workspaces", "plans", "packages", "payments", "multipliers", "settings", "audit"] as const;
 type Tab = (typeof TABS)[number];
-const TAB_LABEL: Record<Tab, string> = { overview: "Overview", reports: "Reports", packages: "Token packages", payments: "Payments", users: "Users", workspaces: "Workspaces", plans: "Plans", multipliers: "Model weights", settings: "Defaults", audit: "Audit log" };
+const TAB_LABEL: Record<Tab, string> = { overview: msg("Overview"), reports: msg("Reports"), packages: msg("Token packages"), payments: msg("Payments"), users: msg("Users"), workspaces: msg("Workspaces"), plans: msg("Plans"), multipliers: msg("Model weights"), settings: msg("Defaults"), audit: msg("Audit log") };
 
 function useAction() {
   const [busy, setBusy] = useState<string | null>(null);
@@ -41,35 +42,35 @@ function Overview() {
   return (
     <>
       <div className="vr-grid vr-grid-4">
-        <Stat label="Users" value={fmt(d.users)} note={`${d.users_suspended} suspended`} />
-        <Stat label="Workspaces" value={fmt(d.workspaces)} note={`${d.active_subscriptions} paying`} />
-        <Stat label="MRR" value={money(d.mrr_cents)} note="Monthly recurring revenue" />
-        <Stat label="AI cost this month" value={`$${d.provider_cost_this_month_usd.toFixed(2)}`} note={`${compact(d.tokens_this_month)} weighted tokens`} />
+        <Stat label={tr("Users")} value={fmt(d.users)} note={tr("{users_suspended} suspended", { users_suspended: d.users_suspended })} />
+        <Stat label={tr("Workspaces")} value={fmt(d.workspaces)} note={tr("{active_subscriptions} paying", { active_subscriptions: d.active_subscriptions })} />
+        <Stat label={tr("MRR")} value={money(d.mrr_cents)} note={tr("Monthly recurring revenue")} />
+        <Stat label={tr("AI cost this month")} value={`$${d.provider_cost_this_month_usd.toFixed(2)}`} note={tr("{tokens_this_month} weighted tokens", { tokens_this_month: compact(d.tokens_this_month) })} />
       </div>
       {a.msg ? <Banner tone={a.msg.tone}>{a.msg.text}</Banner> : null}
-      <Card title="Jobs" actions={<span className="vr-help">The worker also runs these every 5 minutes.</span>}>
+      <Card title={tr("Jobs")} actions={<span className="vr-help">{tr("The worker also runs these every 5 minutes.")}</span>}>
         <div className="vr-actions">
           <Button icon="refresh" busy={a.busy === "renew"} onClick={() => a.run("renew", () => api.post<{ renewed: number; canceled: number }>("/admin/jobs/renewals"), (r) => `Renewed ${r.renewed}, ended ${r.canceled}.`).then(o.reload)}>
-            Run renewals
+            {tr("Run renewals")}
           </Button>
-          <Button icon="clock" busy={a.busy === "stale"} onClick={() => a.run("stale", () => api.post<{ released: number }>("/admin/jobs/release-stale-reservations"), (r) => `Released ${r.released} stale token holds.`)}>
-            Release stale holds
+          <Button icon="clock" busy={a.busy === "stale"} onClick={() => a.run("stale", () => api.post<{ released: number }>("/admin/jobs/release-stale-reservations"), (r) => tr("Released {released} stale token holds.", { released: r.released }))}>
+            {tr("Release stale holds")}
           </Button>
         </div>
       </Card>
-      <Card title="AI usage and provider cost · last 30 days" padded={false}>
+      <Card title={tr("AI usage and provider cost · last 30 days")} padded={false}>
         {!report.data?.length ? (
-          <EmptyState icon="chart" title="No AI usage yet" />
+          <EmptyState icon="chart" title={tr("No AI usage yet")} />
         ) : (
           <div className="vr-table-wrap">
             <table className="vr-table">
               <thead>
                 <tr>
-                  <th>Workspace</th>
-                  <th className="num">Input</th>
-                  <th className="num">Output</th>
-                  <th className="num">Weighted</th>
-                  <th className="num">Provider cost</th>
+                  <th>{tr("Workspace")}</th>
+                  <th className="num">{tr("Input")}</th>
+                  <th className="num">{tr("Output")}</th>
+                  <th className="num">{tr("Weighted")}</th>
+                  <th className="num">{tr("Provider cost")}</th>
                 </tr>
               </thead>
               <tbody>
@@ -103,9 +104,9 @@ function Users() {
     <>
       <form className="vr-actions" onSubmit={(e) => { e.preventDefault(); setQuery(q); }}>
         <div style={{ flex: 1, maxWidth: 420 }}>
-          <Field icon="search" placeholder="Search name or email" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search users" />
+          <Field icon="search" placeholder={tr("Search name or email")} value={q} onChange={(e) => setQ(e.target.value)} aria-label={tr("Search users")} />
         </div>
-        <Button type="submit">Search</Button>
+        <Button type="submit">{tr("Search")}</Button>
       </form>
       {a.msg ? <Banner tone={a.msg.tone}>{a.msg.text}</Banner> : null}
       <Card padded={false}>
@@ -113,12 +114,12 @@ function Users() {
           <table className="vr-table">
             <thead>
               <tr>
-                <th>User</th>
-                <th>Status</th>
-                <th className="num">Workspaces</th>
-                <th>Joined</th>
-                <th>Last sign-in</th>
-                <th><span className="sr-only">Actions</span></th>
+                <th>{tr("User")}</th>
+                <th>{tr("Status")}</th>
+                <th className="num">{tr("Workspaces")}</th>
+                <th>{tr("Joined")}</th>
+                <th>{tr("Last sign-in")}</th>
+                <th><span className="sr-only">{tr("Actions")}</span></th>
               </tr>
             </thead>
             <tbody>
@@ -128,7 +129,7 @@ function Users() {
                     <span className="vr-person">
                       <span>
                         <b>
-                          {u.full_name} {u.is_system_admin ? <Badge tone="brand">Admin</Badge> : null}
+                          {u.full_name} {u.is_system_admin ? <Badge tone="brand">{tr("Admin")}</Badge> : null}
                         </b>
                         <small>{u.email}</small>
                       </span>
@@ -136,8 +137,8 @@ function Users() {
                   </td>
                   <td>
                     <span className="vr-actions">
-                      {u.status === "suspended" ? <Badge tone="danger" dot>Suspended</Badge> : u.email_verified ? <Badge tone="brand" dot>Active</Badge> : <Badge tone="warn" dot>Unverified</Badge>}
-                      {u.totp_enabled ? <Badge>2FA</Badge> : null}
+                      {u.status === "suspended" ? <Badge tone="danger" dot>{tr("Suspended")}</Badge> : u.email_verified ? <Badge tone="brand" dot>{tr("Active")}</Badge> : <Badge tone="warn" dot>{tr("Unverified")}</Badge>}
+                      {u.totp_enabled ? <Badge>{tr("2FA")}</Badge> : null}
                     </span>
                   </td>
                   <td className="num">{u.workspaces}</td>
@@ -151,12 +152,12 @@ function Users() {
                         busy={a.busy === u.id}
                         onClick={() => {
                           const next = u.status === "suspended" ? "active" : "suspended";
-                          const reason = next === "suspended" ? prompt(`Why suspend ${u.email}? (kept in the audit log)`) : "";
+                          const reason = next === "suspended" ? prompt(tr("Why suspend {email}? (kept in the audit log)", { email: u.email })) : "";
                           if (reason === null) return;
-                          a.run(u.id, async () => { await api.patch(`/admin/users/${u.id}/status`, { status: next, reason }); await users.reload(); }, next === "suspended" ? `${u.email} suspended and signed out.` : `${u.email} reactivated.`);
+                          a.run(u.id, async () => { await api.patch(`/admin/users/${u.id}/status`, { status: next, reason }); await users.reload(); }, next === "suspended" ? tr("{email} suspended and signed out.", { email: u.email }) : tr("{email} reactivated.", { email: u.email }));
                         }}
                       >
-                        {u.status === "suspended" ? "Reactivate" : "Suspend"}
+                        {u.status === "suspended" ? tr("Reactivate") : tr("Suspend")}
                       </Button>
                     ) : null}
                   </td>
@@ -181,9 +182,9 @@ function Workspaces() {
     <>
       <form className="vr-actions" onSubmit={(e) => { e.preventDefault(); setQuery(q); }}>
         <div style={{ flex: 1, maxWidth: 420 }}>
-          <Field icon="search" placeholder="Search workspace or owner email" value={q} onChange={(e) => setQ(e.target.value)} aria-label="Search workspaces" />
+          <Field icon="search" placeholder={tr("Search workspace or owner email")} value={q} onChange={(e) => setQ(e.target.value)} aria-label={tr("Search workspaces")} />
         </div>
-        <Button type="submit">Search</Button>
+        <Button type="submit">{tr("Search")}</Button>
       </form>
       {a.msg ? <Banner tone={a.msg.tone}>{a.msg.text}</Banner> : null}
       <Card padded={false}>
@@ -191,12 +192,12 @@ function Workspaces() {
           <table className="vr-table">
             <thead>
               <tr>
-                <th>Workspace</th>
-                <th>Plan</th>
-                <th className="num">Members</th>
-                <th className="num">Tokens used</th>
-                <th>Status</th>
-                <th><span className="sr-only">Actions</span></th>
+                <th>{tr("Workspace")}</th>
+                <th>{tr("Plan")}</th>
+                <th className="num">{tr("Members")}</th>
+                <th className="num">{tr("Tokens used")}</th>
+                <th>{tr("Status")}</th>
+                <th><span className="sr-only">{tr("Actions")}</span></th>
               </tr>
             </thead>
             <tbody>
@@ -210,24 +211,24 @@ function Workspaces() {
                       </span>
                     </span>
                   </td>
-                  <td>{w.plan ? `${w.plan}${w.subscription_status !== "active" ? ` (${w.subscription_status})` : ""}` : <span className="vr-muted">None</span>}</td>
+                  <td>{w.plan ? `${w.plan}${w.subscription_status !== "active" ? ` (${w.subscription_status})` : ""}` : <span className="vr-muted">{tr("None")}</span>}</td>
                   <td className="num">{w.members}</td>
                   <td className="num">{w.tokens ? `${compact(w.tokens.consumed)} / ${compact(w.tokens.allowance + w.tokens.bonus)}` : "—"}</td>
-                  <td>{w.status === "active" ? <Badge tone="brand" dot>Active</Badge> : <Badge tone="danger" dot>Suspended</Badge>}</td>
+                  <td>{w.status === "active" ? <Badge tone="brand" dot>{tr("Active")}</Badge> : <Badge tone="danger" dot>{tr("Suspended")}</Badge>}</td>
                   <td style={{ textAlign: "right", whiteSpace: "nowrap" }}>
                     {w.tokens ? (
                       <Button
                         variant="ghost"
                         size="sm"
                         onClick={() => {
-                          const raw = prompt(`Add (or remove, with a minus) weighted tokens for ${w.name}:`, "100000");
+                          const raw = prompt(tr("Add (or remove, with a minus) weighted tokens for {name}:", { name: w.name }), "100000");
                           if (!raw) return;
-                          const reason = prompt("Reason (kept in the audit log):", "Goodwill credit");
+                          const reason = prompt(tr("Reason (kept in the audit log):"), tr("Goodwill credit"));
                           if (!reason) return;
-                          a.run(`t-${w.id}`, async () => { await api.post(`/admin/workspaces/${w.id}/tokens`, { delta: parseInt(raw, 10), reason }); await list.reload(); }, `Adjusted ${w.name} by ${fmt(parseInt(raw, 10))} tokens.`);
+                          a.run(`t-${w.id}`, async () => { await api.post(`/admin/workspaces/${w.id}/tokens`, { delta: parseInt(raw, 10), reason }); await list.reload(); }, tr("Adjusted {name} by {fmt} tokens.", { name: w.name, fmt: fmt(parseInt(raw, 10)) }));
                         }}
                       >
-                        Adjust tokens
+                        {tr("Adjust tokens")}
                       </Button>
                     ) : null}
                     <Button
@@ -236,12 +237,12 @@ function Workspaces() {
                       busy={a.busy === w.id}
                       onClick={() => {
                         const next = w.status === "active" ? "suspended" : "active";
-                        const reason = next === "suspended" ? prompt(`Why suspend ${w.name}?`) : "";
+                        const reason = next === "suspended" ? prompt(tr("Why suspend {name}?", { name: w.name })) : "";
                         if (reason === null) return;
                         a.run(w.id, async () => { await api.patch(`/admin/workspaces/${w.id}/status`, { status: next, reason }); await list.reload(); });
                       }}
                     >
-                      {w.status === "active" ? "Suspend" : "Reactivate"}
+                      {w.status === "active" ? tr("Suspend") : tr("Reactivate")}
                     </Button>
                   </td>
                 </tr>
@@ -284,7 +285,7 @@ function PlanEditor({ plan, onDone }: { plan: Plan | null; onDone: () => void })
     sort_order: parseInt(p.sort_order || "0", 10),
   };
   return (
-    <Card title={plan ? `Edit ${plan.name}` : "New plan"}>
+    <Card title={plan ? tr("Edit {name}", { name: plan.name }) : tr("New plan")}>
       <form
         className="vr-form"
         onSubmit={(e) => {
@@ -297,33 +298,33 @@ function PlanEditor({ plan, onDone }: { plan: Plan | null; onDone: () => void })
         }}
       >
         {a.msg ? <Banner tone={a.msg.tone}>{a.msg.text}</Banner> : null}
-        {plan ? <Banner tone="neutral">Changes apply to new purchases now and to existing subscribers at their next renewal.</Banner> : null}
+        {plan ? <Banner tone="neutral">{tr("Changes apply to new purchases now and to existing subscribers at their next renewal.")}</Banner> : null}
         <div className="vr-grid vr-grid-3">
-          {!plan ? <Field label="Key" value={p.key} onChange={(e) => setP({ ...p, key: e.target.value })} help="Lowercase, e.g. enterprise" /> : null}
-          <Field label="Name" value={p.name} onChange={(e) => setP({ ...p, name: e.target.value })} />
-          <Field label={`Price (${p.currency})`} inputMode="decimal" value={p.price} onChange={(e) => setP({ ...p, price: e.target.value })} />
-          <Field label="Currency" maxLength={3} value={p.currency} onChange={(e) => setP({ ...p, currency: e.target.value })} />
-          <Field label="Billing cycle (month / year)" value={p.billing_cycle} onChange={(e) => setP({ ...p, billing_cycle: e.target.value as "month" | "year" })} />
-          <Field label="AI tokens per cycle" inputMode="numeric" value={p.token_allowance} onChange={(e) => setP({ ...p, token_allowance: e.target.value })} />
-          <Field label="Sort order" inputMode="numeric" value={p.sort_order} onChange={(e) => setP({ ...p, sort_order: e.target.value })} />
+          {!plan ? <Field label={tr("Key")} value={p.key} onChange={(e) => setP({ ...p, key: e.target.value })} help={tr("Lowercase, e.g. enterprise")} /> : null}
+          <Field label={tr("Name")} value={p.name} onChange={(e) => setP({ ...p, name: e.target.value })} />
+          <Field label={tr("Price ({currency})", { currency: p.currency })} inputMode="decimal" value={p.price} onChange={(e) => setP({ ...p, price: e.target.value })} />
+          <Field label={tr("Currency")} maxLength={3} value={p.currency} onChange={(e) => setP({ ...p, currency: e.target.value })} />
+          <Field label={tr("Billing cycle (month / year)")} value={p.billing_cycle} onChange={(e) => setP({ ...p, billing_cycle: e.target.value as "month" | "year" })} />
+          <Field label={tr("AI tokens per cycle")} inputMode="numeric" value={p.token_allowance} onChange={(e) => setP({ ...p, token_allowance: e.target.value })} />
+          <Field label={tr("Sort order")} inputMode="numeric" value={p.sort_order} onChange={(e) => setP({ ...p, sort_order: e.target.value })} />
         </div>
-        <Field label="Description" value={p.description} onChange={(e) => setP({ ...p, description: e.target.value })} />
-        <span className="vr-eyebrow">Limits · −1 means unlimited</span>
+        <Field label={tr("Description")} value={p.description} onChange={(e) => setP({ ...p, description: e.target.value })} />
+        <span className="vr-eyebrow">{tr("Limits · −1 means unlimited")}</span>
         <div className="vr-grid vr-grid-4">
           {LIMIT_KEYS.map((k) => (
             <Field key={k} label={LIMIT_LABELS[k] + (k === "storage_mb" ? " (MB)" : "")} inputMode="numeric" value={String(p.limits[k])} onChange={(e) => setP({ ...p, limits: { ...p.limits, [k]: e.target.value as unknown as number } })} />
           ))}
         </div>
         <div className="vr-grid vr-grid-2">
-          <Switch label="Public" help="Shown on the plans page." checked={p.is_public} onChange={(v) => setP({ ...p, is_public: v })} />
-          <Switch label="Available" help="Off stops new purchases and renewals." checked={p.is_active} onChange={(v) => setP({ ...p, is_active: v })} />
+          <Switch label={tr("Public")} help={tr("Shown on the plans page.")} checked={p.is_public} onChange={(v) => setP({ ...p, is_public: v })} />
+          <Switch label={tr("Available")} help={tr("Off stops new purchases and renewals.")} checked={p.is_active} onChange={(v) => setP({ ...p, is_active: v })} />
         </div>
         <div className="vr-actions">
           <Button type="submit" variant="primary" busy={a.busy === "save"}>
-            {plan ? "Save plan" : "Create plan"}
+            {plan ? tr("Save plan") : tr("Create plan")}
           </Button>
           <Button variant="ghost" onClick={onDone}>
-            Cancel
+            {tr("Cancel")}
           </Button>
         </div>
       </form>
@@ -345,18 +346,18 @@ function Plans() {
       />
     );
   return (
-    <Card title="Subscription plans" actions={<Button size="sm" variant="primary" icon="plus" onClick={() => setEditing("new")}>New plan</Button>} padded={false}>
+    <Card title={tr("Subscription plans")} actions={<Button size="sm" variant="primary" icon="plus" onClick={() => setEditing("new")}>{tr("New plan")}</Button>} padded={false}>
       <div className="vr-table-wrap">
         <table className="vr-table">
           <thead>
             <tr>
-              <th>Plan</th>
-              <th className="num">Price</th>
-              <th className="num">Tokens</th>
-              <th className="num">Members</th>
-              <th className="num">Documents</th>
-              <th>Visibility</th>
-              <th><span className="sr-only">Actions</span></th>
+              <th>{tr("Plan")}</th>
+              <th className="num">{tr("Price")}</th>
+              <th className="num">{tr("Tokens")}</th>
+              <th className="num">{tr("Members")}</th>
+              <th className="num">{tr("Documents")}</th>
+              <th>{tr("Visibility")}</th>
+              <th><span className="sr-only">{tr("Actions")}</span></th>
             </tr>
           </thead>
           <tbody>
@@ -372,11 +373,11 @@ function Plans() {
                 <td className="num">{p.limits.members < 0 ? "∞" : p.limits.members}</td>
                 <td className="num">{p.limits.documents < 0 ? "∞" : fmt(p.limits.documents)}</td>
                 <td>
-                  {!p.is_active ? <Badge tone="danger">Retired</Badge> : p.is_public ? <Badge tone="brand">Public</Badge> : <Badge>Hidden</Badge>}
+                  {!p.is_active ? <Badge tone="danger">{tr("Retired")}</Badge> : p.is_public ? <Badge tone="brand">{tr("Public")}</Badge> : <Badge>{tr("Hidden")}</Badge>}
                 </td>
                 <td style={{ textAlign: "right" }}>
                   <Button size="sm" variant="ghost" onClick={() => setEditing(p)}>
-                    Edit
+                    {tr("Edit")}
                   </Button>
                 </td>
               </tr>
@@ -397,23 +398,23 @@ function Multipliers() {
   return (
     <>
       {a.msg ? <Banner tone={a.msg.tone}>{a.msg.text}</Banner> : null}
-      <Card title="Model weights" padded={false}>
+      <Card title={tr("Model weights")} padded={false}>
         <div className="vr-panel-body" style={{ paddingBottom: 0 }}>
           <p className="vr-muted" style={{ fontSize: 13 }}>
-            Weighted tokens = input × input weight + output × output weight. Customers see these weights on their usage page. Provider prices feed the cost report.
+            {tr("Weighted tokens = input × input weight + output × output weight. Customers see these weights on their usage page. Provider prices feed the cost report.")}
           </p>
         </div>
         <div className="vr-table-wrap" style={{ marginTop: 12 }}>
           <table className="vr-table">
             <thead>
               <tr>
-                <th>Model</th>
-                <th>Operation</th>
-                <th className="num">Input ×</th>
-                <th className="num">Output ×</th>
-                <th className="num">$ / 1M in</th>
-                <th className="num">$ / 1M out</th>
-                <th><span className="sr-only">Actions</span></th>
+                <th>{tr("Model")}</th>
+                <th>{tr("Operation")}</th>
+                <th className="num">{tr("Input ×")}</th>
+                <th className="num">{tr("Output ×")}</th>
+                <th className="num">{tr("$ / 1M in")}</th>
+                <th className="num">{tr("$ / 1M out")}</th>
+                <th><span className="sr-only">{tr("Actions")}</span></th>
               </tr>
             </thead>
             <tbody>
@@ -431,10 +432,10 @@ function Multipliers() {
                   <td className="num">{m.output_cost_per_m}</td>
                   <td style={{ textAlign: "right" }}>
                     <Button size="sm" variant="ghost" onClick={() => setF({ model: m.model, operation: m.operation, input_multiplier: String(m.input_multiplier), output_multiplier: String(m.output_multiplier), input_cost_per_m: String(m.input_cost_per_m), output_cost_per_m: String(m.output_cost_per_m) })}>
-                      Edit
+                      {tr("Edit")}
                     </Button>
                     <Button size="sm" variant="ghost" onClick={() => a.run(m.id, async () => { await api.del(`/admin/multipliers/${m.id}`); await list.reload(); })}>
-                      Delete
+                      {tr("Delete")}
                     </Button>
                   </td>
                 </tr>
@@ -443,7 +444,7 @@ function Multipliers() {
           </table>
         </div>
       </Card>
-      <Card title="Add or update a weight">
+      <Card title={tr("Add or update a weight")}>
         <form
           className="vr-form"
           onSubmit={(e) => {
@@ -458,20 +459,20 @@ function Multipliers() {
                 output_cost_per_m: Number(f.output_cost_per_m),
               });
               await list.reload();
-            }, "Weight saved.");
+            }, tr("Weight saved."));
           }}
         >
           <div className="vr-grid vr-grid-3">
-            <Field label="Model" className="vr-mono" value={f.model} onChange={(e) => setF({ ...f, model: e.target.value })} placeholder="claude-sonnet-5-5" />
-            <Field label="Operation" value={f.operation} onChange={(e) => setF({ ...f, operation: e.target.value })} help="* for all, or chat_response, kb_ask, tool_call, form_activation, form_prefill, classification, auto_reply, embedding" />
-            <Field label="Input weight" inputMode="decimal" value={f.input_multiplier} onChange={(e) => setF({ ...f, input_multiplier: e.target.value })} />
-            <Field label="Output weight" inputMode="decimal" value={f.output_multiplier} onChange={(e) => setF({ ...f, output_multiplier: e.target.value })} />
-            <Field label="Provider $ / 1M input" inputMode="decimal" value={f.input_cost_per_m} onChange={(e) => setF({ ...f, input_cost_per_m: e.target.value })} />
-            <Field label="Provider $ / 1M output" inputMode="decimal" value={f.output_cost_per_m} onChange={(e) => setF({ ...f, output_cost_per_m: e.target.value })} />
+            <Field label={tr("Model")} className="vr-mono" value={f.model} onChange={(e) => setF({ ...f, model: e.target.value })} placeholder="claude-sonnet-5-5" />
+            <Field label={tr("Operation")} value={f.operation} onChange={(e) => setF({ ...f, operation: e.target.value })} help={tr("* for all, or chat_response, kb_ask, tool_call, form_activation, form_prefill, classification, auto_reply, embedding")} />
+            <Field label={tr("Input weight")} inputMode="decimal" value={f.input_multiplier} onChange={(e) => setF({ ...f, input_multiplier: e.target.value })} />
+            <Field label={tr("Output weight")} inputMode="decimal" value={f.output_multiplier} onChange={(e) => setF({ ...f, output_multiplier: e.target.value })} />
+            <Field label={tr("Provider $ / 1M input")} inputMode="decimal" value={f.input_cost_per_m} onChange={(e) => setF({ ...f, input_cost_per_m: e.target.value })} />
+            <Field label={tr("Provider $ / 1M output")} inputMode="decimal" value={f.output_cost_per_m} onChange={(e) => setF({ ...f, output_cost_per_m: e.target.value })} />
           </div>
           <div>
             <Button type="submit" variant="primary" busy={a.busy === "save"} disabled={!f.model}>
-              Save weight
+              {tr("Save weight")}
             </Button>
           </div>
         </form>
@@ -480,15 +481,23 @@ function Multipliers() {
   );
 }
 
+const RETENTION_LABELS: Record<string, string> = {
+  closed_tickets: msg("Closed tickets"),
+  resolved_conversations: msg("Resolved conversations"),
+  email_content: msg("Email bodies and attachments"),
+  spam: msg("Mail held in Spam"),
+};
+
 function Defaults() {
-  const s = useData<{ no_plan_limits: Limits; audit_retention_days: number }>("/admin/settings");
+  const s = useData<{ no_plan_limits: Limits; audit_retention_days: number; retention_max: Record<string, number | null> }>("/admin/settings");
+  const [caps, setCaps] = useState<Record<string, string> | null>(null);
   const [limits, setLimits] = useState<Limits | null>(null);
   const [days, setDays] = useState<string | null>(null);
   const a = useAction();
   if (!s.data) return <Spinner />;
   const L = limits ?? s.data.no_plan_limits;
   return (
-    <Card title="Workspaces without a plan">
+    <Card title={tr("Workspaces without a plan")}>
       <form
         className="vr-form"
         onSubmit={(e) => {
@@ -497,27 +506,52 @@ function Defaults() {
             await api.put("/admin/settings", {
               no_plan_limits: Object.fromEntries(Object.entries(L).map(([k, v]) => [k, Number(v)])),
               audit_retention_days: Number(days ?? s.data!.audit_retention_days),
+              ...(caps ? { retention_max: Object.fromEntries(Object.entries(caps).map(([k, v]) => [k, v.trim() ? Number(v) : null])) } : {}),
             });
+            setCaps(null);
             await s.reload();
-          }, "Defaults saved.");
+          }, tr("Defaults saved."));
         }}
       >
         {a.msg ? <Banner tone={a.msg.tone}>{a.msg.text}</Banner> : null}
         <p className="vr-muted" style={{ fontSize: 13 }}>
-          Limits for workspaces that haven’t bought a plan or whose plan ended. Paid plans set their own limits.
+          {tr("Limits for workspaces that haven’t bought a plan or whose plan ended. Paid plans set their own limits.")}
         </p>
         <div className="vr-grid vr-grid-4">
           {LIMIT_KEYS.map((k) => (
-            <Field key={k} label={LIMIT_LABELS[k]} inputMode="numeric" value={String(L[k])} onChange={(e) => setLimits({ ...L, [k]: e.target.value as unknown as number })} />
+            <Field key={k} label={tr(LIMIT_LABELS[k])} inputMode="numeric" value={String(L[k])} onChange={(e) => setLimits({ ...L, [k]: e.target.value as unknown as number })} />
           ))}
         </div>
         <hr className="vr-sep" />
+        <div className="vr-form">
+          <b>{tr("Maximum data retention (days)")}</b>
+          <p className="vr-help" style={{ margin: 0 }}>
+            {tr("No workspace keeps these longer than this, whatever it sets. Leave a field empty for no maximum.")}
+          </p>
+          <div className="vr-grid vr-grid-4">
+            {Object.entries(RETENTION_LABELS).map(([k, label]) => (
+              <Field
+                key={k}
+                label={tr(label)}
+                inputMode="numeric"
+                value={caps?.[k] ?? (s.data!.retention_max[k] === null || s.data!.retention_max[k] === undefined ? "" : String(s.data!.retention_max[k]))}
+                onChange={(e) =>
+                  setCaps({
+                    ...Object.fromEntries(Object.entries(s.data!.retention_max).map(([kk, vv]) => [kk, vv === null ? "" : String(vv)])),
+                    ...(caps ?? {}),
+                    [k]: e.target.value,
+                  })
+                }
+              />
+            ))}
+          </div>
+        </div>
         <div style={{ maxWidth: 260 }}>
-          <Field label="Keep audit logs for (days)" inputMode="numeric" value={days ?? String(s.data.audit_retention_days)} onChange={(e) => setDays(e.target.value)} help="At least 30. Older entries are deleted by the worker." />
+          <Field label={tr("Keep audit logs for (days)")} inputMode="numeric" value={days ?? String(s.data.audit_retention_days)} onChange={(e) => setDays(e.target.value)} help={tr("At least 30. Older entries are deleted by the worker.")} />
         </div>
         <div>
           <Button type="submit" variant="primary" busy={a.busy === "save"}>
-            Save defaults
+            {tr("Save defaults")}
           </Button>
         </div>
       </form>
@@ -535,20 +569,20 @@ function Audit() {
     <>
       <form className="vr-actions" onSubmit={(e) => { e.preventDefault(); setQuery(action); }}>
         <div style={{ flex: 1, maxWidth: 420 }}>
-          <Field icon="search" placeholder="Filter by action prefix, e.g. admin. or user.login" value={action} onChange={(e) => setAction(e.target.value)} aria-label="Filter audit log" />
+          <Field icon="search" placeholder={tr("Filter by action prefix, e.g. admin. or user.login")} value={action} onChange={(e) => setAction(e.target.value)} aria-label={tr("Filter audit log")} />
         </div>
-        <Button type="submit">Filter</Button>
+        <Button type="submit">{tr("Filter")}</Button>
       </form>
       <Card padded={false}>
         <div className="vr-table-wrap">
           <table className="vr-table">
             <thead>
               <tr>
-                <th>When</th>
-                <th>Action</th>
-                <th>Actor</th>
-                <th>Target</th>
-                <th>Details</th>
+                <th>{tr("When")}</th>
+                <th>{tr("Action")}</th>
+                <th>{tr("Actor")}</th>
+                <th>{tr("Target")}</th>
+                <th>{tr("Details")}</th>
               </tr>
             </thead>
             <tbody>
@@ -560,7 +594,7 @@ function Audit() {
                   <td className="vr-mono" style={{ fontSize: 13 }}>
                     {l.action}
                   </td>
-                  <td>{l.actor ?? <span className="vr-muted">System</span>}</td>
+                  <td>{l.actor ?? <span className="vr-muted">{tr("System")}</span>}</td>
                   <td className="vr-mono vr-muted" style={{ fontSize: 12 }}>
                     {l.target_type ? `${l.target_type}:${(l.target_id ?? "").slice(0, 18)}` : "—"}
                   </td>
@@ -582,14 +616,14 @@ function Admin() {
   const { user } = useSession();
   const router = useRouter();
   const tab = (useSearchParams().get("tab") as Tab) || "overview";
-  if (!user.is_system_admin) return <Banner tone="danger">This area is for system administrators.</Banner>;
+  if (!user.is_system_admin) return <Banner tone="danger">{tr("This area is for system administrators.")}</Banner>;
   return (
     <>
-      <PageHeader eyebrow="System admin" title="Platform administration" subtitle="Plans, global limits, AI weights and accounts across every workspace. Every change here is audit-logged." />
-      <nav className="vr-tabs" aria-label="Admin sections">
+      <PageHeader eyebrow={tr("System admin")} title={tr("Platform administration")} subtitle={tr("Plans, global limits, AI weights and accounts across every workspace. Every change here is audit-logged.")} />
+      <nav className="vr-tabs" aria-label={tr("Admin sections")}>
         {TABS.map((t) => (
           <button key={t} type="button" className={t === tab ? "is-on" : undefined} aria-current={t === tab ? "page" : undefined} onClick={() => router.replace(`/admin?tab=${t}`)}>
-            {TAB_LABEL[t]}
+            {tr(TAB_LABEL[t])}
           </button>
         ))}
       </nav>

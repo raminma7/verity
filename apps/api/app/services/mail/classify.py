@@ -1,4 +1,7 @@
-"""AI classification of a new email: spam, promotion or legitimate, and which ticket category it belongs to.
+"""AI classification of a new email: which ticket category it belongs to.
+
+Spam is decided by the rules and the trained model (`spam_model`), never by an AI call; this module is called
+for legitimate mail only, without a verdict (the `with_verdict` path is kept for completeness and tests).
 
 One structured call through the Meter (operation "classification"), with the workspace's email model
 (claude-haiku-5-5 by default). The email is passed as data, never as instructions, and the answer is held to

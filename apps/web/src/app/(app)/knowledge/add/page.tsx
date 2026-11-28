@@ -1,10 +1,11 @@
 "use client";
 
+import { t as tr } from "@/i18n";
 import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 import { FileTag, StatusBadge } from "@/components/rag";
-import { Banner, Button, Card, Field, PageHeader, Segmented, Select } from "@/components/ui";
+import { Banner, Button, Card, Field, PageHeader, Segmented, Select, fmt } from "@/components/ui";
 import { api, errorText, type KnowledgeStats, type Source } from "@/lib/api";
 import { ACTIVE, bytes, docStatus } from "@/lib/knowledge";
 import { useSession } from "@/lib/session";
@@ -44,7 +45,7 @@ export default function AddKnowledge() {
       list.map(async (f, i) => {
         const key = fresh[i].key;
         let patch: Partial<Item>;
-        if (f.size > max) patch = { error: `Larger than ${stats.data?.max_upload_mb ?? 25} MB.` };
+        if (f.size > max) patch = { error: tr("Larger than {v} MB.", { v: stats.data?.max_upload_mb ?? 25 }) };
         else {
           try {
             patch = { source: await api.upload<Source>("/knowledge/files", f) };
@@ -58,24 +59,24 @@ export default function AddKnowledge() {
     stats.reload();
   }
 
-  if (!can("knowledge.manage")) return <Banner tone="warn">Your role can browse the knowledge base but not add to it.</Banner>;
+  if (!can("knowledge.manage")) return <Banner tone="warn">{tr("Your role can browse the knowledge base but not add to it.")}</Banner>;
   const done = items.filter((i) => i.source?.status === "ready").length;
 
   return (
     <>
       <div>
         <Link className="vr-link" href="/knowledge" style={{ fontSize: 13 }}>
-          ← Knowledge base
+          {tr("← Knowledge base")}
         </Link>
       </div>
-      <PageHeader title="Add knowledge" subtitle="Documents and websites are parsed, split into passages and indexed for search. Indexing uses AI tokens for embeddings." />
+      <PageHeader title={tr("Add knowledge")} subtitle={tr("Documents and websites are parsed, split into passages and indexed for search. Indexing uses AI tokens for embeddings.")} />
       <Segmented
-        label="Source type"
+        label={tr("Source type")}
         value={tab}
         onChange={setTab}
         options={[
-          { value: "files", label: "Upload documents" },
-          { value: "website", label: "Crawl a website" },
+          { value: "files", label: tr("Upload documents") },
+          { value: "website", label: tr("Crawl a website") },
         ]}
       />
       {tab === "files" ? (
@@ -100,12 +101,12 @@ export default function AddKnowledge() {
             </span>
             <span style={{ display: "flex", flexDirection: "column", gap: 4 }}>
               <span className="vr-display" style={{ fontSize: 28, lineHeight: "34px" }}>
-                Drop files here
+                {tr("Drop files here")}
               </span>
-              <span className="vr-muted">PDF, DOCX, TXT, CSV or XLSX · up to {stats.data?.max_upload_mb ?? 25} MB each</span>
+              <span className="vr-muted">{tr("PDF, DOCX, TXT, CSV or XLSX · up to")} {stats.data?.max_upload_mb ?? 25} {tr("MB each")}</span>
             </span>
             <span className="vr-btn vr-btn-secondary vr-btn-md" role="button">
-              <span>Browse files</span>
+              <span>{tr("Browse files")}</span>
             </span>
             <input
               ref={input}
@@ -122,9 +123,9 @@ export default function AddKnowledge() {
           {items.length ? (
             <>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
-                <h2 className="vr-h">Processing {items.length} file{items.length === 1 ? "" : "s"}</h2>
+                <h2 className="vr-h">{tr("Processing")} {items.length} {tr("file")}{items.length === 1 ? "" : "s"}</h2>
                 <span className="vr-mono vr-muted" style={{ fontSize: 12 }}>
-                  {done} of {items.length} done
+                  {tr("{done} of {total} done", { done, total: items.length })}
                 </span>
               </div>
               <div className="vr-card vr-list" style={{ overflow: "hidden" }}>
@@ -156,7 +157,7 @@ function QueueRow({ item }: { item: Item }) {
         : s.status === "failed"
           ? s.error_message
           : s.status === "processing"
-            ? "Parsing, chunking and embedding…"
+            ? tr("Parsing, chunking and embedding…")
             : "Waiting for a worker…";
   return (
     <div style={{ gap: 14 }}>
@@ -196,7 +197,7 @@ function WebsiteForm({ stats, onAdded }: { stats: KnowledgeStats | null; onAdded
 
   return (
     <div className="vr-grid vr-grid-2" style={{ alignItems: "start" }}>
-      <Card title="Website">
+      <Card title={tr("Website")}>
         <form
           className="vr-form"
           onSubmit={async (e) => {
@@ -221,52 +222,52 @@ function WebsiteForm({ stats, onAdded }: { stats: KnowledgeStats | null; onAdded
             }
           }}
         >
-          <Field label="Start address" placeholder="https://help.example.com" value={url} onChange={(e) => setUrl(e.target.value)} required error={err} />
+          <Field label={tr("Start address")} placeholder="https://help.example.com" value={url} onChange={(e) => setUrl(e.target.value)} required error={err} />
           <div className="vr-form-row" style={{ gridTemplateColumns: "1fr 1fr" }}>
             <Select
-              label="Follow links"
+              label={tr("Follow links")}
               value={depth}
               onChange={setDepth}
               options={[
-                { value: "0", label: "This page only" },
-                { value: "1", label: "1 level deep" },
-                { value: "2", label: "2 levels deep" },
-                { value: "3", label: "3 levels deep" },
-                { value: "5", label: "5 levels deep" },
+                { value: "0", label: tr("This page only") },
+                { value: "1", label: tr("1 level deep") },
+                { value: "2", label: tr("2 levels deep") },
+                { value: "3", label: tr("3 levels deep") },
+                { value: "5", label: tr("5 levels deep") },
               ]}
             />
             <Select
-              label="Re-sync"
+              label={tr("Re-sync")}
               value={sync}
               onChange={setSync}
               options={[
-                { value: "daily", label: "Every day" },
-                { value: "weekly", label: "Every week" },
-                { value: "off", label: "Only when I ask" },
+                { value: "daily", label: tr("Every day") },
+                { value: "weekly", label: tr("Every week") },
+                { value: "off", label: tr("Only when I ask") },
               ]}
             />
           </div>
-          <Field label="Only these paths" placeholder="/docs, /help" help="Optional. Comma-separated path prefixes." value={include} onChange={(e) => setInclude(e.target.value)} />
-          <Field label="Skip these paths" placeholder="/blog, /careers" value={exclude} onChange={(e) => setExclude(e.target.value)} />
+          <Field label={tr("Only these paths")} placeholder="/docs, /help" help={tr("Optional. Comma-separated path prefixes.")} value={include} onChange={(e) => setInclude(e.target.value)} />
+          <Field label={tr("Skip these paths")} placeholder="/blog, /careers" value={exclude} onChange={(e) => setExclude(e.target.value)} />
           <Button type="submit" variant="primary" icon="link" busy={busy} disabled={!url || !!full}>
-            Start crawl
+            {tr("Start crawl")}
           </Button>
-          {full ? <p className="vr-help">Your plan’s website limit is reached. Upgrade or remove a website to add another.</p> : null}
+          {full ? <p className="vr-help">{tr("Your plan’s website limit is reached. Upgrade or remove a website to add another.")}</p> : null}
         </form>
       </Card>
-      <Card title="How crawling works">
+      <Card title={tr("How crawling works")}>
         <ul className="vr-muted" style={{ margin: 0, paddingLeft: 18, display: "flex", flexDirection: "column", gap: 8 }}>
-          <li>Verity starts at the address and its sitemap, follows links on the same site and respects robots.txt.</li>
-          <li>Only the main text of each page is kept; navigation, footers and cookie banners are left out.</li>
-          <li>On re-sync, only pages that changed are embedded again, so re-syncs cost few tokens.</li>
+          <li>{tr("Verity starts at the address and its sitemap, follows links on the same site and respects robots.txt.")}</li>
+          <li>{tr("Only the main text of each page is kept; navigation, footers and cookie banners are left out.")}</li>
+          <li>{tr("On re-sync, only pages that changed are embedded again, so re-syncs cost few tokens.")}</li>
           <li>
-            Your plan allows {stats ? (stats.limits.crawled_pages < 0 ? "unlimited" : stats.limits.crawled_pages.toLocaleString()) : "…"} crawled pages in total; {stats?.usage.crawled_pages.toLocaleString() ?? "…"} are used.
+            {tr("Your plan allows {limit} crawled pages in total; {used} are used.", { limit: stats ? (stats.limits.crawled_pages < 0 ? tr("unlimited") : fmt(stats.limits.crawled_pages)) : "…", used: stats ? fmt(stats.usage.crawled_pages) : "…" })}
           </li>
         </ul>
         {added ? (
           <div style={{ marginTop: 16 }}>
-            <Banner tone="brand" title={`Crawling ${added.domain}`} action={<Link className="vr-btn vr-btn-secondary vr-btn-sm" href={`/knowledge/${added.id}`}>Follow progress</Link>}>
-              Pages appear in the knowledge base as they’re indexed.
+            <Banner tone="brand" title={tr("Crawling {domain}", { domain: added.domain })} action={<Link className="vr-btn vr-btn-secondary vr-btn-sm" href={`/knowledge/${added.id}`}>{tr("Follow progress")}</Link>}>
+              {tr("Pages appear in the knowledge base as they’re indexed.")}
             </Banner>
           </div>
         ) : null}

@@ -624,7 +624,9 @@ async def email(db: AsyncSession, ws: uuid.UUID, rng: Range) -> dict:
     totals = dict(await _all(db, f"SELECT {MAIL_KIND}, count(*) FROM email_messages WHERE {w} GROUP BY 1", p))
     extra = await _one(
         db,
-        "SELECT count(*) FILTER (WHERE verdict->>'reviewed' = 'not_spam'), count(*) FILTER (WHERE verdict->>'decided_by' = 'ai') "
+        "SELECT count(*) FILTER (WHERE verdict->>'reviewed' = 'not_spam'), count(*) FILTER (WHERE verdict->>'decided_by' = 'ai'), "
+        "count(*) FILTER (WHERE verdict->>'decided_by' = 'model' AND status IN ('spam', 'promotion')), "
+        "count(*) FILTER (WHERE (verdict->>'possible_spam')::boolean) "
         f"FROM email_messages WHERE {w}",
         p,
     )
@@ -637,6 +639,9 @@ async def email(db: AsyncSession, ws: uuid.UUID, rng: Range) -> dict:
             **{k: int(totals.get(k, 0)) for k in keys},
             "marked_not_spam": int(extra[0]),
             "decided_by_ai": int(extra[1]),
+            # Spam the trained model caught on its own: each one is an AI call the workspace didn't pay for.
+            "caught_by_model": int(extra[2]),
+            "possible_spam": int(extra[3]),
             "spam_rate": _rate(unwanted, total),
         },
         "series": _series(rng, series, keys),

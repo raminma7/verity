@@ -107,6 +107,8 @@ class Ticket(IdMixin, TimestampMixin, Base):
     assigned_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     # The team's first reply to the customer (for first-response times).
     first_response_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    summary: Mapped[str | None] = mapped_column(Text)  # AI summary for the team (operation "summary")
+    summary_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     resolved_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     closed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     reopened_count: Mapped[int] = mapped_column(Integer, default=0)

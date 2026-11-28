@@ -1,5 +1,6 @@
 "use client";
 
+import { intlLocale, t } from "@/i18n";
 /* Charts for Phase 5B (analytics, admin reports). The design system has no charts yet, so these are built only
    from its tokens and rules:
    - one hue: a teal ramp derived from --brand (--chart-1..3, validated for both themes in app.css), ordered by
@@ -26,13 +27,17 @@ const TONE_VAR: Record<Tone, string> = {
   muted: "var(--line-strong)",
 };
 
-const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
 /** "3 Nov" for a local calendar day (YYYY-MM-DD, already in the viewer's time zone), "Week of 3 Nov" for weeks. */
 export function dayLabel(iso: string, bucket: "day" | "week" = "day", long = false) {
   const [y, m, d] = iso.split("-").map(Number);
-  const s = `${d} ${MONTHS[m - 1]}${long ? ` ${y}` : ""}`;
-  return bucket === "week" ? `Week of ${s}` : s;
+  const s = new Date(Date.UTC(y, m - 1, d)).toLocaleDateString(intlLocale(), {
+    day: "numeric",
+    month: "short",
+    ...(long ? { year: "numeric" } : {}),
+    timeZone: "UTC",
+  });
+  return bucket === "week" ? t("Week of {date}", { date: s }) : s;
 }
 
 /** A max whose half is a whole number too, so a count axis never shows "0.5". */
@@ -58,7 +63,7 @@ export function Legend({ series }: { series: Series[] }) {
       {series.map((s) => (
         <li key={s.key}>
           <span className="vr-legend-key" style={{ background: TONE_VAR[s.tone] }} aria-hidden="true" />
-          {s.label}
+          {t(s.label)}
         </li>
       ))}
     </ul>
@@ -101,13 +106,13 @@ export function BarChart({
           <span data-v={format(max / 2)} />
           <span data-v="0" />
         </div>
-        <div className="vr-chart-bars" role="img" aria-label={`${label}: ${format(sum)} in total over ${data.length} ${bucket === "week" ? "weeks" : "days"}`}>
+        <div className="vr-chart-bars" role="img" aria-label={t("{label}: {sum} in total over {length} {v}", { label: label, sum: format(sum), length: data.length, v: bucket === "week" ? "weeks" : "days" })}>
           {data.map((p, i) => (
             <button
               key={p.date}
               type="button"
               className={cx("vr-chart-col", hover === i && "is-on")}
-              aria-label={`${dayLabel(p.date, bucket)}: ${series.map((s) => `${s.label} ${format(Number(p[s.key]) || 0)}`).join(", ")}`}
+              aria-label={`${dayLabel(p.date, bucket)}: ${series.map((s) => `${t(s.label)} ${format(Number(p[s.key]) || 0)}`).join(", ")}`}
               onMouseEnter={() => setHover(i)}
               onFocus={() => setHover(i)}
               onBlur={() => setHover(null)}
@@ -127,7 +132,7 @@ export function BarChart({
             {series.map((s) => (
               <span key={s.key}>
                 {series.length > 1 ? <i style={{ background: TONE_VAR[s.tone] }} aria-hidden="true" /> : null}
-                {s.label} <span className="vr-mono">{format(Number(tip[s.key]) || 0)}</span>
+                {t(s.label)} <span className="vr-mono">{format(Number(tip[s.key]) || 0)}</span>
               </span>
             ))}
           </div>
@@ -208,7 +213,7 @@ export function LineChart({
         <div
           className="vr-chart-hits"
           role="img"
-          aria-label={`${label}: ${known.length ? `from ${format(known[0])} to ${format(known[known.length - 1])}` : "no data in this range"}`}
+          aria-label={known.length ? t("{label}: from {from} to {to}", { label, from: format(known[0]), to: format(known[known.length - 1]) }) : t("{label}: no data in this range", { label })}
         >
           {data.map((p, i) => (
             <button
@@ -225,7 +230,7 @@ export function LineChart({
           <div className="vr-chart-tip" style={{ left: `${x(hover)}%` }} role="status">
             <b>{dayLabel(data[hover].date, bucket, true)}</b>
             <span>
-              {serie.label} <span className="vr-mono">{tipV === null ? "no data" : format(tipV)}</span>
+              {t(serie.label)} <span className="vr-mono">{tipV === null ? t("no data") : format(tipV)}</span>
             </span>
           </div>
         ) : null}
@@ -251,7 +256,7 @@ export function BarList({
 }) {
   const max = Math.max(1, ...rows.map((r) => r.value));
   const total = rows.reduce((a, r) => a + r.value, 0);
-  if (!rows.length) return <p className="vr-muted vr-caption">Nothing in this range.</p>;
+  if (!rows.length) return <p className="vr-muted vr-caption">{t("Nothing in this range.")}</p>;
   return (
     <ul className="vr-barlist" aria-label={label}>
       {rows.map((r) => (
@@ -272,12 +277,12 @@ export function BarList({
 }
 
 /** "Up 12% from the previous 7 days" — direction in words, never colour alone. */
-export function delta(current: number | null | undefined, previous: number | null | undefined, days: number, unit = "") {
-  if (current === null || current === undefined || previous === null || previous === undefined) return `No data for the previous ${days} days`;
-  if (previous === 0) return current === 0 ? `Same as the previous ${days} days` : `None in the previous ${days} days`;
+export function delta(current: number | null | undefined, previous: number | null | undefined, days: number) {
+  if (current === null || current === undefined || previous === null || previous === undefined) return t("No data for the previous {days} days", { days });
+  if (previous === 0) return current === 0 ? t("Same as the previous {days} days", { days }) : t("None in the previous {days} days", { days });
   const pct = Math.round(((current - previous) / previous) * 100);
-  if (pct === 0) return `Same as the previous ${days} days`;
-  return `${pct > 0 ? "Up" : "Down"} ${Math.abs(pct)}%${unit} from the previous ${days} days`;
+  if (pct === 0) return t("Same as the previous {days} days", { days });
+  return pct > 0 ? t("Up {pct}% from the previous {days} days", { pct, days }) : t("Down {pct}% from the previous {days} days", { pct: Math.abs(pct), days });
 }
 
 export function KPI({ label, value, note }: { label: string; value: ReactNode; note?: ReactNode }) {
@@ -318,12 +323,12 @@ export function ChartCard({
         <div className="vr-actions">
           {actions}
           <Segmented
-            label={`${title}: chart or table`}
+            label={t("{title}: chart or table", { title: title })}
             value={view}
             onChange={setView}
             options={[
-              { value: "chart", label: "Chart" },
-              { value: "table", label: "Table" },
+              { value: "chart", label: t("Chart") },
+              { value: "table", label: t("Table") },
             ]}
           />
         </div>
@@ -372,11 +377,11 @@ export function seriesTable(data: Point[], series: Series[], bucket: "day" | "we
 
 export function minutes(m: number | null | undefined) {
   if (m === null || m === undefined) return "—";
-  if (m === 0) return "0 min";
-  if (m < 1) return `${Math.max(1, Math.round(m * 60))} s`;
-  if (m < 60) return `${Math.round(m)} min`;
-  if (m < 48 * 60) return `${(m / 60).toFixed(m < 600 ? 1 : 0)} h`;
-  return `${(m / 1440).toFixed(1)} days`;
+  if (m === 0) return t("{v} min", { v: 0 });
+  if (m < 1) return t("{v} s", { v: Math.max(1, Math.round(m * 60)) });
+  if (m < 60) return t("{v} min", { v: Math.round(m) });
+  if (m < 48 * 60) return t("{v} h", { v: (m / 60).toFixed(m < 600 ? 1 : 0) });
+  return t("{v} d", { v: (m / 1440).toFixed(1) });
 }
 
 export function pct(v: number | null | undefined) {

@@ -123,8 +123,9 @@ class Payment(IdMixin, Base):
     __tablename__ = "payments"
     __table_args__ = (Index("ix_payments_created", "created_at"),)
 
-    workspace_id: Mapped[uuid.UUID] = mapped_column(ForeignKey("workspaces.id", ondelete="CASCADE"), index=True)
-    checkout_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("checkouts.id"), unique=True)
+    # Invoices outlive a deleted workspace for accounting, de-identified (workspace and checkout set to NULL).
+    workspace_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("workspaces.id", ondelete="SET NULL"), index=True)
+    checkout_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("checkouts.id", ondelete="SET NULL"), unique=True)
     plan_id: Mapped[uuid.UUID | None] = mapped_column(ForeignKey("plans.id"))
     description: Mapped[str] = mapped_column(String(200))
     amount_cents: Mapped[int] = mapped_column(Integer)

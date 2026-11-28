@@ -400,3 +400,15 @@ async def test_price_changes_make_a_new_price_billed_from_renewal(client, stripe
         p.price_cents = 2900
         p.provider_price_ref = None
         await s.commit()
+
+
+async def test_deleting_the_workspace_cancels_the_stripe_subscription_now(client, stripe):
+    from tests.conftest import PASSWORD
+
+    sub_ref = await active(client, stripe)
+    name = (await client.get("/api/workspace")).json()["workspace"]["name"]
+    r = await client.post("/api/workspace/delete", json={"password": PASSWORD, "confirm_name": name})
+    assert r.status_code == 200, r.text
+    assert ("DELETE", f"/v1/subscriptions/{sub_ref}", {}) in stripe.requests
+    async with SessionLocal() as db:
+        assert (await db.execute(select(Subscription.status))).scalar_one() == "canceled"

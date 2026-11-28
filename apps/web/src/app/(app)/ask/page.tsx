@@ -1,5 +1,6 @@
 "use client";
 
+import { t } from "@/i18n";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useRef, useState } from "react";
@@ -102,16 +103,16 @@ function Ask() {
       <section className="vr-ask-main">
         {messages.length === 0 && !loading && streaming === null ? (
           <>
-            <PageHeader title={`What do you want to know, ${first}?`} subtitle="Ask the knowledge base exactly as a customer would. You’ll see the answer the chatbot would give, with its sources." />
-            {noKnowledge ? <Banner tone="warn">Ask needs an active plan.</Banner> : null}
+            <PageHeader title={t("What do you want to know, {first}?", { first: first })} subtitle={t("Ask the knowledge base exactly as a customer would. You’ll see the answer the chatbot would give, with its sources.")} />
+            {noKnowledge ? <Banner tone="warn">{t("Ask needs an active plan.")}</Banner> : null}
             <QueryBar busy={busy} onSubmit={ask} rows={3} autoFocus />
             {history.data?.length ? (
               <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-                <span className="vr-eyebrow">Recent questions</span>
+                <span className="vr-eyebrow">{t("Recent questions")}</span>
                 <div className="vr-card vr-list">
                   {history.data.slice(0, 8).map((c) => (
                     <Link key={c.id} href={`/ask?c=${c.id}`} style={{ display: "flex", justifyContent: "space-between", gap: 12 }}>
-                      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.title || "Untitled"}</span>
+                      <span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{c.title || t("Untitled")}</span>
                       <span className="vr-muted vr-mono" style={{ fontSize: 12, flex: "none" }}>
                         {c.message_count / 2} {c.message_count === 2 ? "question" : "questions"}
                       </span>
@@ -120,8 +121,8 @@ function Ask() {
                 </div>
               </div>
             ) : (
-              <EmptyState icon="chat" title="No questions yet">
-                Answers come only from your knowledge base, so add documents or a website first.
+              <EmptyState icon="chat" title={t("No questions yet")}>
+                {t("Answers come only from your knowledge base, so add documents or a website first.")}
               </EmptyState>
             )}
           </>
@@ -129,10 +130,10 @@ function Ask() {
           <>
             <header style={{ display: "flex", alignItems: "center", gap: 12 }}>
               <h1 className="vr-h" style={{ flex: 1, margin: 0 }}>
-                {messages.find((m) => m.role === "member")?.content.slice(0, 120) ?? "Ask"}
+                {messages.find((m) => m.role === "member")?.content.slice(0, 120) ?? t("Ask")}
               </h1>
               <Button icon="plus" onClick={() => router.push("/ask")}>
-                New question
+                {t("New question")}
               </Button>
             </header>
             {loading ? <Spinner /> : null}
@@ -156,13 +157,13 @@ function Ask() {
               ) : null,
             )}
             {streaming !== null ? (
-              <AnswerCard confidence={undefined}>{streaming ? <p style={{ whiteSpace: "pre-line" }}>{streaming}</p> : <p className="vr-muted">Searching the knowledge base…</p>}</AnswerCard>
+              <AnswerCard confidence={undefined}>{streaming ? <p style={{ whiteSpace: "pre-line" }}>{streaming}</p> : <p className="vr-muted">{t("Searching the knowledge base…")}</p>}</AnswerCard>
             ) : null}
             {err ? <Banner tone="danger">{err}</Banner> : null}
             <div ref={endRef} />
-            <QueryBar busy={busy} onSubmit={ask} rows={1} placeholder="Ask a follow-up…" />
+            <QueryBar busy={busy} onSubmit={ask} rows={1} placeholder={t("Ask a follow-up…")} />
             <p className="vr-muted" style={{ margin: 0, textAlign: "center", fontSize: 12, lineHeight: "16px" }}>
-              Answers come only from your documents. Check the cited passages before acting on them.
+              {t("Answers come only from your documents. Check the cited passages before acting on them.")}
             </p>
           </>
         )}

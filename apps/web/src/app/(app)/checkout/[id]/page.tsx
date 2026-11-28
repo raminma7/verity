@@ -1,5 +1,6 @@
 "use client";
 
+import { t } from "@/i18n";
 import { useParams, useRouter } from "next/navigation";
 import { useState } from "react";
 
@@ -36,40 +37,40 @@ export default function CheckoutPage() {
 
   return (
     <>
-      <PageHeader eyebrow="Checkout" title={isPackage ? `Token package: ${co.package?.name}` : `Verity ${co.plan?.name}`} />
-      <Card className="vr-checkout" title="Order summary" actions={<Badge tone="warn" dot>Test mode</Badge>}>
+      <PageHeader eyebrow={t("Checkout")} title={isPackage ? t("Token package: {name}", { name: co.package?.name }) : t("Verity {name}", { name: co.plan?.name })} />
+      <Card className="vr-checkout" title={t("Order summary")} actions={<Badge tone="warn" dot>{t("Test mode")}</Badge>}>
         <div className="vr-form">
           <dl className="vr-kv">
             {isPackage ? (
               <>
-                <dt>Package</dt>
-                <dd>{co.package?.name}, paid once</dd>
-                <dt>AI tokens</dt>
-                <dd className="vr-mono">{compact(co.package?.tokens ?? 0)}, used after the plan’s allowance, expiring in 12 months</dd>
+                <dt>{t("Package")}</dt>
+                <dd>{t("{package}, paid once", { package: co.package?.name ?? "" })}</dd>
+                <dt>{t("AI tokens")}</dt>
+                <dd className="vr-mono">{t("{tokens}, used after the plan’s allowance, expiring in 12 months", { tokens: compact(co.package?.tokens ?? 0) })}</dd>
               </>
             ) : (
               <>
-                <dt>Plan</dt>
+                <dt>{t("Plan")}</dt>
                 <dd>
-                  {co.plan?.name}, billed every {co.plan?.billing_cycle}
+                  {t("{plan}, billed every {cycle}", { plan: co.plan?.name ?? "", cycle: t(co.plan?.billing_cycle ?? "month") })}
                 </dd>
-                <dt>AI tokens</dt>
+                <dt>{t("AI tokens")}</dt>
                 <dd className="vr-mono">
-                  {compact(co.plan?.token_allowance ?? 0)} per {co.plan?.billing_cycle}
+                  {t("{tokens} per {cycle}", { tokens: compact(co.plan?.token_allowance ?? 0), cycle: t(co.plan?.billing_cycle ?? "month") })}
                 </dd>
               </>
             )}
-            <dt>Due today</dt>
+            <dt>{t("Due today")}</dt>
             <dd>
-              <b>{money(co.amount_cents, co.currency)}</b> <span className="vr-muted">plus tax where it applies</span>
+              <b>{money(co.amount_cents, co.currency)}</b> <span className="vr-muted">{t("plus tax where it applies")}</span>
             </dd>
           </dl>
-          <Banner tone="neutral" title="No card is charged.">
-            Payments run on a test provider until live billing is connected. Confirming reports the payment exactly as the payment provider would.
+          <Banner tone="neutral" title={t("No card is charged.")}>
+            {t("Payments run on a test provider until live billing is connected. Confirming reports the payment exactly as the payment provider would.")}
           </Banner>
           {error ? <Banner tone="danger">{error}</Banner> : null}
           {co.status === "paid" ? (
-            <Banner title={isPackage ? "Paid. The tokens are in your balance." : "Paid. Your plan is active."} />
+            <Banner title={isPackage ? t("Paid. The tokens are in your balance.") : t("Paid. Your plan is active.")} />
           ) : (
             <div className="vr-actions">
               <Button
@@ -89,10 +90,10 @@ export default function CheckoutPage() {
                   }
                 }}
               >
-                Pay {money(co.amount_cents, co.currency)}
+                {t("Pay")} {money(co.amount_cents, co.currency)}
               </Button>
               <Button variant="ghost" onClick={() => router.push(isPackage ? "/billing/tokens" : "/plans")}>
-                Cancel
+                {t("Cancel")}
               </Button>
             </div>
           )}

@@ -1,5 +1,6 @@
 "use client";
 
+import { intlLocale, t as tr } from "@/i18n";
 import { useEffect, useState } from "react";
 
 import { Badge, Banner, Button, Card, EmptyState, Field, Segmented, Select, Spinner, Switch } from "@/components/ui";
@@ -28,11 +29,11 @@ function Chips<T extends string>({ label, options, value, onChange, disabled }: 
               disabled={disabled}
               onClick={() => onChange(on ? value.filter((v) => v !== o.value) : [...value, o.value])}
             >
-              {o.label}
+              {tr(o.label)}
             </button>
           );
         })}
-        {!options.length ? <span className="vr-help">None yet.</span> : null}
+        {!options.length ? <span className="vr-help">{tr("None yet.")}</span> : null}
       </div>
     </div>
   );
@@ -42,7 +43,7 @@ function Availability({ value }: { value: "available" | "away" }) {
   return (
     <span className="vr-avail">
       <span className={value === "away" ? "vr-avail-dot is-away" : "vr-avail-dot"} aria-hidden="true" />
-      {value === "away" ? "Away" : "Available"}
+      {value === "away" ? tr("Away") : tr("Available")}
     </span>
   );
 }
@@ -75,11 +76,11 @@ export default function RoutingSettingsPage() {
   }, [settings.data]);
 
   const catOpts = (cats.data ?? []).map((c) => ({ value: c.id, label: c.name }));
-  const catName = (id: string) => cats.data?.find((c) => c.id === id)?.name ?? "a deleted category";
+  const catName = (id: string) => cats.data?.find((c) => c.id === id)?.name ?? tr("a deleted category");
   const teamList = teams.data?.items ?? [];
   const people = members.data?.items ?? [];
-  const personName = (id?: string) => people.find((p) => p.user_id === id)?.name ?? "someone who can’t take tickets";
-  const teamName = (id?: string) => teamList.find((t) => t.id === id)?.name ?? "a deleted team";
+  const personName = (id?: string) => people.find((p) => p.user_id === id)?.name ?? tr("someone who can’t take tickets");
+  const teamName = (id?: string) => teamList.find((t) => t.id === id)?.name ?? tr("a deleted team");
 
   async function act(key: string, fn: () => Promise<unknown>, ok?: string) {
     setBusy(key);
@@ -103,15 +104,16 @@ export default function RoutingSettingsPage() {
 
   function describe(r: RoutingRule) {
     const c = r.conditions;
+    const or = (xs: string[]) => new Intl.ListFormat(intlLocale(), { type: "disjunction" }).format(xs);
     const parts = [
-      c.sources?.length ? `from ${c.sources.map((s) => SOURCE[s as keyof typeof SOURCE] ?? s).join(" or ")}` : "",
-      c.category_ids?.length ? `in ${c.category_ids.map(catName).join(" or ")}` : "",
-      c.priorities?.length ? `${c.priorities.map((p) => PRIORITY[p as keyof typeof PRIORITY]?.label ?? p).join(" or ")} priority` : "",
-      c.keywords?.length ? `mentioning ${c.keywords.map((k) => `“${k}”`).join(" or ")}` : "",
-      c.requester_domains?.length ? `from @${c.requester_domains.join(", @")}` : "",
+      c.sources?.length ? tr("from {sources}", { sources: or(c.sources.map((s) => tr(SOURCE[s as keyof typeof SOURCE] ?? s))) }) : "",
+      c.category_ids?.length ? tr("in {categories}", { categories: or(c.category_ids.map(catName)) }) : "",
+      c.priorities?.length ? tr("{priorities} priority", { priorities: or(c.priorities.map((p) => tr(PRIORITY[p as keyof typeof PRIORITY]?.label ?? p))) }) : "",
+      c.keywords?.length ? tr("mentioning {words}", { words: or(c.keywords.map((k) => `“${k}”`)) }) : "",
+      c.requester_domains?.length ? tr("from {domains}", { domains: or(c.requester_domains.map((d) => `@${d}`)) }) : "",
     ].filter(Boolean);
-    const to = r.action.team_id ? `team “${teamName(r.action.team_id)}”` : personName(r.action.assignee_id);
-    return `${parts.length ? `Tickets ${parts.join(", ")}` : "Every ticket"} → ${to}`;
+    const to = r.action.team_id ? tr("team “{team}”", { team: teamName(r.action.team_id) }) : personName(r.action.assignee_id);
+    return parts.length ? tr("Tickets {conditions} → {to}", { conditions: parts.join(", "), to }) : tr("Every ticket → {to}", { to });
   }
 
   if (teams.loading && !teams.data) return <Spinner />;
@@ -120,42 +122,41 @@ export default function RoutingSettingsPage() {
     <>
       {msg ? <Banner tone={msg.tone}>{msg.text}</Banner> : null}
       {!configure ? (
-        <Banner tone="neutral">Owners and administrators set up teams and rules. You can mark yourself away from the menu under your name.</Banner>
+        <Banner tone="neutral">{tr("Owners and administrators set up teams and rules. You can mark yourself away from the menu under your name.")}</Banner>
       ) : null}
 
       {configure && cfg ? (
-        <Card title="Automatic routing">
+        <Card title={tr("Automatic routing")}>
           <Switch
-            label="Assign new tickets automatically"
-            help="Email, chatbot forms, chats and tickets your team adds go to the right team, then to its least busy available member. No AI tokens are used."
+            label={tr("Assign new tickets automatically")}
+            help={tr("Email, chatbot forms, chats and tickets your team adds go to the right team, then to its least busy available member. No AI tokens are used.")}
             checked={cfg.enabled}
             onChange={(v) => setCfg({ ...cfg, enabled: v })}
           />
           <div className="vr-actions" style={{ alignItems: "flex-end", marginTop: 12 }}>
             <Select
-              label="When nothing else matches"
+              label={tr("When nothing else matches")}
               value={cfg.default_team_id ?? ""}
               onChange={(v) => setCfg({ ...cfg, default_team_id: v || null })}
-              options={[{ value: "", label: "Leave the ticket unassigned" }, ...teamList.map((t) => ({ value: t.id, label: `Send to ${t.name}` }))]}
+              options={[{ value: "", label: tr("Leave the ticket unassigned") }, ...teamList.map((t) => ({ value: t.id, label: tr("Send to {name}", { name: t.name }) }))]}
             />
-            <Button variant="primary" busy={busy === "settings"} onClick={() => act("settings", () => api.put("/routing/settings", cfg), "Routing settings saved.")}>
-              Save
+            <Button variant="primary" busy={busy === "settings"} onClick={() => act("settings", () => api.put("/routing/settings", cfg), tr("Routing settings saved."))}>
+              {tr("Save")}
             </Button>
           </div>
           <p className="vr-help">
-            Order of checks: your rules from the top, then the team that handles the ticket’s category, then the team above. Inside a team, members who handle the
-            category come first, then whoever has the fewest open tickets. Away members and members at their cap are skipped.
+            {tr("Order of checks: your rules from the top, then the team that handles the ticket’s category, then the team above. Inside a team, members who handle the category come first, then whoever has the fewest open tickets. Away members and members at their cap are skipped.")}
           </p>
         </Card>
       ) : null}
 
-      <Card title="Teams">
+      <Card title={tr("Teams")}>
         {!teamList.length ? (
-          <EmptyState icon="users" title="No teams yet">
-            A team is a group of people who work the same tickets, such as Billing or Shipping.
+          <EmptyState icon="users" title={tr("No teams yet")}>
+            {tr("A team is a group of people who work the same tickets, such as Billing or Shipping.")}
           </EmptyState>
         ) : (
-          <div className="vr-card" aria-label="Teams">
+          <div className="vr-card" aria-label={tr("Teams")}>
             {teamList.map((t) => (
               <div key={t.id} className="vr-team">
                 <div className="vr-actions" style={{ justifyContent: "space-between" }}>
@@ -163,21 +164,21 @@ export default function RoutingSettingsPage() {
                   <span className="vr-actions">
                     <Badge>{`${t.members.length} ${t.members.length === 1 ? "member" : "members"}`}</Badge>
                     {configure ? (
-                      <Button size="sm" variant="ghost" busy={busy === `del-${t.id}`} onClick={() => act(`del-${t.id}`, () => api.del(`/teams/${t.id}`), `${t.name} deleted.`)}>
-                        Delete
+                      <Button size="sm" variant="ghost" busy={busy === `del-${t.id}`} onClick={() => act(`del-${t.id}`, () => api.del(`/teams/${t.id}`), tr("{name} deleted.", { name: t.name }))}>
+                        {tr("Delete")}
                       </Button>
                     ) : null}
                   </span>
                 </div>
                 <Chips
-                  label="Members"
+                  label={tr("Members")}
                   disabled={!configure || busy === `m-${t.id}`}
                   options={people.map((p) => ({ value: p.user_id, label: p.name }))}
                   value={t.members.map((m) => m.id)}
                   onChange={(ids) => act(`m-${t.id}`, () => api.put(`/teams/${t.id}/members`, { member_ids: ids }))}
                 />
                 <Chips
-                  label="Handles these categories"
+                  label={tr("Handles these categories")}
                   disabled={!configure || busy === `c-${t.id}`}
                   options={catOpts}
                   value={t.category_ids}
@@ -193,24 +194,24 @@ export default function RoutingSettingsPage() {
             style={{ alignItems: "flex-end", marginTop: 12 }}
             onSubmit={(e) => {
               e.preventDefault();
-              act("team", () => api.post("/teams", { name: newTeam }), `${newTeam} added. Add its members and categories above.`).then(() => setNewTeam(""));
+              act("team", () => api.post("/teams", { name: newTeam }), tr("{newTeam} added. Add its members and categories above.", { newTeam: newTeam })).then(() => setNewTeam(""));
             }}
           >
-            <Field label="New team" value={newTeam} onChange={(e) => setNewTeam(e.target.value)} placeholder="Billing" maxLength={80} />
+            <Field label={tr("New team")} value={newTeam} onChange={(e) => setNewTeam(e.target.value)} placeholder={tr("Billing")} maxLength={80} />
             <Button type="submit" icon="plus" busy={busy === "team"} disabled={!newTeam.trim()}>
-              Add team
+              {tr("Add team")}
             </Button>
           </form>
         ) : null}
       </Card>
 
       {configure ? (
-        <Card title="Rules">
+        <Card title={tr("Rules")}>
           <p className="vr-muted" style={{ marginTop: 0 }}>
-            Checked from the top; the first rule whose conditions all match decides. Leave a condition empty to match anything.
+            {tr("Checked from the top; the first rule whose conditions all match decides. Leave a condition empty to match anything.")}
           </p>
           {rules.data?.items.length ? (
-            <div className="vr-rules" aria-label="Routing rules">
+            <div className="vr-rules" aria-label={tr("Routing rules")}>
               {rules.data.items.map((r, i, all) => (
                 <div key={r.id} className={r.enabled ? "vr-rule" : "vr-rule is-off"}>
                   <span className="vr-rule-pos">{i + 1}</span>
@@ -220,31 +221,31 @@ export default function RoutingSettingsPage() {
                   </span>
                   <span className="vr-actions">
                     <Badge tone={r.enabled ? "brand" : "neutral"} dot>
-                      {r.enabled ? "On" : "Off"}
+                      {r.enabled ? tr("On") : tr("Off")}
                     </Badge>
-                    <Button size="sm" variant="ghost" disabled={i === 0} onClick={() => move(i, -1)} aria-label={`Move ${r.name} up`}>
+                    <Button size="sm" variant="ghost" disabled={i === 0} onClick={() => move(i, -1)} aria-label={tr("Move {name} up", { name: r.name })}>
                       ↑
                     </Button>
-                    <Button size="sm" variant="ghost" disabled={i === all.length - 1} onClick={() => move(i, 1)} aria-label={`Move ${r.name} down`}>
+                    <Button size="sm" variant="ghost" disabled={i === all.length - 1} onClick={() => move(i, 1)} aria-label={tr("Move {name} down", { name: r.name })}>
                       ↓
                     </Button>
                     <Button size="sm" variant="ghost" onClick={() => act(`t-${r.id}`, () => api.patch(`/routing/rules/${r.id}`, { enabled: !r.enabled }))}>
-                      {r.enabled ? "Turn off" : "Turn on"}
+                      {r.enabled ? tr("Turn off") : tr("Turn on")}
                     </Button>
-                    <Button size="sm" variant="ghost" onClick={() => act(`d-${r.id}`, () => api.del(`/routing/rules/${r.id}`), "Rule deleted.")}>
-                      Delete
+                    <Button size="sm" variant="ghost" onClick={() => act(`d-${r.id}`, () => api.del(`/routing/rules/${r.id}`), tr("Rule deleted."))}>
+                      {tr("Delete")}
                     </Button>
                   </span>
                 </div>
               ))}
             </div>
           ) : (
-            <span className="vr-help">No rules: tickets go by category and the default team.</span>
+            <span className="vr-help">{tr("No rules: tickets go by category and the default team.")}</span>
           )}
           <form
             className="vr-form"
             style={{ marginTop: 16 }}
-            aria-label="Add a rule"
+            aria-label={tr("Add a rule")}
             onSubmit={(e) => {
               e.preventDefault();
               act(
@@ -261,53 +262,53 @@ export default function RoutingSettingsPage() {
                     },
                     action: rule.target === "team" ? { team_id: rule.team_id || null } : { assignee_id: rule.assignee_id || null },
                   }),
-                "Rule added.",
+                tr("Rule added."),
               ).then(() => setRule({ ...EMPTY_RULE }));
             }}
           >
-            <b>Add a rule</b>
-            <Field label="Name" value={rule.name} onChange={(e) => setRule({ ...rule, name: e.target.value })} placeholder="Billing email" maxLength={80} required />
-            <Chips label="Source" options={SOURCES.map((s) => ({ value: s, label: SOURCE[s] }))} value={rule.sources} onChange={(v) => setRule({ ...rule, sources: v })} />
-            <Chips label="Category" options={catOpts} value={rule.category_ids} onChange={(v) => setRule({ ...rule, category_ids: v })} />
-            <Chips label="Priority" options={PRIORITY_ORDER.map((p) => ({ value: p, label: PRIORITY[p].label }))} value={rule.priorities} onChange={(v) => setRule({ ...rule, priorities: v })} />
+            <b>{tr("Add a rule")}</b>
+            <Field label={tr("Name")} value={rule.name} onChange={(e) => setRule({ ...rule, name: e.target.value })} placeholder={tr("Billing email")} maxLength={80} required />
+            <Chips label={tr("Source")} options={SOURCES.map((s) => ({ value: s, label: tr(SOURCE[s]) }))} value={rule.sources} onChange={(v) => setRule({ ...rule, sources: v })} />
+            <Chips label={tr("Category")} options={catOpts} value={rule.category_ids} onChange={(v) => setRule({ ...rule, category_ids: v })} />
+            <Chips label={tr("Priority")} options={PRIORITY_ORDER.map((p) => ({ value: p, label: tr(PRIORITY[p].label) }))} value={rule.priorities} onChange={(v) => setRule({ ...rule, priorities: v })} />
             <div className="vr-grid2">
-              <Field label="Words in the subject or message" value={rule.keywords} onChange={(e) => setRule({ ...rule, keywords: e.target.value })} placeholder="refund, invoice" help="Separate with commas; any one matches." />
-              <Field label="Requester’s email domain" value={rule.domains} onChange={(e) => setRule({ ...rule, domains: e.target.value })} placeholder="bigcorp.com" help="Subdomains match too." />
+              <Field label={tr("Words in the subject or message")} value={rule.keywords} onChange={(e) => setRule({ ...rule, keywords: e.target.value })} placeholder={tr("refund, invoice")} help={tr("Separate with commas; any one matches.")} />
+              <Field label={tr("Requester’s email domain")} value={rule.domains} onChange={(e) => setRule({ ...rule, domains: e.target.value })} placeholder="bigcorp.com" help={tr("Subdomains match too.")} />
             </div>
             <div className="vr-actions" style={{ alignItems: "flex-end" }}>
               <Segmented
-                label="Send to"
+                label={tr("Send to")}
                 value={rule.target}
                 onChange={(v) => setRule({ ...rule, target: v })}
                 options={[
-                  { value: "team", label: "A team" },
-                  { value: "person", label: "One person" },
+                  { value: "team", label: tr("A team") },
+                  { value: "person", label: tr("One person") },
                 ]}
               />
               {rule.target === "team" ? (
-                <Select label="Team" value={rule.team_id} onChange={(v) => setRule({ ...rule, team_id: v })} options={[{ value: "", label: "Choose a team" }, ...teamList.map((t) => ({ value: t.id, label: t.name }))]} />
+                <Select label={tr("Team")} value={rule.team_id} onChange={(v) => setRule({ ...rule, team_id: v })} options={[{ value: "", label: tr("Choose a team") }, ...teamList.map((t) => ({ value: t.id, label: t.name }))]} />
               ) : (
-                <Select label="Person" value={rule.assignee_id} onChange={(v) => setRule({ ...rule, assignee_id: v })} options={[{ value: "", label: "Choose a person" }, ...people.map((p) => ({ value: p.user_id, label: p.name }))]} />
+                <Select label={tr("Person")} value={rule.assignee_id} onChange={(v) => setRule({ ...rule, assignee_id: v })} options={[{ value: "", label: tr("Choose a person") }, ...people.map((p) => ({ value: p.user_id, label: p.name }))]} />
               )}
               <Button type="submit" variant="primary" busy={busy === "rule"} disabled={!rule.name.trim() || !(rule.target === "team" ? rule.team_id : rule.assignee_id)}>
-                Add rule
+                {tr("Add rule")}
               </Button>
             </div>
           </form>
         </Card>
       ) : null}
 
-      <Card title="People" padded={false}>
+      <Card title={tr("People")} padded={false}>
         {people.length ? (
-          <table className="vr-table" aria-label="People who can take tickets">
+          <table className="vr-table" aria-label={tr("People who can take tickets")}>
             <thead>
               <tr>
-                <th>Name</th>
-                <th>Status</th>
-                <th className="num">Open tickets</th>
-                <th>Cap</th>
-                <th>Handles first</th>
-                <th>Teams</th>
+                <th>{tr("Name")}</th>
+                <th>{tr("Status")}</th>
+                <th className="num">{tr("Open tickets")}</th>
+                <th>{tr("Cap")}</th>
+                <th>{tr("Handles first")}</th>
+                <th>{tr("Teams")}</th>
               </tr>
             </thead>
             <tbody>
@@ -328,7 +329,7 @@ export default function RoutingSettingsPage() {
                           variant="ghost"
                           onClick={() => act(`a-${p.user_id}`, () => api.put(`/routing/members/${p.user_id}`, { availability: p.availability === "away" ? "available" : "away" }))}
                         >
-                          {p.availability === "away" ? "Mark available" : "Mark away"}
+                          {p.availability === "away" ? tr("Mark available") : tr("Mark away")}
                         </Button>
                       ) : null}
                     </span>
@@ -341,41 +342,41 @@ export default function RoutingSettingsPage() {
                         onSubmit={(e) => {
                           e.preventDefault();
                           const v = caps[p.user_id] ?? "";
-                          act(`cap-${p.user_id}`, () => api.put(`/routing/members/${p.user_id}`, v ? { max_open: Number(v) } : { clear_max_open: true }), "Cap saved.");
+                          act(`cap-${p.user_id}`, () => api.put(`/routing/members/${p.user_id}`, v ? { max_open: Number(v) } : { clear_max_open: true }), tr("Cap saved."));
                         }}
                       >
                         <Field
-                          aria-label={`Most open tickets for ${p.name}`}
+                          aria-label={tr("Most open tickets for {name}", { name: p.name })}
                           type="number"
                           min={1}
                           max={1000}
-                          placeholder="No cap"
+                          placeholder={tr("No cap")}
                           value={caps[p.user_id] ?? (p.max_open ? String(p.max_open) : "")}
                           onChange={(e) => setCaps({ ...caps, [p.user_id]: e.target.value })}
                           style={{ width: 80 }}
                         />
                         <Button size="sm" type="submit" variant="ghost">
-                          Save
+                          {tr("Save")}
                         </Button>
                       </form>
                     ) : (
-                      <span className="vr-num">{p.max_open ?? "No cap"}</span>
+                      <span className="vr-num">{p.max_open ?? tr("No cap")}</span>
                     )}
                   </td>
                   <td>
                     {configure ? (
                       <Select
-                        ariaLabel={`Add a category ${p.name} handles first`}
+                        ariaLabel={tr("Add a category {name} handles first", { name: p.name })}
                         value=""
                         onChange={(v) => v && act(`s-${p.user_id}`, () => api.put(`/routing/members/${p.user_id}`, { skills: [...p.skills, v] }))}
-                        options={[{ value: "", label: p.skills.length ? p.skills.map(catName).join(", ") : "Any category" }, ...catOpts.filter((c) => !p.skills.includes(c.value)).map((c) => ({ value: c.value, label: `+ ${c.label}` }))]}
+                        options={[{ value: "", label: p.skills.length ? p.skills.map(catName).join(", ") : tr("Any category") }, ...catOpts.filter((c) => !p.skills.includes(c.value)).map((c) => ({ value: c.value, label: `+ ${tr(c.label)}` }))]}
                       />
                     ) : (
-                      <span className="vr-sub">{p.skills.length ? p.skills.map(catName).join(", ") : "Any category"}</span>
+                      <span className="vr-sub">{p.skills.length ? p.skills.map(catName).join(", ") : tr("Any category")}</span>
                     )}
                     {configure && p.skills.length ? (
                       <Button size="sm" variant="ghost" onClick={() => act(`s-${p.user_id}`, () => api.put(`/routing/members/${p.user_id}`, { skills: [] }))}>
-                        Clear
+                        {tr("Clear")}
                       </Button>
                     ) : null}
                   </td>
@@ -386,7 +387,7 @@ export default function RoutingSettingsPage() {
           </table>
         ) : (
           <div className="vr-panel-body">
-            <span className="vr-help">Nobody can take tickets yet: invite a Support Agent under Members.</span>
+            <span className="vr-help">{tr("Nobody can take tickets yet: invite a Support Agent under Members.")}</span>
           </div>
         )}
       </Card>

@@ -1,5 +1,6 @@
 "use client";
 
+import { t } from "@/i18n";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -58,18 +59,18 @@ export default function RetrievalSettings() {
     <>
       <div>
         <Link className="vr-link" href="/knowledge" style={{ fontSize: 13 }}>
-          ← Knowledge base
+          {t("← Knowledge base")}
         </Link>
       </div>
-      <PageHeader title="Retrieval settings" subtitle="How passages are found for every answer, in the chatbot and on Ask. Test a question to see what would be retrieved." />
+      <PageHeader title={t("Retrieval settings")} subtitle={t("How passages are found for every answer, in the chatbot and on Ask. Test a question to see what would be retrieved.")} />
       {msg ? <Banner tone={msg.tone}>{msg.text}</Banner> : null}
       <div className="vr-grid vr-grid-2" style={{ alignItems: "start" }}>
-        <Card title="Retrieval">
+        <Card title={t("Retrieval")}>
           <div className="vr-form">
-            <Slider label="Passages per answer (top-k)" help="More passages give fuller answers but cost more tokens." value={cfg.top_k} min={1} max={12} step={1} onChange={(v) => setCfg({ ...cfg, top_k: v })} format={(v) => String(v)} />
+            <Slider label={t("Passages per answer (top-k)")} help={t("More passages give fuller answers but cost more tokens.")} value={cfg.top_k} min={1} max={12} step={1} onChange={(v) => setCfg({ ...cfg, top_k: v })} format={(v) => String(v)} />
             <Slider
-              label="Minimum relevance"
-              help="Passages below this similarity are left out. If none is left, the chatbot says it couldn't find the answer instead of guessing."
+              label={t("Minimum relevance")}
+              help={t("Passages below this similarity are left out. If none is left, the chatbot says it couldn't find the answer instead of guessing.")}
               value={cfg.min_relevance}
               min={0}
               max={0.9}
@@ -78,8 +79,8 @@ export default function RetrievalSettings() {
               format={(v) => v.toFixed(2)}
             />
             <Slider
-              label="Hybrid weight"
-              help="0 = keywords only, 1 = meaning only. Mixing both finds exact terms (product names, error codes) and paraphrases."
+              label={t("Hybrid weight")}
+              help={t("0 = keywords only, 1 = meaning only. Mixing both finds exact terms (product names, error codes) and paraphrases.")}
               value={cfg.hybrid_weight}
               min={0}
               max={1}
@@ -97,7 +98,7 @@ export default function RetrievalSettings() {
                     setMsg(null);
                     try {
                       await api.put("/knowledge/settings", cfg);
-                      setMsg({ tone: "brand", text: "Retrieval settings saved." });
+                      setMsg({ tone: "brand", text: t("Retrieval settings saved.") });
                     } catch (e) {
                       setMsg({ tone: "danger", text: errorText(e) });
                     } finally {
@@ -105,22 +106,22 @@ export default function RetrievalSettings() {
                     }
                   }}
                 >
-                  Save
+                  {t("Save")}
                 </Button>
                 <Button variant="ghost" onClick={() => setCfg(data.data!.defaults)}>
-                  Reset to defaults
+                  {t("Reset to defaults")}
                 </Button>
               </div>
             ) : null}
           </div>
         </Card>
-        <Card title="Test retrieval">
+        <Card title={t("Test retrieval")}>
           <form onSubmit={test} style={{ display: "flex", gap: 8, marginBottom: 16 }}>
             <span className="vr-input" style={{ flex: 1 }}>
-              <input placeholder="Ask a question your customers ask…" value={query} onChange={(e) => setQuery(e.target.value)} aria-label="Test question" />
+              <input placeholder={t("Ask a question your customers ask…")} value={query} onChange={(e) => setQuery(e.target.value)} aria-label={t("Test question")} />
             </span>
             <Button type="submit" icon="search" busy={testing} disabled={!query.trim()}>
-              Test
+              {t("Test")}
             </Button>
           </form>
           {results ? (
@@ -129,18 +130,18 @@ export default function RetrievalSettings() {
                 <PipelineTrace steps={results.trace} />
                 {results.results.map((r, i) => (
                   <div key={r.chunk_id} style={{ opacity: r.kept ? 1 : 0.5 }}>
-                    <SourceCard n={r.kept ? i + 1 : undefined} type={r.type} title={r.title} section={`${r.section ? `${r.section} · ` : ""}${r.kept ? "used" : "below cut-off"}`} score={r.relevance} excerpt={r.content.slice(0, 280)} />
+                    <SourceCard n={r.kept ? i + 1 : undefined} type={r.type} title={r.title} section={`${r.section ? `${r.section} · ` : ""}${r.kept ? t("used") : t("below cut-off")}`} score={r.relevance} excerpt={r.content.slice(0, 280)} />
                   </div>
                 ))}
               </div>
             ) : (
-              <EmptyState icon="search" title="Nothing found">
-                No passage matches this question.
+              <EmptyState icon="search" title={t("Nothing found")}>
+                {t("No passage matches this question.")}
               </EmptyState>
             )
           ) : (
             <p className="vr-muted" style={{ margin: 0 }}>
-              Runs retrieval only (one query embedding). Dimmed passages fall below the cut-off and would not be used.
+              {t("Runs retrieval only (one query embedding). Dimmed passages fall below the cut-off and would not be used.")}
             </p>
           )}
         </Card>

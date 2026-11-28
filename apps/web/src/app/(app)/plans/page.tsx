@@ -1,5 +1,6 @@
 "use client";
 
+import { t } from "@/i18n";
 import { useRouter } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
 
@@ -39,46 +40,46 @@ function ChangeDialog({ preview, current, busy, error, onConfirm, onClose }: { p
       <div className="vr-dialog" role="dialog" aria-modal="true" aria-labelledby="change-title" ref={ref}>
         <div className="vr-dialog-head">
           <h2 className="vr-h" id="change-title">
-            {up ? `Upgrade to ${p.name}` : `Switch to ${p.name} at renewal`}
+            {up ? t("Upgrade to {name}", { name: p.name }) : t("Switch to {name} at renewal", { name: p.name })}
           </h2>
         </div>
         <div className="vr-dialog-body">
           {up ? (
             <>
               <p className="vr-muted">
-                {p.name} and its {compact(p.token_allowance)} tokens start today, with a new billing period. The unused part of {current} is credited.
+                {t("{plan} and its {tokens} tokens start today, with a new billing period. The unused part of {current} is credited.", { plan: p.name, tokens: compact(p.token_allowance), current })}
               </p>
               <dl className="vr-kv">
                 <dt>{p.name}</dt>
                 <dd className="vr-mono">{money(p.price_cents, p.currency)}</dd>
-                <dt>Unused {current}</dt>
+                <dt>{t("Unused")} {current}</dt>
                 <dd className="vr-mono">−{money(preview.credit_cents, preview.currency)}</dd>
                 {preview.tax_cents !== null ? (
                   <>
-                    <dt>Tax</dt>
+                    <dt>{t("Tax")}</dt>
                     <dd className="vr-mono">{money(preview.tax_cents, preview.currency)}</dd>
                   </>
                 ) : null}
               </dl>
               <div className="vr-total">
-                <span>Due today</span>
+                <span>{t("Due today")}</span>
                 <span className="vr-mono">{money(preview.amount_due_cents + (preview.tax_cents ?? 0), preview.currency)}</span>
               </div>
               {preview.tax_note ? <span className="vr-help">{preview.tax_note}</span> : null}
-              <span className="vr-help">Charged to the payment method on file.</span>
+              <span className="vr-help">{t("Charged to the payment method on file.")}</span>
             </>
           ) : (
             <p className="vr-muted">
-              You keep {current} and everything it includes until {date(preview.effective_at)}. Then {p.name} starts at {money(p.price_cents, p.currency)} / {p.billing_cycle}. Nothing is charged now.
+              {t("You keep {current} and everything it includes until {date}. Then {plan} starts at {price} / {cycle}. Nothing is charged now.", { current, date: date(preview.effective_at), plan: p.name, price: money(p.price_cents, p.currency), cycle: t(p.billing_cycle) })}
             </p>
           )}
           {error ? <Banner tone="danger">{error}</Banner> : null}
           <div className="vr-actions">
             <Button variant="primary" busy={busy} onClick={onConfirm}>
-              {up ? `Pay and upgrade` : `Switch at renewal`}
+              {up ? t("Pay and upgrade") : t("Switch at renewal")}
             </Button>
             <Button variant="ghost" onClick={onClose}>
-              Keep {current}
+              {t("Keep")} {current}
             </Button>
           </div>
         </div>
@@ -136,7 +137,7 @@ export default function Plans() {
         return;
       }
       setPreview(null);
-      setMessage({ tone: "brand", text: `${preview.plan.name} starts when the current period ends on ${date(r.effective_at)}. You keep your current plan until then.` });
+      setMessage({ tone: "brand", text: t("{name} starts when the current period ends on {effective_at}. You keep your current plan until then.", { name: preview.plan.name, effective_at: date(r.effective_at) }) });
       plans.reload();
     } catch (e) {
       setDialogError(errorText(e));
@@ -146,9 +147,9 @@ export default function Plans() {
 
   return (
     <>
-      <PageHeader eyebrow="Plans" title="Choose a plan" subtitle="Every plan includes the knowledge base, chatbot, ticketing and email. They differ in AI tokens and resource limits. Tokens are shared across the whole workspace." />
-      {!canBuy ? <Banner tone="neutral" title="Only people who manage billing can change the plan.">Ask your workspace owner.</Banner> : null}
-      {pastDue ? <Banner tone="danger" title="A payment is overdue.">Settle it on the Billing page before changing plans.</Banner> : null}
+      <PageHeader eyebrow={t("Plans")} title={t("Choose a plan")} subtitle={t("Every plan includes the knowledge base, chatbot, ticketing and email. They differ in AI tokens and resource limits. Tokens are shared across the whole workspace.")} />
+      {!canBuy ? <Banner tone="neutral" title={t("Only people who manage billing can change the plan.")}>{t("Ask your workspace owner.")}</Banner> : null}
+      {pastDue ? <Banner tone="danger" title={t("A payment is overdue.")}>{t("Settle it on the Billing page before changing plans.")}</Banner> : null}
       {message ? <Banner tone={message.tone}>{message.text}</Banner> : null}
       {plans.loading && !plans.data ? (
         <Spinner />
@@ -161,10 +162,10 @@ export default function Plans() {
             const isDowngrade = currentPlan && perMonth(p) <= perMonth(currentPlan) && !isCurrent;
             const otherCurrency = !!currency && p.currency !== currency;
             return (
-              <article key={p.id} className={isCurrent ? "vr-plan is-current" : otherCurrency ? "vr-plan is-other-currency" : "vr-plan"} aria-label={`${p.name} plan`}>
+              <article key={p.id} className={isCurrent ? "vr-plan is-current" : otherCurrency ? "vr-plan is-other-currency" : "vr-plan"} aria-label={t("{name} plan", { name: p.name })}>
                 <div className="vr-plan-head">
                   <h2 className="vr-h">{p.name}</h2>
-                  {isCurrent ? <Badge tone="brand" dot>Current plan</Badge> : null}
+                  {isCurrent ? <Badge tone="brand" dot>{t("Current plan")}</Badge> : null}
                 </div>
                 <div className="vr-plan-price">
                   <span className="vr-display">{money(p.price_cents, p.currency)}</span>
@@ -174,14 +175,14 @@ export default function Plans() {
                   {p.description}
                 </p>
                 <div className="vr-plan-tokens">
-                  <span>AI tokens / {p.billing_cycle}</span>
+                  <span>{t("AI tokens /")} {p.billing_cycle}</span>
                   <b className="vr-mono">{compact(p.token_allowance)}</b>
                 </div>
                 <ul>
                   {LIMIT_KEYS.map((k) => (
                     <li key={k}>
                       <Icon name="check" />
-                      <span style={{ flex: 1 }}>{LIMIT_LABELS[k]}</span>
+                      <span style={{ flex: 1 }}>{t(LIMIT_LABELS[k])}</span>
                       <span className="vr-mono" style={{ fontSize: 13 }}>
                         {limitText(k, p.limits[k] ?? 0)}
                       </span>
@@ -190,11 +191,11 @@ export default function Plans() {
                 </ul>
                 {otherCurrency ? (
                   <span className="vr-help">
-                    Priced in {p.currency}; this workspace pays in {currency}.
+                    {t("Priced in {currency}; this workspace pays in {workspace_currency}.", { currency: p.currency, workspace_currency: currency })}
                   </span>
                 ) : canBuy ? (
                   <Button variant={isCurrent ? "secondary" : "primary"} disabled={isCurrent || !!busy || pastDue} busy={busy === p.id} onClick={() => choose(p)}>
-                    {isCurrent ? "Your plan" : !sub ? `Choose ${p.name}` : isDowngrade ? `Switch at renewal` : `Upgrade to ${p.name}`}
+                    {isCurrent ? t("Your plan") : !sub ? t("Choose {name}", { name: p.name }) : isDowngrade ? t("Switch at renewal") : t("Upgrade to {name}", { name: p.name })}
                   </Button>
                 ) : null}
               </article>
@@ -203,7 +204,7 @@ export default function Plans() {
         </div>
       )}
       <p className="vr-muted vr-caption">
-        Prices exclude tax, which is added at checkout from your billing address. Upgrades apply straight away and are prorated: unused time on the current plan is credited and a new billing period starts. Downgrades take effect at renewal. Unused plan tokens don’t roll over; bought token packages do.
+        {t("Prices exclude tax, which is added at checkout from your billing address. Upgrades apply straight away and are prorated: unused time on the current plan is credited and a new billing period starts. Downgrades take effect at renewal. Unused plan tokens don’t roll over; bought token packages do.")}
       </p>
       {preview && currentPlan ? (
         <ChangeDialog

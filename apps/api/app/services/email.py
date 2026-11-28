@@ -2,12 +2,15 @@
 
 import asyncio
 import html
+import json
 import logging
 import smtplib
 from dataclasses import dataclass, field
+from datetime import date, datetime
 from email.message import EmailMessage
 
 from app.core.config import get_settings
+from app.services.email_text import day, lang, number, phrase, render
 
 log = logging.getLogger("verity.email")
 
@@ -23,9 +26,25 @@ class Sent:
 
 # The "memory" backend keeps messages here (tests and local runs without Mailpit).
 OUTBOX: list[Sent] = []
+DEV_OUTBOX_KEY = "verity:dev:outbox"
 
 
-def _html(text: str, links: list[str]) -> str:
+async def _mirror(m: Sent) -> None:
+    """In development, also keeps the message in Redis, so /api/dev/outbox shows mail the worker sent too."""
+    if not get_settings().is_dev:
+        return
+    try:
+        from app.core.ratelimit import get_redis
+
+        r = get_redis()
+        row = {"to": m.to, "subject": m.subject, "text": m.text, "links": m.links, "headers": m.headers}
+        await r.rpush(DEV_OUTBOX_KEY, json.dumps(row))
+        await r.ltrim(DEV_OUTBOX_KEY, -500, -1)
+    except Exception:  # noqa: BLE001 - a development convenience; never block sending
+        log.debug("dev outbox mirror unavailable", exc_info=True)
+
+
+def _html(text: str, links: list[str], locale: str = "en") -> str:
     body = html.escape(text)
     for link in links:
         esc = html.escape(link)
@@ -41,7 +60,7 @@ def _html(text: str, links: list[str]) -> str:
         "<div style=\"font-family:'Instrument Serif',Georgia,serif;font-size:28px;margin-bottom:16px\">Verity"
         '<span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#d6f35b;'
         'margin-left:6px"></span></div>'
-        f'<div style="white-space:pre-line">{body}</div></div></div>'
+        f'<div style="white-space:pre-line" dir="{"rtl" if locale == "ar" else "ltr"}" lang="{locale}">{body}</div></div></div>'
     )
 
 
@@ -55,11 +74,13 @@ def _send_smtp(msg: EmailMessage) -> None:
         smtp.send_message(msg)
 
 
-async def send_email(to: str, subject: str, text: str, links: list[str] | None = None) -> None:
+async def send_email(to: str, subject: str, text: str, links: list[str] | None = None, *, locale: str = "en") -> None:
     s = get_settings()
     links = links or []
     if s.email_backend == "memory":
-        OUTBOX.append(Sent(to, subject, text, links))
+        sent = Sent(to, subject, text, links, {"Content-Language": locale})
+        OUTBOX.append(sent)
+        await _mirror(sent)
         return
     if s.email_backend == "console":
         log.warning("EMAIL to=%s subject=%s\n%s", to, subject, text)
@@ -68,8 +89,9 @@ async def send_email(to: str, subject: str, text: str, links: list[str] | None =
     msg["From"] = s.email_from
     msg["To"] = to
     msg["Subject"] = subject
+    msg["Content-Language"] = locale
     msg.set_content(text)
-    msg.add_alternative(_html(text, links), subtype="html")
+    msg.add_alternative(_html(text, links, locale), subtype="html")
     try:
         await asyncio.to_thread(_send_smtp, msg)
     except OSError:
@@ -106,129 +128,100 @@ def link(path: str) -> str:
     return get_settings().app_url.rstrip("/") + path
 
 
-async def send_verification(to: str, name: str, token: str) -> None:
-    url = link(f"/verify-email?token={token}")
+Day = date | datetime | str | None
+
+
+async def _send(to: str, key: str, locale: str | None, url: str | None, **values: object) -> None:
+    loc = lang(locale)
+    subject, body = render(key, loc, url=url or "", **values)
+    await send_email(to, subject, body, [url] if url else [], locale=loc)
+
+
+async def send_verification(to: str, name: str, token: str, *, locale: str = "en") -> None:
     hours = get_settings().verify_token_ttl_hours
-    await send_email(
-        to,
-        "Verify your email for Verity",
-        f"Hi {name},\n\nConfirm this is your email address to finish creating your Verity account:\n\n{url}\n\n"
-        f"The link works once and expires in {hours} hours. If you didn't sign up, ignore this email.",
-        [url],
-    )
+    await _send(to, "verify", locale, link(f"/verify-email?token={token}"), name=name, hours=hours)
 
 
-async def send_password_reset(to: str, name: str, token: str) -> None:
-    url = link(f"/reset-password?token={token}")
+async def send_password_reset(to: str, name: str, token: str, *, locale: str = "en") -> None:
     minutes = get_settings().reset_token_ttl_minutes
-    await send_email(
-        to,
-        "Reset your Verity password",
-        f"Hi {name},\n\nSomeone asked to reset the password for this account. To choose a new one, open:\n\n{url}\n\n"
-        f"The link works once and expires in {minutes} minutes. If it wasn't you, ignore this email; "
-        "your password stays the same.",
-        [url],
+    await _send(to, "reset", locale, link(f"/reset-password?token={token}"), name=name, minutes=minutes)
+
+
+async def send_invitation(to: str, inviter: str, workspace: str, role: str, token: str, *, locale: str = "en") -> None:
+    days = get_settings().invite_ttl_days
+    await _send(to, "invite", locale, link(f"/invite/{token}"), inviter=inviter, workspace=workspace, role=role, days=days)
+
+
+async def send_usage_alert(to: str, workspace: str, percent: int, remaining: int, *, locale: str = "en") -> None:
+    await _send(to, "usage", locale, link("/usage"), workspace=workspace, percent=percent, remaining=number(remaining, lang(locale)))
+
+
+async def send_payment_receipt(to: str, workspace: str, plan: str, amount: str, period_end: Day, *, locale: str = "en") -> None:
+    await _send(
+        to, "receipt", locale, link("/billing"), workspace=workspace, plan=plan, amount=amount, period_end=day(period_end, lang(locale))
     )
 
 
-async def send_invitation(to: str, inviter: str, workspace: str, role: str, token: str) -> None:
-    url = link(f"/invite/{token}")
-    await send_email(
+async def send_payment_failed(
+    to: str, workspace: str, plan: str, amount: str, reason: str | None, next_retry: Day, grace_end: Day, *, locale: str = "en"
+) -> None:
+    loc = lang(locale)
+    retry = phrase("retry_on", loc, next_retry=day(next_retry, loc)) if next_retry else phrase("retry_none", loc)
+    await _send(
         to,
-        f"{inviter} invited you to {workspace} on Verity",
-        f"{inviter} invited you to join the {workspace} workspace on Verity as {role}.\n\n"
-        f"Accept the invitation:\n\n{url}\n\nThe invitation expires in {get_settings().invite_ttl_days} days.",
-        [url],
+        "failed",
+        loc,
+        link("/billing"),
+        amount=amount,
+        plan=plan,
+        workspace=workspace,
+        reason=f": {reason}" if reason else "",
+        retry=retry,
+        grace_end=day(grace_end, loc),
     )
 
 
-async def send_usage_alert(to: str, workspace: str, percent: int, remaining: int) -> None:
-    url = link("/usage")
-    await send_email(
-        to,
-        f"{workspace} has used {percent}% of its AI tokens",
-        f"The {workspace} workspace has used {percent}% of this period's AI token allowance. "
-        f"{remaining:,} weighted tokens remain.\n\nWhen the allowance runs out, AI answers pause. Manual "
-        f"ticketing, email ingestion and forms keep working.\n\nSee usage or upgrade:\n\n{url}",
-        [url],
+async def send_payment_recovered(to: str, workspace: str, plan: str, *, locale: str = "en") -> None:
+    await _send(to, "recovered", locale, link("/billing"), workspace=workspace, plan=plan)
+
+
+async def send_subscription_ended(to: str, workspace: str, plan: str, *, locale: str = "en") -> None:
+    await _send(to, "ended", locale, link("/plans"), workspace=workspace, plan=plan)
+
+
+async def send_package_receipt(to: str, workspace: str, package: str, tokens: int, amount: str, *, locale: str = "en") -> None:
+    loc = lang(locale)
+    await _send(
+        to, "package", loc, link("/billing/tokens"), workspace=workspace, package=package, tokens=number(tokens, loc), amount=amount
     )
 
 
-async def send_payment_receipt(to: str, workspace: str, plan: str, amount: str, period_end: str) -> None:
-    url = link("/billing")
-    await send_email(
-        to,
-        f"Receipt: Verity {plan}",
-        f"Payment received for the {workspace} workspace.\n\nPlan: {plan}\nAmount: {amount}\n"
-        f"Renews on: {period_end}\n\nBilling history:\n\n{url}",
-        [url],
-    )
+async def send_export_ready(to: str, workspace: str | None, token: str, expires: Day, *, locale: str = "en") -> None:
+    loc = lang(locale)
+    what = phrase("export_workspace", loc, workspace=workspace) if workspace else phrase("export_personal", loc)
+    await _send(to, "export", loc, link(f"/exports/{token}"), what=what, expires=day(expires, loc))
 
 
-async def send_payment_failed(to: str, workspace: str, plan: str, amount: str, reason: str | None, next_retry: str, grace_end: str) -> None:
-    url = link("/billing")
-    retry = f"We'll try again on {next_retry}." if next_retry else "There are no automatic retries left."
-    await send_email(
-        to,
-        f"Payment failed: Verity {plan}",
-        f"The {amount} renewal of {plan} for the {workspace} workspace didn't go through"
-        f"{': ' + reason if reason else '.'}\n\n{retry} Until it's paid, AI answers are paused. Tickets, email and "
-        f"forms keep working until {grace_end}; after that the subscription ends.\n\n"
-        f"Update the payment method or retry now:\n\n{url}",
-        [url],
-    )
+async def send_workspace_deletion_scheduled(to: str, workspace: str, erase_on: Day, owner: bool, *, locale: str = "en") -> None:
+    loc = lang(locale)
+    url = link("/workspaces")
+    when = day(erase_on, loc)
+    undo = phrase("ws_undo_owner", loc, erase_on=when, url=url) if owner else phrase("ws_undo_member", loc)
+    await _send(to, "ws_delete", loc, url if owner else None, workspace=workspace, erase_on=when, undo=undo)
 
 
-async def send_payment_recovered(to: str, workspace: str, plan: str) -> None:
-    url = link("/billing")
-    await send_email(
-        to,
-        f"Payment received: Verity {plan}",
-        f"The renewal of {plan} for the {workspace} workspace has been paid. AI answers are back on.\n\n{url}",
-        [url],
-    )
+async def send_account_deletion_scheduled(to: str, erase_on: Day, *, locale: str = "en") -> None:
+    loc = lang(locale)
+    await _send(to, "account_delete", loc, link("/sign-in"), erase_on=day(erase_on, loc))
 
 
-async def send_subscription_ended(to: str, workspace: str, plan: str) -> None:
-    url = link("/plans")
-    await send_email(
-        to,
-        f"Your Verity {plan} subscription has ended",
-        f"The {plan} subscription of the {workspace} workspace ended because its renewal couldn't be charged. "
-        f"Your data is kept. Choose a plan to start again:\n\n{url}",
-        [url],
-    )
-
-
-async def send_package_receipt(to: str, workspace: str, package: str, tokens: int, amount: str) -> None:
-    url = link("/billing/tokens")
-    await send_email(
-        to,
-        f"Receipt: {package}",
-        f"Payment received for the {workspace} workspace.\n\nToken package: {package}\nTokens: {tokens:,}\n"
-        f"Amount: {amount}\n\nThese tokens are used after the plan's allowance, carry over from period to period "
-        f"and expire 12 months after purchase.\n\n{url}",
-        [url],
-    )
-
-
-async def send_escalation(to: str, workspace: str, chatbot: str, question: str, conversation_id: str) -> None:
-    url = link(f"/conversations/{conversation_id}")
+async def send_escalation(to: str, workspace: str, chatbot: str | None, question: str, conversation_id: str, *, locale: str = "en") -> None:
+    loc = lang(locale)
     snippet = " ".join(question.split())[:300]
-    await send_email(
-        to,
-        f"A customer is waiting for a reply in {workspace}",
-        f"A conversation with {chatbot} was handed to your team. The assistant stays quiet until someone resolves it."
-        f"\n\nLast message from the customer:\n“{snippet}”\n\nReply here:\n\n{url}",
-        [url],
-    )
+    bot = chatbot or phrase("assistant", loc)
+    await _send(to, "escalation", loc, link(f"/conversations/{conversation_id}"), workspace=workspace, chatbot=bot, snippet=snippet)
 
 
-async def send_ticket_created(to: str, workspace: str, number: int, subject: str, ticket_id: str) -> None:
-    url = link(f"/tickets/{ticket_id}")
-    await send_email(
-        to,
-        f"New ticket #{number} in {workspace}",
-        f"A customer opened ticket #{number}:\n\n“{' '.join(subject.split())[:300]}”\n\nOpen it here:\n\n{url}",
-        [url],
-    )
+async def send_ticket_created(to: str, workspace: str, number: int, subject: str, ticket_id: str, *, locale: str = "en") -> None:
+    snippet = " ".join(subject.split())[:300]
+    await _send(to, "ticket_created", locale, link(f"/tickets/{ticket_id}"), workspace=workspace, number=number, subject=snippet)

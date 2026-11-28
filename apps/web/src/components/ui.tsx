@@ -1,5 +1,6 @@
 "use client";
 
+import { intlLocale, numberLocale, t } from "@/i18n";
 /**
  * Verity design system components, ported from the design system bundle (window.Verity) to typed React.
  * Class names (vr-*) and behaviour match the bundle so src/design/verity.css styles them unchanged.
@@ -167,7 +168,7 @@ export function Select({
         <select name={name} value={value} disabled={disabled} aria-label={ariaLabel} onChange={(e) => onChange(e.target.value)}>
           {options.map((o) => (
             <option key={o.value} value={o.value}>
-              {o.label}
+              {t(o.label)}
             </option>
           ))}
         </select>
@@ -195,7 +196,7 @@ export function Segmented({
     <div className={cx("vr-seg", block && "vr-seg-block")} role="tablist" aria-label={label}>
       {options.map((o) => (
         <button key={o.value} type="button" role="tab" aria-selected={value === o.value} className={cx(value === o.value && "is-on")} onClick={() => onChange(o.value)}>
-          {o.label}
+          {t(o.label)}
         </button>
       ))}
     </div>
@@ -249,7 +250,7 @@ export function UsageMeter({ used, total, label }: { used: number; total: number
         <div className="vr-usage-top">
           <span>{label}</span>
           <span className="vr-mono">
-            {fmt(used)} / {unlimited ? "Unlimited" : fmt(total)}
+            {fmt(used)} / {unlimited ? t("Unlimited") : fmt(total)}
           </span>
         </div>
       ) : null}
@@ -259,7 +260,7 @@ export function UsageMeter({ used, total, label }: { used: number; total: number
         aria-valuemin={0}
         aria-valuemax={unlimited ? undefined : total}
         aria-valuenow={used}
-        aria-label={label ?? "Usage"}
+        aria-label={label ?? t("Usage")}
       >
         <span style={{ width: `${pct}%` }} />
       </div>
@@ -367,23 +368,23 @@ export function useToggle(initial = false) {
 }
 
 export function fmt(n: number) {
-  return new Intl.NumberFormat("en-US").format(n);
+  return new Intl.NumberFormat(numberLocale()).format(n);
 }
 
 export function compact(n: number) {
-  return new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 }).format(n);
+  return new Intl.NumberFormat(numberLocale(), { notation: "compact", maximumFractionDigits: 1 }).format(n);
 }
 
 export function money(cents: number, currency = "USD") {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency, minimumFractionDigits: cents % 100 ? 2 : 0 }).format(cents / 100);
+  return new Intl.NumberFormat(numberLocale(), { style: "currency", currency, currencyDisplay: "narrowSymbol", minimumFractionDigits: cents % 100 ? 2 : 0 }).format(cents / 100);
 }
 
 export function date(iso: string | null | undefined) {
   if (!iso) return "—";
-  return new Date(iso).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" });
+  return new Date(iso).toLocaleDateString(intlLocale(), { day: "numeric", month: "short", year: "numeric" });
 }
 
 export function dateTime(iso: string | null | undefined) {
   if (!iso) return "—";
-  return new Date(iso).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+  return new Date(iso).toLocaleString(intlLocale(), { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
 }

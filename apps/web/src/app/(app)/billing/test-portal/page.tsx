@@ -1,5 +1,6 @@
 "use client";
 
+import { t } from "@/i18n";
 import Link from "next/link";
 import { useState } from "react";
 
@@ -33,35 +34,35 @@ export default function TestPortal() {
   if (b.loading && !b.data) return <Spinner />;
   if (b.error) return <Banner tone="danger">{b.error.message}</Banner>;
   const d = b.data!;
-  if (d.provider !== "mock") return <Banner tone="neutral">Payment methods and invoices are managed in Stripe’s billing portal.</Banner>;
+  if (d.provider !== "mock") return <Banner tone="neutral">{t("Payment methods and invoices are managed in Stripe’s billing portal.")}</Banner>;
   const card = d.account.test_card ?? "ok";
 
   return (
     <>
-      <PageHeader eyebrow="Billing" title="Payment methods" subtitle="Test mode: this page stands in for the payment provider’s portal. No card details are entered or stored." />
+      <PageHeader eyebrow={t("Billing")} title={t("Payment methods")} subtitle={t("Test mode: this page stands in for the payment provider’s portal. No card details are entered or stored.")} />
       {msg ? <Banner tone={msg.tone}>{msg.text}</Banner> : null}
-      <Card className="vr-test-portal" title="Card on file" actions={<Badge tone="warn" dot>Test mode</Badge>}>
+      <Card className="vr-test-portal" title={t("Card on file")} actions={<Badge tone="warn" dot>{t("Test mode")}</Badge>}>
         <div className="vr-form">
           <Segmented
-            label="Test card"
+            label={t("Test card")}
             value={card}
-            onChange={(v) => run("card", () => api.put("/billing/test-card", { card: v }), v === "ok" ? "The test card now approves payments." : "The test card now declines payments.")}
+            onChange={(v) => run("card", () => api.put("/billing/test-card", { card: v }), v === "ok" ? t("The test card now approves payments.") : t("The test card now declines payments."))}
             options={[
-              { value: "ok", label: "Test card that pays" },
-              { value: "declines", label: "Use a card that declines" },
+              { value: "ok", label: t("Test card that pays") },
+              { value: "declines", label: t("Use a card that declines") },
             ]}
           />
           <span className="vr-help">
-            {card === "ok" ? "Renewals and upgrades go through." : "The next renewal or upgrade fails, as a declined card would."}
+            {card === "ok" ? t("Renewals and upgrades go through.") : t("The next renewal or upgrade fails, as a declined card would.")}
           </span>
           {d.subscription && d.can_manage ? (
             <div className="vr-actions">
-              <Button busy={busy === "renew"} onClick={() => run("renew", () => api.post("/dev/billing/renew"), "The renewal job ran for this workspace.")}>
-                Run the renewal now
+              <Button busy={busy === "renew"} onClick={() => run("renew", () => api.post("/dev/billing/renew"), t("The renewal job ran for this workspace."))}>
+                {t("Run the renewal now")}
               </Button>
             </div>
           ) : null}
-          <Link href="/billing">Back to Billing</Link>
+          <Link href="/billing">{t("Back to Billing")}</Link>
         </div>
       </Card>
     </>

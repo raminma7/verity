@@ -1,5 +1,6 @@
 "use client";
 
+import { t, msg } from "@/i18n";
 /**
  * Email pieces (Phase 4), built only from the design system's tokens and rules: status always carries a word,
  * teal acts, lime stays for evidence, and cards sit on a line border.
@@ -15,13 +16,13 @@ import { FileTag } from "./rag";
 import { Badge, Button, cx, dateTime, Icon, type Tone } from "./ui";
 
 export const ACCOUNT_STATUS: Record<string, { label: string; tone: Tone }> = {
-  connected: { label: "Connected", tone: "brand" },
-  fetching: { label: "Checking for mail…", tone: "warn" },
-  queued: { label: "Checking soon", tone: "neutral" },
-  paused: { label: "Paused", tone: "neutral" },
-  auth: { label: "Sign-in failed", tone: "danger" },
-  error: { label: "Can’t reach the server", tone: "danger" },
-  disconnected: { label: "Disconnected", tone: "neutral" },
+  connected: { label: msg("Connected"), tone: "brand" },
+  fetching: { label: msg("Checking for mail…"), tone: "warn" },
+  queued: { label: msg("Checking soon"), tone: "neutral" },
+  paused: { label: msg("Paused"), tone: "neutral" },
+  auth: { label: msg("Sign-in failed"), tone: "danger" },
+  error: { label: msg("Can’t reach the server"), tone: "danger" },
+  disconnected: { label: msg("Disconnected"), tone: "neutral" },
 };
 
 export function accountState(a: EmailAccount): keyof typeof ACCOUNT_STATUS {
@@ -38,44 +39,52 @@ export function AccountStatusBadge({ account }: { account: EmailAccount }) {
   const s = ACCOUNT_STATUS[accountState(account)];
   return (
     <Badge tone={s.tone} dot>
-      {s.label}
+      {t(s.label)}
     </Badge>
   );
 }
 
 export const HELD_REASON: Record<string, { label: string; tone: Tone }> = {
-  spam: { label: "Spam", tone: "danger" },
-  promotion: { label: "Promotion", tone: "warn" },
-  rate_limited: { label: "Too many from this sender", tone: "neutral" },
+  spam: { label: msg("Spam"), tone: "danger" },
+  promotion: { label: msg("Promotion"), tone: "warn" },
+  rate_limited: { label: msg("Too many from this sender"), tone: "neutral" },
 };
 
 const RULE_WORDS: Record<string, string> = {
-  spam_flag_header: "the receiving server flagged it as spam",
-  authentication_failed: "the sender’s domain didn’t authenticate it (SPF and DMARC/DKIM failed)",
-  block_list: "the sender is on your block list",
-  list_unsubscribe: "it has an unsubscribe link",
-  list_id: "it was sent to a mailing list",
-  precedence_bulk: "it was sent as bulk mail",
-  sender_rate_limit: "this sender sent more new requests than the hourly limit",
+  spam_flag_header: msg("the receiving server flagged it as spam"),
+  authentication_failed: msg("the sender’s domain didn’t authenticate it (SPF and DMARC/DKIM failed)"),
+  block_list: msg("the sender is on your block list"),
+  list_unsubscribe: msg("it has an unsubscribe link"),
+  list_id: msg("it was sent to a mailing list"),
+  precedence_bulk: msg("it was sent as bulk mail"),
+  sender_rate_limit: msg("this sender sent more new requests than the hourly limit"),
 };
 
-/** Why a message is held, in words: the rules that matched and whether the AI decided. */
+/** Why a message is held, in words: the rules that matched and who decided (a rule, the spam filter or the AI). */
 export function heldReason(m: HeldEmail): string {
-  const hits = (m.verdict.rules ?? []).map((r) => RULE_WORDS[r] ?? (r.startsWith("esp:") ? "it came from a bulk-mail service" : r.startsWith("word:") ? `it says “${r.slice(5)}”` : r));
-  const unique = Array.from(new Set(hits));
-  if (m.verdict.decided_by === "ai") {
-    return unique.length ? `The AI judged it ${m.status === "spam" ? "spam" : "promotional"}; also, ${unique.join("; ")}.` : `The AI judged it ${m.status === "spam" ? "spam" : "promotional"}.`;
+  const hits = (m.verdict.rules ?? []).map((r) =>
+    RULE_WORDS[r] ? t(RULE_WORDS[r]) : r.startsWith("esp:") ? t("it came from a bulk-mail service") : r.startsWith("word:") ? t("it says “{word}”", { word: r.slice(5) }) : r,
+  );
+  const reasons = Array.from(new Set(hits)).join("; ");
+  const spam = m.status === "spam";
+  if (m.verdict.decided_by === "model" && m.verdict.model) {
+    const percent = Math.round(m.verdict.model.p_spam * 100);
+    return reasons ? t("The spam filter rated it {percent}% likely to be spam; also, {reasons}.", { percent, reasons }) : t("The spam filter rated it {percent}% likely to be spam.", { percent });
   }
-  return unique.length ? `Held because ${unique.join("; ")}.` : "Held by a rule.";
+  if (m.verdict.decided_by === "ai") {
+    if (reasons) return spam ? t("The AI judged it spam; also, {reasons}.", { reasons }) : t("The AI judged it promotional; also, {reasons}.", { reasons });
+    return spam ? t("The AI judged it spam.") : t("The AI judged it promotional.");
+  }
+  return reasons ? t("Held because {reasons}.", { reasons }) : t("Held by a rule.");
 }
 
 const BLOCKED: Record<string, string> = {
-  blocked_type: "Not kept: this type of file can carry malware",
-  type_mismatch: "Not kept: its content doesn’t match its name",
-  too_large: "Not kept: larger than the limit",
-  too_many: "Not kept: too many attachments",
-  archive_too_large: "Not kept: the archive expands too far",
-  storage_full: "Not kept: your plan’s storage is full",
+  blocked_type: msg("Not kept: this type of file can carry malware"),
+  type_mismatch: msg("Not kept: its content doesn’t match its name"),
+  too_large: msg("Not kept: larger than the limit"),
+  too_many: msg("Not kept: too many attachments"),
+  archive_too_large: msg("Not kept: the archive expands too far"),
+  storage_full: msg("Not kept: your plan’s storage is full"),
 };
 
 function size(n: number) {
@@ -93,9 +102,9 @@ export function AttachmentChip({ a }: { a: EmailAttachmentInfo }) {
   );
   if (!a.available)
     return (
-      <span className="vr-att is-blocked" title={BLOCKED[a.blocked_reason ?? ""] ?? "Not kept"}>
+      <span className="vr-att is-blocked" title={t(BLOCKED[a.blocked_reason ?? ""]) ?? t("Not kept")}>
         {inner}
-        <span className="vr-help">{BLOCKED[a.blocked_reason ?? ""] ?? "Not kept"}</span>
+        <span className="vr-help">{t(BLOCKED[a.blocked_reason ?? ""]) ?? t("Not kept")}</span>
       </span>
     );
   return (
@@ -123,10 +132,10 @@ export function MailBody({ text, html, title }: { text: string; html?: string | 
   const [formatted, setFormatted] = useState(false);
   return (
     <div className="vr-mailbody">
-      {formatted && html ? <SafeHtml html={html} title={title} /> : <p>{text || "(no text)"}</p>}
+      {formatted && html ? <SafeHtml html={html} title={title} /> : <p>{text || t("(no text)")}</p>}
       {html ? (
         <Button size="sm" variant="ghost" onClick={() => setFormatted(!formatted)}>
-          {formatted ? "Show plain text" : "Show formatted"}
+          {formatted ? t("Show plain text") : t("Show formatted")}
         </Button>
       ) : null}
     </div>
@@ -134,55 +143,55 @@ export function MailBody({ text, html, title }: { text: string; html?: string | 
 }
 
 const DELIVERY: Record<string, { label: string; tone: Tone }> = {
-  queued: { label: "Sending…", tone: "warn" },
-  sent: { label: "Sent", tone: "brand" },
-  failed: { label: "Not sent", tone: "danger" },
+  queued: { label: msg("Sending…"), tone: "warn" },
+  sent: { label: msg("Sent"), tone: "brand" },
+  failed: { label: msg("Not sent"), tone: "danger" },
 };
 
 const OUT_KIND: Record<string, string> = {
-  auto_reply: "Automatic first reply",
-  agent_reply: "replied by email",
-  chat_reply: "chat reply, also sent by email",
-  form_confirmation: "Confirmation email",
+  auto_reply: msg("Automatic first reply"),
+  agent_reply: msg("replied by email"),
+  chat_reply: msg("chat reply, also sent by email"),
+  form_confirmation: msg("Confirmation email"),
 };
 
 /** One email of a ticket's thread: who wrote, to whom, the body, attachments and (for outgoing mail) delivery. */
 export function EmailCard({ m, author, onRetry, retrying }: { m: TicketEmail; author?: string | null; onRetry?: () => void; retrying?: boolean }) {
   const out = m.direction === "out";
-  const who = out ? (m.kind === "agent_reply" || m.kind === "chat_reply" ? author ?? "Team" : OUT_KIND[m.kind ?? ""] ?? "Verity") : m.from_name || m.from_addr;
+  const who = out ? (m.kind === "agent_reply" || m.kind === "chat_reply" ? author ?? t("Team") : t(OUT_KIND[m.kind ?? ""] ?? "Verity")) : m.from_name || m.from_addr;
   const d = DELIVERY[m.status];
   return (
-    <article className={cx("vr-tl-item", "vr-mail", out ? "is-agent" : "is-customer")} aria-label={out ? "Email sent" : "Email received"}>
+    <article className={cx("vr-tl-item", "vr-mail", out ? "is-agent" : "is-customer")} aria-label={out ? t("Email sent") : t("Email received")}>
       <header className="vr-mail-head">
         <Icon name="mail" size={14} />
         <span className="vr-tl-meta">
           <b>{who}</b>
-          {out && (m.kind === "agent_reply" || m.kind === "chat_reply") ? ` ${OUT_KIND[m.kind]}` : out ? "" : " wrote by email"} ·{" "}
+          {out && (m.kind === "agent_reply" || m.kind === "chat_reply") ? ` ${t(OUT_KIND[m.kind])}` : out ? "" : ` ${t("wrote by email")}`} ·{" "}
           <span className="vr-mono">{dateTime(m.sent_at ?? m.received_at ?? m.created_at)}</span>
         </span>
         {out && d ? (
           <Badge tone={d.tone} dot>
-            {d.label}
+            {t(d.label)}
           </Badge>
         ) : null}
       </header>
       <dl className="vr-mail-addr">
-        <dt>From</dt>
-        <dd>{out ? (m.via_platform ? "Verity (no-reply)" : m.from_addr) : m.from_name ? `${m.from_name} <${m.from_addr}>` : m.from_addr}</dd>
-        <dt>To</dt>
+        <dt>{t("From")}</dt>
+        <dd>{out ? (m.via_platform ? t("Verity (no-reply)") : m.from_addr) : m.from_name ? `${m.from_name} <${m.from_addr}>` : m.from_addr}</dd>
+        <dt>{t("To")}</dt>
         <dd>{m.to.join(", ")}</dd>
         {m.cc.length ? (
           <>
-            <dt>Cc</dt>
+            <dt>{t("Cc")}</dt>
             <dd>{m.cc.join(", ")}</dd>
           </>
         ) : null}
-        <dt>Subject</dt>
-        <dd>{m.subject || "(no subject)"}</dd>
+        <dt>{t("Subject")}</dt>
+        <dd>{m.subject || t("(no subject)")}</dd>
       </dl>
-      <MailBody text={m.text} html={m.html} title={`Email: ${m.subject}`} />
+      <MailBody text={m.text} html={m.html} title={t("Email: {subject}", { subject: m.subject })} />
       {m.attachments.length ? (
-        <div className="vr-atts" aria-label="Attachments">
+        <div className="vr-atts" aria-label={t("Attachments")}>
           {m.attachments.map((a) => (
             <AttachmentChip key={a.id} a={a} />
           ))}
@@ -190,15 +199,15 @@ export function EmailCard({ m, author, onRetry, retrying }: { m: TicketEmail; au
       ) : null}
       {m.status === "failed" ? (
         <div className="vr-actions">
-          <span className="vr-help vr-help-error">{m.error ?? "The mail server didn’t accept this email."}</span>
+          <span className="vr-help vr-help-error">{m.error ?? t("The mail server didn’t accept this email.")}</span>
           {onRetry ? (
             <Button size="sm" icon="refresh" busy={retrying} onClick={onRetry}>
-              Retry
+              {t("Retry")}
             </Button>
           ) : null}
         </div>
       ) : null}
-      {out && m.via_platform && m.status !== "failed" ? <span className="vr-help">Sent from Verity’s address because no mailbox is connected; replies to it aren’t read.</span> : null}
+      {out && m.via_platform && m.status !== "failed" ? <span className="vr-help">{t("Sent from Verity’s address because no mailbox is connected; replies to it aren’t read.")}</span> : null}
     </article>
   );
 }

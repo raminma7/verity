@@ -1,5 +1,6 @@
 "use client";
 
+import { t } from "@/i18n";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
@@ -24,16 +25,16 @@ export default function Chatbots() {
 
   return (
     <>
-      <PageHeader title="Chatbots" subtitle="An assistant on your website that answers from the knowledge base, cites its sources and hands customers to your team when it can’t help." />
+      <PageHeader title={t("Chatbots")} subtitle={t("An assistant on your website that answers from the knowledge base, cites its sources and hands customers to your team when it can’t help.")} />
       <div className="vr-grid vr-grid-2" style={{ alignItems: "start" }}>
-        <Card title="Authorized domains">
-          <UsageMeter label="Domains across all chatbots" used={d.domains_used} total={d.domains_limit} />
+        <Card title={t("Authorized domains")}>
+          <UsageMeter label={t("Domains across all chatbots")} used={d.domains_used} total={d.domains_limit} />
           <p className="vr-help" style={{ marginTop: 8 }}>
-            A chatbot only loads on the domains you authorize. Your plan sets how many you can use.
+            {t("A chatbot only loads on the domains you authorize. Your plan sets how many you can use.")}
           </p>
         </Card>
         {manage ? (
-          <Card title="New chatbot">
+          <Card title={t("New chatbot")}>
             <form
               className="vr-form-row"
               style={{ gridTemplateColumns: "1fr auto", alignItems: "end" }}
@@ -50,17 +51,17 @@ export default function Chatbots() {
                 }
               }}
             >
-              <Field label="Name" placeholder="Acme Help" value={name} onChange={(e) => setName(e.target.value)} error={err} required />
+              <Field label={t("Name")} placeholder={t("Acme Help")} value={name} onChange={(e) => setName(e.target.value)} error={err} required />
               <Button type="submit" variant="primary" icon="plus" busy={busy} disabled={!name.trim()}>
-                Create
+                {t("Create")}
               </Button>
             </form>
           </Card>
         ) : null}
       </div>
       {d.chatbots.length === 0 ? (
-        <EmptyState icon="chat" title="No chatbots yet">
-          Create one, authorize your website’s domain and paste one line of code into your site.
+        <EmptyState icon="chat" title={t("No chatbots yet")}>
+          {t("Create one, authorize your website’s domain and paste one line of code into your site.")}
         </EmptyState>
       ) : (
         <div className="vr-card vr-list">
@@ -72,14 +73,14 @@ export default function Chatbots() {
               <span style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
                 <b>{b.name}</b>
                 <span className="vr-muted" style={{ fontSize: 13 }}>
-                  {b.allowed_domains.length ? b.allowed_domains.join(", ") : "No domains yet: it won’t load anywhere"}
+                  {b.allowed_domains.length ? b.allowed_domains.join(", ") : t("No domains yet: it won’t load anywhere")}
                 </span>
               </span>
               <span className="vr-mono vr-muted" style={{ fontSize: 12 }}>
                 {b.model}
               </span>
               <Badge tone={b.status === "active" && b.allowed_domains.length ? "brand" : "neutral"} dot>
-                {b.status === "paused" ? "Paused" : b.allowed_domains.length ? "Live" : "Not installed"}
+                {b.status === "paused" ? t("Paused") : b.allowed_domains.length ? t("Live") : t("Not installed")}
               </Badge>
             </Link>
           ))}

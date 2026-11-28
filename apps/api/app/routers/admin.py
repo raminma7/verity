@@ -407,9 +407,12 @@ SETTING_DEFAULTS = {"audit_retention_days": 365}
 @router.get("/settings")
 async def get_settings_(_: SystemAdmin, db: Db):
     retention = await db.get(SystemSetting, "audit_retention_days")
+    from app.services.privacy import retention_caps
+
     return {
         "no_plan_limits": await default_limits(db),
         "audit_retention_days": retention.value if retention else SETTING_DEFAULTS["audit_retention_days"],
+        "retention_max": await retention_caps(db),
     }
 
 
@@ -423,6 +426,11 @@ async def put_settings(body: dict, admin: SystemAdmin, db: Db):
         if days < 30:
             raise ApiError(422, "retention_too_short", "Keep audit logs for at least 30 days.")
         await db.merge(SystemSetting(key="audit_retention_days", value=days, updated_at=utcnow()))
+    if "retention_max" in body:
+        from app.services.privacy import clean_retention
+
+        caps = clean_retention(body["retention_max"] or {})
+        await db.merge(SystemSetting(key="retention_max", value=caps, updated_at=utcnow()))
     audit(db, "admin.settings_updated", actor_id=admin.id, target_type="settings", keys=list(body))
     await db.commit()
     return await get_settings_(admin, db)

@@ -166,7 +166,8 @@ async def send_receipts(db: AsyncSession, ws: Workspace, sub: Subscription) -> N
                 ws.name,
                 sub.terms["plan_name"],
                 format_money(sub.terms["price_cents"], sub.terms["currency"]),
-                sub.current_period_end.strftime("%d %b %Y"),
+                sub.current_period_end,
+                locale=u.locale,
             )
 
 

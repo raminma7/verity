@@ -1,5 +1,6 @@
 "use client";
 
+import { t, tp } from "@/i18n";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -19,12 +20,12 @@ export default function FormsPage() {
   return (
     <>
       <PageHeader
-        title="Forms"
-        subtitle="Structured requests customers fill in inside the chat. The assistant offers a form when its condition fits the conversation, fills in what the customer already said, and the customer confirms before it becomes a ticket."
+        title={t("Forms")}
+        subtitle={t("Structured requests customers fill in inside the chat. The assistant offers a form when its condition fits the conversation, fills in what the customer already said, and the customer confirms before it becomes a ticket.")}
         actions={
           manage ? (
             <Button variant="primary" icon="plus" onClick={() => router.push("/forms/new")}>
-              New form
+              {t("New form")}
             </Button>
           ) : null
         }
@@ -34,20 +35,20 @@ export default function FormsPage() {
       ) : data.error ? (
         <Banner tone="danger">{data.error.message}</Banner>
       ) : !forms.length ? (
-        <EmptyState icon="file" title="No forms yet">
-          Create a form for requests that need specific details, like a return or a callback.
+        <EmptyState icon="file" title={t("No forms yet")}>
+          {t("Create a form for requests that need specific details, like a return or a callback.")}
         </EmptyState>
       ) : (
         <div className="vr-card vr-table-wrap">
           <table className="vr-table">
             <thead>
               <tr>
-                <th>Form</th>
-                <th>Category</th>
-                <th>Offered by</th>
-                <th className="num">Fields</th>
-                <th>Status</th>
-                <th className="num">Updated</th>
+                <th>{t("Form")}</th>
+                <th>{t("Category")}</th>
+                <th>{t("Offered by")}</th>
+                <th className="num">{t("Fields")}</th>
+                <th>{t("Status")}</th>
+                <th className="num">{t("Updated")}</th>
               </tr>
             </thead>
             <tbody>
@@ -58,27 +59,27 @@ export default function FormsPage() {
                       {f.name}
                     </Link>
                     <div className="vr-muted" style={{ fontSize: 12, maxWidth: 420, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>
-                      {f.is_contact ? "Offered when nobody answers a handoff and no other form fits." : f.activation_condition || "Only when the customer opens it."}
+                      {f.is_contact ? t("Offered when nobody answers a handoff and no other form fits.") : f.activation_condition || t("Only when the customer opens it.")}
                     </div>
                   </td>
                   <td className="vr-sub">{f.category ?? "—"}</td>
-                  <td className="vr-sub">{f.is_contact ? "Every chatbot" : f.chatbot_ids.length ? `${f.chatbot_ids.length} chatbot${f.chatbot_ids.length === 1 ? "" : "s"}` : "No chatbot"}</td>
+                  <td className="vr-sub">{f.is_contact ? t("Every chatbot") : f.chatbot_ids.length ? tp("{n} chatbot", "{n} chatbots", f.chatbot_ids.length) : t("No chatbot")}</td>
                   <td className="num">{f.fields.length}</td>
                   <td>
                     {f.is_contact ? (
                       <Badge tone="brand" dot>
-                        Contact form
+                        {t("Contact form")}
                       </Badge>
                     ) : f.status === "active" ? (
                       <Badge tone="brand" dot>
-                        Active
+                        {t("Active")}
                       </Badge>
                     ) : (
-                      <Badge dot>Draft</Badge>
+                      <Badge dot>{t("Draft")}</Badge>
                     )}
                   </td>
                   <td className="num">
-                    v{f.version} · {ago(f.updated_at)}
+                    {t("v")}{f.version} · {ago(f.updated_at)}
                   </td>
                 </tr>
               ))}
