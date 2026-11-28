@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 
 import { getTranslator } from "@/i18n/server";
 import type { Locale } from "@/i18n";
@@ -6,6 +7,14 @@ import { Cited, Closing, Contact, Control, Cost, EmailSection, Faq, Footer, Form
 import { fetchContactEnabled } from "./contact";
 import { fetchPlans } from "./plans";
 import { OG_LOCALE, SITE_LOCALES, alternates, pathFor, siteUrl } from "./site";
+
+/** Verity's own chatbot on its public pages: the embed line from the product itself, with the key from VERITY_SITE_CHATBOT_KEY.
+ *  Nothing is added when it is unset. The chatbot must authorize this site's address under Chatbots in the dashboard. */
+function SiteChatbot() {
+  const key = process.env.VERITY_SITE_CHATBOT_KEY?.trim();
+  if (!key || !/^vb_[A-Za-z0-9_-]+$/.test(key)) return null;
+  return <Script src={`${siteUrl()}/widget.js`} data-verity-key={key} strategy="afterInteractive" />;
+}
 
 export async function landingMetadata(locale: Locale): Promise<Metadata> {
   const { t } = await getTranslator(locale);
@@ -46,6 +55,7 @@ export async function LandingPage({ locale }: { locale: Locale }) {
         <Closing {...c} />
       </main>
       <Footer t={c.t} locale={locale} />
+      <SiteChatbot />
     </div>
   );
 }
