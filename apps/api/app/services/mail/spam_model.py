@@ -30,13 +30,13 @@ from app.models import SpamModelStats
 from app.models.base import utcnow
 
 DIM = 1 << 20
-SPAM_AT = 0.95  # at or above: spam, no AI call
+SPAM_AT = 0.99  # at or above: spam, no AI call. Strict: a customer in Spam costs more than a spam ticket
 HAM_AT = 0.35  # at or below: legitimate
 WEAK_RULE_SPAM_AT = 0.6  # a weak spam rule hit lowers the bar
 LEARN_FULL_WEIGHT_AT = 50  # reviewed messages before the workspace layer counts fully
-MAX_WORKSPACE_SHIFT = 10.0  # the workspace layer can move the log-odds at most this far
+MAX_WORKSPACE_SHIFT = 11.0  # the workspace layer can move the log-odds at most this far
 # The base model's log-odds are clamped to this, so a workspace that has reviewed enough mail always has the last
-# word (6 - 10 < logit(HAM_AT), -6 + 10 > logit(SPAM_AT)). Both thresholds lie inside it: no base-only decision changes.
+# word (6 - 11 < logit(HAM_AT), -6 + 11 > logit(SPAM_AT)). Both thresholds lie inside it: no base-only decision changes.
 BASE_CLAMP = 6.0
 MAX_FEATURES = 400
 WEIGHTS = Path(__file__).with_name("spam_base.json")
@@ -78,7 +78,7 @@ def features(subject: str, text_body: str, html: str | None, from_addr: str = ""
     if _MONEY.search(subj + " " + body):
         out.add("x:money")
     local = (from_addr or "").split("@")[0]
-    if sum(c.isdigit() for c in local) >= 3:
+    if sum(c.isdigit() for c in local) >= 5:  # machine-made sender IDs; a birth year (jsmith1987) is not a signal
         out.add("x:from_digits")
     if subj and subj.upper() == subj and any(c.isalpha() for c in subj):
         out.add("x:subj_caps")

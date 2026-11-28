@@ -73,7 +73,18 @@ def load(root: Path) -> list[Example]:
 PRIOR = 0.2  # the bias is fixed at this spam rate, so a message with little evidence leans legitimate
 
 
-def train(data: list[Example], seed: int = 7) -> tuple[float, dict[int, float]]:
+SEEDS = (7, 11, 23, 42, 101)  # weights are averaged over these runs: one SGD run is noisy on borderline mail
+
+
+def train(data: list[Example]) -> tuple[float, dict[int, float]]:
+    """Averages the weights of one run per seed (the bias is fixed), which steadies borderline scores."""
+    runs = [train_once(data, seed) for seed in SEEDS]
+    bias = runs[0][0]
+    keys = set().union(*(w for _, w in runs))
+    return bias, {k: sum(w.get(k, 0.0) for _, w in runs) / len(runs) for k in keys}
+
+
+def train_once(data: list[Example], seed: int) -> tuple[float, dict[int, float]]:
     rnd = random.Random(seed)
     w: dict[int, float] = {}
     bias = math.log(PRIOR / (1 - PRIOR))
