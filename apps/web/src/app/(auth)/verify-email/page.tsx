@@ -30,7 +30,7 @@ function CheckInbox({ email }: { email: string }) {
         <span className="vr-eyebrow">{tr("Create account · 2 of 2")}</span>
         <h1 className="vr-display">{tr("Check your inbox")}</h1>
         <p className="vr-muted">
-          {tr("We sent a verification link to")} <b style={{ color: "var(--ink)" }}>{email || tr("your email address")}</b>{tr(". Open it to finish setting up your workspace. The link expires in 24 hours.")}
+          {tr("We sent a verification link to {email}. Open it to finish setting up your workspace. The link expires in 24 hours.", { email: email || tr("your email address") })}
         </p>
       </div>
       {sent ? <Banner title={tr("Sent again.")}>{tr("Only the newest link works.")}</Banner> : null}

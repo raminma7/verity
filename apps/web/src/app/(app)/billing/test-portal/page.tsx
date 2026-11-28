@@ -57,7 +57,7 @@ export default function TestPortal() {
           </span>
           {d.subscription && d.can_manage ? (
             <div className="vr-actions">
-              <Button busy={busy === "renew"} onClick={() => run("renew", () => api.post("/dev/billing/renew"), "The renewal job ran for this workspace.")}>
+              <Button busy={busy === "renew"} onClick={() => run("renew", () => api.post("/dev/billing/renew"), t("The renewal job ran for this workspace."))}>
                 {t("Run the renewal now")}
               </Button>
             </div>

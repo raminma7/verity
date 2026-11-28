@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useEffect, useRef, useState } from "react";
 
 import { FileTag, StatusBadge } from "@/components/rag";
-import { Banner, Button, Card, Field, PageHeader, Segmented, Select } from "@/components/ui";
+import { Banner, Button, Card, Field, PageHeader, Segmented, Select, fmt } from "@/components/ui";
 import { api, errorText, type KnowledgeStats, type Source } from "@/lib/api";
 import { ACTIVE, bytes, docStatus } from "@/lib/knowledge";
 import { useSession } from "@/lib/session";
@@ -125,7 +125,7 @@ export default function AddKnowledge() {
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline" }}>
                 <h2 className="vr-h">{tr("Processing")} {items.length} {tr("file")}{items.length === 1 ? "" : "s"}</h2>
                 <span className="vr-mono vr-muted" style={{ fontSize: 12 }}>
-                  {done} {tr("of")} {items.length} {tr("done")}
+                  {tr("{done} of {total} done", { done, total: items.length })}
                 </span>
               </div>
               <div className="vr-card vr-list" style={{ overflow: "hidden" }}>
@@ -261,7 +261,7 @@ function WebsiteForm({ stats, onAdded }: { stats: KnowledgeStats | null; onAdded
           <li>{tr("Only the main text of each page is kept; navigation, footers and cookie banners are left out.")}</li>
           <li>{tr("On re-sync, only pages that changed are embedded again, so re-syncs cost few tokens.")}</li>
           <li>
-            {tr("Your plan allows")} {stats ? (stats.limits.crawled_pages < 0 ? "unlimited" : stats.limits.crawled_pages.toLocaleString()) : "…"} {tr("crawled pages in total;")} {stats?.usage.crawled_pages.toLocaleString() ?? "…"} {tr("are used.")}
+            {tr("Your plan allows {limit} crawled pages in total; {used} are used.", { limit: stats ? (stats.limits.crawled_pages < 0 ? tr("unlimited") : fmt(stats.limits.crawled_pages)) : "…", used: stats ? fmt(stats.usage.crawled_pages) : "…" })}
           </li>
         </ul>
         {added ? (

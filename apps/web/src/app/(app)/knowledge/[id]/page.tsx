@@ -1,6 +1,6 @@
 "use client";
 
-import { t as tr, msg } from "@/i18n";
+import { t as tr, msg, tp } from "@/i18n";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
@@ -89,7 +89,7 @@ export default function SourcePage() {
             <FileTag type={web ? "web" : s.file_type} />
             <StatusBadge status={docStatus(s.status)} />
             <span className="vr-mono" style={{ fontSize: 12 }}>
-              {web ? tr("{root_url} · {fmt} pages", { root_url: s.root_url, fmt: fmt(s.page_count ?? 0) }) : bytes(s.size_bytes ?? 0)} · {fmt(s.chunk_count)} {tr("chunks ·")} {fmt(s.token_count)} {tr("tokens")}
+              {web ? tr("{root_url} · {fmt} pages", { root_url: s.root_url, fmt: fmt(s.page_count ?? 0) }) : bytes(s.size_bytes ?? 0)} · {tr("{chunks} chunks · {tokens} tokens", { chunks: fmt(s.chunk_count), tokens: fmt(s.token_count) })}
             </span>
           </span>
         }
@@ -189,7 +189,7 @@ export default function SourcePage() {
                     {tr("Previous")}
                   </Button>
                   <span className="vr-muted vr-mono" style={{ fontSize: 12, alignSelf: "center" }}>
-                    {offset + 1}–{Math.min(offset + 50, chunks.data.total)} {tr("of")} {chunks.data.total}
+                    {tr("{from}–{to} of {total}", { from: offset + 1, to: Math.min(offset + 50, chunks.data.total), total: chunks.data.total })}
                   </span>
                   <Button size="sm" disabled={offset + 50 >= chunks.data.total} onClick={() => setOffset(offset + 50)}>
                     {tr("Next")}
@@ -275,7 +275,7 @@ function WebsiteSettings({ source, onSaved }: { source: Source; onSaved: () => v
           label={tr("Follow links")}
           value={depth}
           onChange={setDepth}
-          options={["0", "1", "2", "3", "5"].map((d) => ({ value: d, label: d === "0" ? tr("Start page only") : tr("{d} level{v} deep", { d: d, v: d === "1" ? "" : "s" }) }))}
+          options={["0", "1", "2", "3", "5"].map((d) => ({ value: d, label: d === "0" ? tr("Start page only") : tp("{n} level deep", "{n} levels deep", Number(d)) }))}
         />
         <Field label={tr("Only these paths")} value={include} onChange={(e) => setInclude(e.target.value)} placeholder="/docs" />
         <Field label={tr("Skip these paths")} value={exclude} onChange={(e) => setExclude(e.target.value)} placeholder="/blog" />

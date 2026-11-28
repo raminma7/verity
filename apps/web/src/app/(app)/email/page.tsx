@@ -145,7 +145,7 @@ export default function MailboxesPage() {
                         style={{ alignItems: "flex-end", marginTop: 8 }}
                         onSubmit={(e) => {
                           e.preventDefault();
-                          act(`pw-${a.id}`, () => api.patch(`/email-accounts/${a.id}`, { password: pw.value }), "App password updated. Verity signed in again.").then(() => setPw(null));
+                          act(`pw-${a.id}`, () => api.patch(`/email-accounts/${a.id}`, { password: pw.value }), tr("App password updated. Verity signed in again.")).then(() => setPw(null));
                         }}
                       >
                         <Field label={tr("New app password")} type="password" autoComplete="new-password" value={pw.value} onChange={(e) => setPw({ id: a.id, value: e.target.value })} />
@@ -166,17 +166,17 @@ export default function MailboxesPage() {
                       {tr("Update app password")}
                     </Button>
                     {a.status === "paused" ? (
-                      <Button size="sm" variant="ghost" onClick={() => act(`st-${a.id}`, () => api.patch(`/email-accounts/${a.id}`, { status: "active" }), `${a.address} resumed.`)}>
+                      <Button size="sm" variant="ghost" onClick={() => act(`st-${a.id}`, () => api.patch(`/email-accounts/${a.id}`, { status: "active" }), tr("{address} resumed.", { address: a.address }))}>
                         {tr("Resume")}
                       </Button>
                     ) : a.status === "active" ? (
-                      <Button size="sm" variant="ghost" onClick={() => act(`st-${a.id}`, () => api.patch(`/email-accounts/${a.id}`, { status: "paused" }), `${a.address} paused. No mail is fetched or sent from it.`)}>
+                      <Button size="sm" variant="ghost" onClick={() => act(`st-${a.id}`, () => api.patch(`/email-accounts/${a.id}`, { status: "paused" }), tr("{address} paused. No mail is fetched or sent from it.", { address: a.address }))}>
                         {tr("Pause")}
                       </Button>
                     ) : null}
                     {confirm === a.id ? (
                       <>
-                        <Button size="sm" variant="danger" busy={busy === `del-${a.id}`} onClick={() => act(`del-${a.id}`, () => api.del(`/email-accounts/${a.id}`), `${a.address} disconnected and its app password erased.`).then(() => setConfirm(null))}>
+                        <Button size="sm" variant="danger" busy={busy === `del-${a.id}`} onClick={() => act(`del-${a.id}`, () => api.del(`/email-accounts/${a.id}`), tr("{address} disconnected and its app password erased.", { address: a.address })).then(() => setConfirm(null))}>
                           {tr("Disconnect and erase password")}
                         </Button>
                         <Button size="sm" variant="ghost" onClick={() => setConfirm(null)}>

@@ -105,7 +105,7 @@ export default function EmailSettingsPage() {
               </label>
               <div className="vr-actions" aria-label={t("Placeholders")}>
                 {PLACEHOLDERS.map((p) => (
-                  <button key={p.key} type="button" className="vr-chip" onClick={() => setReply({ ...reply, body: `${reply.body}${p.key}` })} title={p.label}>
+                  <button key={p.key} type="button" className="vr-chip" onClick={() => setReply({ ...reply, body: `${reply.body}${p.key}` })} title={t(p.label)}>
                     <span className="vr-mono">{p.key}</span>
                   </button>
                 ))}

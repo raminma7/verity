@@ -255,7 +255,7 @@ export default function ToolEditor() {
               </div>
               {missing.length || extra.length ? (
                 <Banner tone="warn">
-                  {missing.length ? tr("Add a path parameter for {v}. ", { v: missing.map((m) => `{${m}}`).join(", ") }) : ""}
+                  {missing.length ? `${tr("Add a path parameter for {names}.", { names: missing.map((m) => `{${m}}`).join(", ") })} ` : ""}
                   {extra.length ? tr("{v} {v2} in the address.", { v: extra.join(", "), v2: extra.length > 1 ? "aren’t" : "isn’t" }) : ""}
                   {missing.length ? (
                     <Button
@@ -375,7 +375,7 @@ export default function ToolEditor() {
                     <Badge tone="brand" dot>
                       {tr("Saved · encrypted")}
                     </Badge>
-                    <span className="vr-help">{tr("The")} {d.auth_type === "bearer" ? "token" : "key"} {tr("can’t be shown again.")}</span>
+                    <span className="vr-help">{d.auth_type === "bearer" ? tr("The token can’t be shown again.") : tr("The key can’t be shown again.")}</span>
                     <Button size="sm" variant="ghost" onClick={() => setReplacing(true)}>
                       {tr("Replace")}
                     </Button>

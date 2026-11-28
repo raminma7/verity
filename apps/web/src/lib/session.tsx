@@ -45,7 +45,7 @@ export function SessionProvider({ children, fallback }: { children: ReactNode; f
           if (e instanceof ApiError && (e.code === "workspace_not_found" || e.code === "workspace_required")) {
             await api.post(`/me/switch-workspace/${me.workspaces[0].id}`);
             current = await api.get<WorkspaceDetail>("/workspace");
-          } else if (!(e instanceof ApiError && e.code === "workspace_suspended")) {
+          } else if (!(e instanceof ApiError && (e.code === "workspace_suspended" || e.code === "workspace_deleting"))) {
             throw e;
           }
         }

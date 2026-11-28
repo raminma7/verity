@@ -1,6 +1,6 @@
 "use client";
 
-import { t as tr } from "@/i18n";
+import { t as tr, tp } from "@/i18n";
 import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useState } from "react";
@@ -68,7 +68,7 @@ function Conversations() {
     <>
       <PageHeader title={tr("Conversations")} subtitle={tr("Every chatbot conversation, with the evidence behind each answer. Conversations handed to the team wait here for a reply.")} />
       {data.data?.waiting ? (
-        <Banner tone="warn" title={tr("{waiting} customer{v} waiting for a person", { waiting: data.data.waiting, v: data.data.waiting === 1 ? " is" : "s are" })}>
+        <Banner tone="warn" title={tp("{n} customer is waiting for a person", "{n} customers are waiting for a person", data.data.waiting)}>
           {tr("The assistant stays quiet in these conversations until someone resolves them.")}
         </Banner>
       ) : null}
@@ -82,7 +82,7 @@ function Conversations() {
           onChange={setStatus}
           options={[
             { value: "all", label: tr("All") },
-            { value: "escalated", label: tr("Needs a person{v}", { v: data.data?.waiting ? ` · ${data.data.waiting}` : "" }) },
+            { value: "escalated", label: data.data?.waiting ? tr("Needs a person · {n}", { n: data.data.waiting }) : tr("Needs a person") },
             { value: "open", label: tr("With the assistant") },
             { value: "resolved", label: tr("Resolved") },
           ]}

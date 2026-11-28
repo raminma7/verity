@@ -225,7 +225,7 @@ function Workspaces() {
                           if (!raw) return;
                           const reason = prompt("Reason (kept in the audit log):", "Goodwill credit");
                           if (!reason) return;
-                          a.run(`t-${w.id}`, async () => { await api.post(`/admin/workspaces/${w.id}/tokens`, { delta: parseInt(raw, 10), reason }); await list.reload(); }, `Adjusted ${w.name} by ${fmt(parseInt(raw, 10))} tokens.`);
+                          a.run(`t-${w.id}`, async () => { await api.post(`/admin/workspaces/${w.id}/tokens`, { delta: parseInt(raw, 10), reason }); await list.reload(); }, tr("Adjusted {name} by {fmt} tokens.", { name: w.name, fmt: fmt(parseInt(raw, 10)) }));
                         }}
                       >
                         {tr("Adjust tokens")}
@@ -459,7 +459,7 @@ function Multipliers() {
                 output_cost_per_m: Number(f.output_cost_per_m),
               });
               await list.reload();
-            }, "Weight saved.");
+            }, tr("Weight saved."));
           }}
         >
           <div className="vr-grid vr-grid-3">
@@ -481,8 +481,16 @@ function Multipliers() {
   );
 }
 
+const RETENTION_LABELS: Record<string, string> = {
+  closed_tickets: msg("Closed tickets"),
+  resolved_conversations: msg("Resolved conversations"),
+  email_content: msg("Email bodies and attachments"),
+  spam: msg("Mail held in Spam"),
+};
+
 function Defaults() {
-  const s = useData<{ no_plan_limits: Limits; audit_retention_days: number }>("/admin/settings");
+  const s = useData<{ no_plan_limits: Limits; audit_retention_days: number; retention_max: Record<string, number | null> }>("/admin/settings");
+  const [caps, setCaps] = useState<Record<string, string> | null>(null);
   const [limits, setLimits] = useState<Limits | null>(null);
   const [days, setDays] = useState<string | null>(null);
   const a = useAction();
@@ -498,9 +506,11 @@ function Defaults() {
             await api.put("/admin/settings", {
               no_plan_limits: Object.fromEntries(Object.entries(L).map(([k, v]) => [k, Number(v)])),
               audit_retention_days: Number(days ?? s.data!.audit_retention_days),
+              ...(caps ? { retention_max: Object.fromEntries(Object.entries(caps).map(([k, v]) => [k, v.trim() ? Number(v) : null])) } : {}),
             });
+            setCaps(null);
             await s.reload();
-          }, "Defaults saved.");
+          }, tr("Defaults saved."));
         }}
       >
         {a.msg ? <Banner tone={a.msg.tone}>{a.msg.text}</Banner> : null}
@@ -513,6 +523,29 @@ function Defaults() {
           ))}
         </div>
         <hr className="vr-sep" />
+        <div className="vr-form">
+          <b>{tr("Maximum data retention (days)")}</b>
+          <p className="vr-help" style={{ margin: 0 }}>
+            {tr("No workspace keeps these longer than this, whatever it sets. Leave a field empty for no maximum.")}
+          </p>
+          <div className="vr-grid vr-grid-4">
+            {Object.entries(RETENTION_LABELS).map(([k, label]) => (
+              <Field
+                key={k}
+                label={tr(label)}
+                inputMode="numeric"
+                value={caps?.[k] ?? (s.data!.retention_max[k] === null || s.data!.retention_max[k] === undefined ? "" : String(s.data!.retention_max[k]))}
+                onChange={(e) =>
+                  setCaps({
+                    ...Object.fromEntries(Object.entries(s.data!.retention_max).map(([kk, vv]) => [kk, vv === null ? "" : String(vv)])),
+                    ...(caps ?? {}),
+                    [k]: e.target.value,
+                  })
+                }
+              />
+            ))}
+          </div>
+        </div>
         <div style={{ maxWidth: 260 }}>
           <Field label={tr("Keep audit logs for (days)")} inputMode="numeric" value={days ?? String(s.data.audit_retention_days)} onChange={(e) => setDays(e.target.value)} help={tr("At least 30. Older entries are deleted by the worker.")} />
         </div>

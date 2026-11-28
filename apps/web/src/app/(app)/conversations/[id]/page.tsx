@@ -73,8 +73,17 @@ export default function ConversationPage() {
               {c.title || tr("New conversation")}
             </h1>
             <span className="vr-muted" style={{ fontSize: 13 }}>
-              {[c.visitor_email || c.visitor_name || "Anonymous visitor", c.page_url, `started ${dateTime(c.created_at)}`].filter(Boolean).join(" · ")}
+              {[c.visitor_email || c.visitor_name || tr("Anonymous visitor"), c.page_url, tr("started {when}", { when: dateTime(c.created_at) })].filter(Boolean).join(" · ")}
             </span>
+            {c.summary ? (
+              <div className="vr-summary" aria-label={tr("Summary")}>
+                <div className="vr-summary-head">
+                  <b>{tr("Summary for the team")}</b>
+                  <span className="vr-muted vr-caption">{tr("AI · written when the chat was handed over")}</span>
+                </div>
+                <p>{c.summary}</p>
+              </div>
+            ) : null}
           </div>
           {c.status === "escalated" ? (
             <Badge tone="warn" dot>
@@ -145,7 +154,7 @@ export default function ConversationPage() {
             <div key={m.id} className="vr-agent-msg">
               <span className="vr-eyebrow">
                 {m.author ?? tr("Team")} · {dateTime(m.created_at)}
-                {m.data.emailed_to ? tr(" · also emailed to {emailed_to}", { emailed_to: m.data.emailed_to }) : ""}
+                {m.data.emailed_to ? ` · ${tr("also emailed to {email}", { email: m.data.emailed_to })}` : ""}
               </span>
               <p style={{ margin: 0, whiteSpace: "pre-line" }}>{m.content}</p>
             </div>
@@ -180,7 +189,7 @@ export default function ConversationPage() {
             <div className="vr-query-bar">
               <span className="vr-query-hint">
                 {c.status === "escalated" ? tr("The customer sees this in the chat within a few seconds") : tr("Replying hands the conversation to you; the assistant stops answering")}
-                {c.visitor_email ? tr(", and by email at {visitor_email}.", { visitor_email: c.visitor_email }) : "."}
+                {c.visitor_email ? tr(", and by email at {email}.", { email: c.visitor_email }) : "."}
               </span>
               <div className="vr-query-meta">
                 <span className="vr-query-hint">{tr("⌘⏎ to send")}</span>

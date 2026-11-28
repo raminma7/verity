@@ -1,6 +1,6 @@
 "use client";
 
-import { t as tr } from "@/i18n";
+import { t as tr, tp } from "@/i18n";
 /**
  * Verity design system: the Ask, Sources and Library components (QueryBar, AnswerCard, Citation,
  * SourceCard, RelevanceMeter, PipelineTrace, DocumentRow, FileTag), ported from the design system bundle
@@ -245,8 +245,8 @@ export function QueryBar({
       <div className="vr-query-bar">
         <div className="vr-query-scopes">
           {(scopes ?? []).map((s) => (
-            <button key={s.label} type="button" className={cx("vr-chip", s.active && "is-active")} aria-pressed={!!s.active} onClick={s.onClick}>
-              {s.label}
+            <button key={tr(s.label)} type="button" className={cx("vr-chip", s.active && "is-active")} aria-pressed={!!s.active} onClick={s.onClick}>
+              {tr(s.label)}
             </button>
           ))}
         </div>
@@ -337,7 +337,7 @@ export function DocumentRow({
         )}
         <span className="vr-docrow-sub">{sub}</span>
       </span>
-      <span className="vr-docrow-chunks">{chunks ? tr("{chunks} chunk{v}", { chunks: chunks, v: chunks === 1 ? "" : "s" }) : "—"}</span>
+      <span className="vr-docrow-chunks">{chunks ? tp("{n} chunk", "{n} chunks", chunks) : "—"}</span>
       <span className="vr-docrow-status">
         <StatusBadge status={status} />
         {status === "indexing" ? (

@@ -26,7 +26,7 @@ export default function EmailLayout({ children }: { children: ReactNode }) {
       <nav className="vr-tabs" aria-label={tr("Email sections")}>
         {tabs.map((t) => (
           <Link key={t.href} href={t.href} className={path === t.href ? "is-on" : undefined} aria-current={path === t.href ? "page" : undefined}>
-            {t.label}
+            {tr(t.label)}
           </Link>
         ))}
       </nav>

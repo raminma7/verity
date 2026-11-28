@@ -28,7 +28,14 @@ function SignIn() {
       onSubmit={(e) => {
         e.preventDefault();
         f.run(async () => {
-          const r = await api.post<{ user: User; mfa_required: boolean }>("/auth/login", { email, password });
+          const r = await api.post<{ user: User; mfa_required: boolean; deletion_cancelled?: boolean }>("/auth/login", { email, password });
+          if (r.deletion_cancelled) {
+            try {
+              sessionStorage.setItem("verity.notice", "deletion_cancelled");
+            } catch {
+              /* private mode */
+            }
+          }
           if (r.mfa_required) router.push(`/sign-in/2fa?next=${encodeURIComponent(next)}`);
           else if (!r.user.email_verified) router.push(`/verify-email?email=${encodeURIComponent(r.user.email)}`);
           else router.push(next);
@@ -40,6 +47,9 @@ function SignIn() {
         <p className="vr-muted">{t("Sign in to your workspace.")}</p>
       </div>
       {params.get("suspended") ? <Banner tone="danger" title={t("This account is suspended.")}>{t("Contact support if you think this is a mistake.")}</Banner> : null}
+      {params.get("deleted") ? (
+        <Banner title={t("Your account will be deleted in 30 days.")}>{t("You’ve been signed out everywhere. Sign in before then to keep your account.")}</Banner>
+      ) : null}
       {params.get("reset") ? <Banner title={t("Password changed.")}>{t("Sign in with your new password.")}</Banner> : null}
       {f.error ? <Banner tone="danger">{f.error}</Banner> : null}
       <Field label={t("Work email")} name="email" type="email" autoComplete="email" inputSize="lg" placeholder={t("you@company.com")} value={email} onChange={(e) => setEmail(e.target.value)} error={f.fieldErrors.email} required />

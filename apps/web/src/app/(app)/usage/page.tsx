@@ -153,7 +153,7 @@ export default function Usage() {
       <Card title={t("How weighted tokens are calculated")} padded={false}>
         <div className="vr-panel-body" style={{ paddingBottom: 0 }}>
           <p className="vr-muted" style={{ fontSize: 13 }}>
-            {t("Models cost different amounts to run, so each request counts as")} <span className="vr-code">{t("input × input weight + output × output weight")}</span>{t(". A weight for a specific feature overrides the model’s default (")}<span className="vr-code">*</span>).
+            {t("Models cost different amounts to run, so each request counts as input × input weight + output × output weight. A weight for a specific feature overrides the model’s default (*).")}
           </p>
         </div>
         <div className="vr-table-wrap" style={{ marginTop: 16 }}>

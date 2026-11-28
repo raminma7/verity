@@ -18,7 +18,7 @@ const path = require("path");
 const UI_ATTRS = new Set(["label", "title", "placeholder", "aria-label", "help", "subtitle", "eyebrow", "alt", "description", "caption", "note", "confirmLabel", "emptyText"]);
 const UI_PROPS = new Set(["label", "title", "text", "message", "word", "description", "help", "note", "placeholder", "caption", "heading", "subtitle", "hint", "eyebrow", "body", "tip", "empty", "summary", "detail"]);
 const UI_CALLS = new Set(["setError", "setNotice", "confirm", "alert", "setInfo", "setStatusText"]);
-const SKIP_FILES = [/app\/widget\//, /components\/chat-form\.tsx$/, /\/i18n\//];
+const SKIP_FILES = [/app\/layout\.tsx$/, /app\/widget\//, /components\/chat-form\.tsx$/, /\/i18n\//];
 const ENTITIES = { "&apos;": "'", "&quot;": '"', "&amp;": "&", "&nbsp;": " ", "&lt;": "<", "&gt;": ">", "&rsquo;": "’", "&lsquo;": "‘", "&ldquo;": "“", "&rdquo;": "”", "&mdash;": "—", "&ndash;": "–", "&hellip;": "…", "&middot;": "·", "&rarr;": "→" };
 
 const report = [];
@@ -186,6 +186,8 @@ function transform(file) {
         if (UI_PROPS.has(name)) ctx = "prop";
       } else if (parent && ts.isCallExpression(parent) && parent.arguments[0] === n && ts.isIdentifier(parent.expression) && UI_CALLS.has(parent.expression.text)) {
         ctx = "call";
+      } else if (parent && ts.isCallExpression(parent) && parent.arguments.indexOf(n) > 0 && ["run", "act"].includes(ts.isIdentifier(parent.expression) ? parent.expression.text : ts.isPropertyAccessExpression(parent.expression) ? parent.expression.name.text : "")) {
+        ctx = "call"; // act("save", fn, "Saved.") / a.run("key", fn, "Done.")
       } else {
         const j = jsxChildContext(n);
         if (j) ctx = j;

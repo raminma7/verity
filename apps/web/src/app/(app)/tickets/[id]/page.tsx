@@ -1,5 +1,6 @@
 "use client";
 
+import { TicketSummary } from "@/components/tickets";
 import { t as tr } from "@/i18n";
 import Link from "next/link";
 import { useParams } from "next/navigation";
@@ -68,6 +69,18 @@ export default function TicketPage() {
       setBusy(null);
     }
   }
+  async function run(key: string, fn: () => Promise<unknown>) {
+    setBusy(key);
+    setErr(null);
+    try {
+      await fn();
+      await reload();
+    } catch (e) {
+      setErr(errorText(e));
+    } finally {
+      setBusy(null);
+    }
+  }
   async function retry(emailId: string) {
     setBusy(`retry-${emailId}`);
     setErr(null);
@@ -80,8 +93,8 @@ export default function TicketPage() {
       setBusy(null);
     }
   }
-  const catName = (cid: string | number | null | undefined) => cats.data?.find((c) => c.id === cid)?.name ?? "No category";
-  const personName = (pid: string | number | null | undefined) => (pid ? people.data?.find((p) => p.id === pid)?.name ?? "a former member" : "nobody");
+  const catName = (cid: string | number | null | undefined) => cats.data?.find((c) => c.id === cid)?.name ?? tr("No category");
+  const personName = (pid: string | number | null | undefined) => (pid ? people.data?.find((p) => p.id === pid)?.name ?? tr("a former member") : tr("nobody"));
 
   async function change(patch: Record<string, unknown>) {
     setBusy("props");
@@ -132,8 +145,24 @@ export default function TicketPage() {
         <StatusBadge status={t.status} />
       </header>
       {err ? <Banner tone="danger">{err}</Banner> : null}
+      {data.data?.possible_spam && t.status !== "closed" ? (
+        <Banner
+          tone="warn"
+          title={tr("Possible spam")}
+          action={
+            can_manage ? (
+              <Button size="sm" variant="secondary" busy={busy === "spam"} onClick={() => run("spam", () => api.post(`/tickets/${id}/move-to-spam`))}>
+                {tr("Move to Spam")}
+              </Button>
+            ) : null
+          }
+        >
+          {tr("The spam filter wasn’t sure about this email, so it became a ticket. Moving it to Spam closes the ticket and teaches the filter.")}
+        </Banner>
+      ) : null}
       <div className="vr-ticket">
         <section className="vr-timeline" aria-label={tr("Timeline")}>
+          <TicketSummary id={id} summary={data.data?.summary ?? null} onDone={reload} />
           {t.description && !(t.source === "email" && firstIn) ? (
             <div className="vr-tl-item">
               <span className="vr-tl-meta">
@@ -183,7 +212,9 @@ export default function TicketPage() {
                 <span className="vr-help">
                   {mode === "reply"
                     ? reply_channel?.kind === "email"
-                      ? tr("To {to}{v}.", { to: reply_channel.to, v: reply_channel.from ? `, from ${reply_channel.from}` : ", from Verity’s no-reply address (no mailbox connected)" })
+                      ? reply_channel.from
+                        ? tr("To {to}, from {from}.", { to: reply_channel.to, from: reply_channel.from })
+                        : tr("To {to}, from Verity’s no-reply address (no mailbox connected).", { to: reply_channel.to })
                       : reply_channel?.kind === "chat" && reply_channel.email
                         ? tr("Replying takes the chat over: the assistant stays quiet until the ticket is resolved. Also emailed to {email}.", { email: reply_channel.email })
                         : tr("Replying takes the chat over: the assistant stays quiet until the ticket is resolved.")
@@ -270,14 +301,14 @@ export default function TicketPage() {
               <dl className="vr-kv" style={{ gridTemplateColumns: "1fr" }} aria-label={tr("Submitted form data")}>
                 {form.fields.map((f) => (
                   <div key={f.key} style={{ display: "contents" }}>
-                    <dt>{f.label}</dt>
+                    <dt>{tr(f.label)}</dt>
                     <dd className={f.type === "number" ? "vr-mono" : undefined} style={{ marginBottom: 8, overflowWrap: "anywhere", whiteSpace: "pre-line" }}>
                       {showValue(f.value)}
                     </dd>
                   </div>
                 ))}
               </dl>
-              {form.version ? <p className="vr-help">{tr("Form version")} {form.version}{tr(", as the customer saw it.")}</p> : null}
+              {form.version ? <p className="vr-help">{tr("Form version {version}, as the customer saw it.", { version: form.version })}</p> : null}
             </Card>
           ) : null}
           {data.data.conversation ? (
@@ -327,7 +358,7 @@ function TimelineItem({
     return (
       <div className="vr-tl-item is-agent">
         <span className="vr-tl-meta">
-          <b>{e.author ?? tr("Team")}</b> {tr("replied in the chat ·")} {when}
+          <b>{e.author ?? tr("Team")}</b> {tr("replied in the chat")} · {when}
         </span>
         <p>{e.body}</p>
       </div>
@@ -407,7 +438,7 @@ function ConvoLine({ m }: { m: ChatMessage }) {
       <div className="vr-agent-msg">
         <span className="vr-eyebrow">
           {m.author ?? tr("Team")}
-          {m.data.emailed_to ? tr(" · also emailed to {emailed_to}", { emailed_to: m.data.emailed_to }) : ""}
+          {m.data.emailed_to ? ` · ${tr("also emailed to {email}", { email: m.data.emailed_to })}` : ""}
         </span>
         <p style={{ margin: 0, whiteSpace: "pre-line" }}>{m.content}</p>
       </div>

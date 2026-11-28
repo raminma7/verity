@@ -15,7 +15,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
     <div className="vr-auth">
       <section className="vr-auth-story" aria-hidden="true">
-        <span className="vr-logo">Verity</span>
+        <span className="vr-logo">{t("Verity")}</span>
         <div className="vr-auth-sheet">
           <span style={{ width: "92%" }} />
           <span style={{ width: "74%" }} />
@@ -32,7 +32,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
         </div>
       </section>
       <main className="vr-auth-form">
-        <span className="vr-logo vr-auth-mobile-logo">Verity</span>
+        <span className="vr-logo vr-auth-mobile-logo">{t("Verity")}</span>
         {children}
       </main>
     </div>

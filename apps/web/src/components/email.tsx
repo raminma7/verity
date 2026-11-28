@@ -39,7 +39,7 @@ export function AccountStatusBadge({ account }: { account: EmailAccount }) {
   const s = ACCOUNT_STATUS[accountState(account)];
   return (
     <Badge tone={s.tone} dot>
-      {s.label}
+      {t(s.label)}
     </Badge>
   );
 }
@@ -158,12 +158,12 @@ export function EmailCard({ m, author, onRetry, retrying }: { m: TicketEmail; au
         <Icon name="mail" size={14} />
         <span className="vr-tl-meta">
           <b>{who}</b>
-          {out && (m.kind === "agent_reply" || m.kind === "chat_reply") ? ` ${OUT_KIND[m.kind]}` : out ? "" : t(" wrote by email")} ·{" "}
+          {out && (m.kind === "agent_reply" || m.kind === "chat_reply") ? ` ${OUT_KIND[m.kind]}` : out ? "" : ` ${t("wrote by email")}`} ·{" "}
           <span className="vr-mono">{dateTime(m.sent_at ?? m.received_at ?? m.created_at)}</span>
         </span>
         {out && d ? (
           <Badge tone={d.tone} dot>
-            {d.label}
+            {t(d.label)}
           </Badge>
         ) : null}
       </header>

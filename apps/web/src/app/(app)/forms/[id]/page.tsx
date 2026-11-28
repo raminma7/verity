@@ -267,7 +267,7 @@ export default function FormBuilder() {
                   <div key={x.key + i} style={{ display: "flex", alignItems: "center" }}>
                     <button type="button" role="option" aria-selected={i === sel} className={`vr-fieldrow${i === sel ? " is-on" : ""}`} onClick={() => setSel(i)}>
                       <span>
-                        <span>{x.label}</span>
+                        <span>{tr(x.label)}</span>
                         <small>
                           {TYPE_LABEL[x.type]} · <span className="vr-mono">{x.key}</span>
                         </small>
@@ -305,7 +305,7 @@ export default function FormBuilder() {
                 <div className="vr-form-row">
                   <Field
                     label={tr("Label")}
-                    value={field.label}
+                    value={tr(field.label)}
                     disabled={ro}
                     maxLength={120}
                     onChange={(e) => {

@@ -1,6 +1,6 @@
 "use client";
 
-import { t as tr } from "@/i18n";
+import { t as tr, tp } from "@/i18n";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 
@@ -92,7 +92,7 @@ export default function KnowledgeBase() {
           <Stat
             label={tr("Storage")}
             value={`${(st.usage.storage_bytes / 1024 / 1024).toFixed(1)} MB`}
-            note={tr("{v} · {chunks} searchable chunk{v2}", { v: st.limits.storage_mb < 0 ? "Unlimited" : `of ${limitText("storage_mb", st.limits.storage_mb)}`, chunks: fmt(st.chunks), v2: st.chunks === 1 ? "" : "s" })}
+            note={`${st.limits.storage_mb < 0 ? tr("Unlimited") : tr("of {limit}", { limit: limitText("storage_mb", st.limits.storage_mb) })} · ${tp("{n} searchable chunk", "{n} searchable chunks", st.chunks)}`}
           />
         </div>
       ) : null}
@@ -164,7 +164,7 @@ export default function KnowledgeBase() {
                             type="button"
                             style={{ color: "var(--danger)" }}
                             onClick={() => {
-                              if (confirm(tr("Remove {name} from the knowledge base? The chatbot stops using it at once.", { name: s.name }))) act(() => api.del(`/knowledge/sources/${s.id}`), `${s.name} is being removed.`);
+                              if (confirm(tr("Remove {name} from the knowledge base? The chatbot stops using it at once.", { name: s.name }))) act(() => api.del(`/knowledge/sources/${s.id}`), tr("{name} is being removed.", { name: s.name }));
                             }}
                           >
                             <Icon name="x" /> {tr("Remove")}

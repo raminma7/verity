@@ -45,6 +45,23 @@ for (const f of walk(path.join(__dirname, "..", "src"))) {
   })(sf);
 }
 
+// The API's own error messages (ApiError(status, "code", "message")), shown through errorText().
+const API = path.join(__dirname, "..", "..", "api", "app");
+function walkPy(d, out = []) {
+  for (const f of fs.readdirSync(d)) {
+    const p = path.join(d, f);
+    if (fs.statSync(p).isDirectory()) walkPy(p, out);
+    else if (p.endsWith(".py")) out.push(p);
+  }
+  return out;
+}
+if (fs.existsSync(API)) {
+  for (const f of walkPy(API)) {
+    const src = fs.readFileSync(f, "utf8");
+    for (const m of src.matchAll(/ApiError\(\s*\d+,\s*"[a-z_]+",\s*"((?:[^"\\]|\\.)*)"/gs)) keys.set(JSON.parse(`"${m[1]}"`), "string");
+  }
+}
+
 const placeholders = (s) => [...String(s).matchAll(/\{(\w+)\}/g)].map((m) => m[1]).sort().join(",");
 const sorted = [...keys.keys()].sort((a, b) => a.localeCompare(b));
 const write = process.argv.includes("--write");

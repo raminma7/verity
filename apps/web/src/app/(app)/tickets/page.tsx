@@ -75,8 +75,8 @@ function Tickets() {
         value={status}
         onChange={setStatus}
         options={[
-          { value: "active", label: tr("Active{v}", { v: counts ? ` · ${active}` : "" }) },
-          ...STATUS_ORDER.map((s) => ({ value: s, label: `${STATUS[s].label}${counts ? ` · ${counts[s]}` : ""}` })),
+          { value: "active", label: counts ? tr("Active · {n}", { n: active }) : tr("Active") },
+          ...STATUS_ORDER.map((s) => ({ value: s, label: `${tr(STATUS[s].label)}${counts ? ` · ${counts[s]}` : ""}` })),
           { value: "all", label: tr("All") },
         ]}
       />
@@ -136,7 +136,7 @@ function Tickets() {
                     </Link>
                     <div className="vr-muted" style={{ fontSize: 12 }}>
                       {tr(SOURCE[t.source]) ?? t.source}
-                      {t.reopened_count ? tr(" · reopened {reopened_count}×", { reopened_count: t.reopened_count }) : ""}
+                      {t.reopened_count ? ` · ${tr("reopened {count}×", { count: t.reopened_count })}` : ""}
                     </div>
                   </td>
                   <td className="vr-sub">{t.requester_email || t.requester_name || "—"}</td>

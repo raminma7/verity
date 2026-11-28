@@ -63,7 +63,7 @@ export default function SpamPage() {
             <Link className="vr-link" href={`/tickets/${r.ticket.id}`}>
               #{r.ticket.number}
             </Link>
-            {allow ? tr(", and {from_addr} is now always allowed.", { from_addr: m.from_addr }) : "."}
+            {allow ? tr(", and {sender} is now always allowed.", { sender: m.from_addr }) : "."}
           </>
         ) : (
           tr("Moved to tickets.")

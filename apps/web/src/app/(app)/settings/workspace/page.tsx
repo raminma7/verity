@@ -5,12 +5,13 @@ import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useState } from "react";
 
+import { DeleteWorkspaceCard, ExportCard, RetentionCard } from "@/components/privacy";
 import { Banner, Button, Card, date, Field } from "@/components/ui";
 import { api, errorText } from "@/lib/api";
 import { useSession } from "@/lib/session";
 
 function WorkspaceSettings() {
-  const { current, can, refresh, switchWorkspace } = useSession();
+  const { workspaces, current, can, refresh, switchWorkspace } = useSession();
   const router = useRouter();
   const showNew = useSearchParams().get("new");
   const [name, setName] = useState(current?.workspace.name ?? "");
@@ -97,6 +98,13 @@ function WorkspaceSettings() {
             )}
           </form>
         </Card>
+      ) : null}
+      {current ? <RetentionCard /> : null}
+      {current && workspaces.find((w) => w.id === current.workspace.id)?.is_owner ? (
+        <>
+          <ExportCard kind="workspace" />
+          <DeleteWorkspaceCard />
+        </>
       ) : null}
     </>
   );

@@ -54,7 +54,7 @@ function Return() {
       <Card>
         {failed ? (
           <Banner tone="danger" title={failed}>
-            {t("Nothing was activated.")} <Link href="/plans">{t("Choose a plan")}</Link> {t("to try again.")}
+            {t("Nothing was activated.")} <Link href="/plans">{t("Choose a plan to try again.")}</Link>
           </Banner>
         ) : (
           <div className="vr-form">

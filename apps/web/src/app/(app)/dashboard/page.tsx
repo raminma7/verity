@@ -110,11 +110,11 @@ function Dashboard() {
         </Banner>
       ) : u && !u.ai_available ? (
         <Banner tone="danger" title={t("AI token allowance used up.")} action={<Link className="vr-btn vr-btn-secondary vr-btn-sm" href="/plans">{t("Upgrade")}</Link>}>
-          {t("AI answers are paused until")} {date(u.period_end)}{t(". Manual ticketing, email ingestion and forms keep working.")}
+          {t("AI answers are paused until {date}. Manual ticketing, email ingestion and forms keep working.", { date: date(u.period_end) })}
         </Banner>
       ) : u && u.percent_used >= 80 ? (
         <Banner tone="warn" title={t("{percent_used}% of this period’s AI tokens used.", { percent_used: Math.floor(u.percent_used) })} action={<Link className="vr-btn vr-btn-secondary vr-btn-sm" href="/usage">{t("See usage")}</Link>}>
-          {compact(u.remaining)} {t("weighted tokens remain until")} {date(u.period_end)}.
+          {t("{tokens} weighted tokens remain until {date}.", { tokens: compact(u.remaining), date: date(u.period_end) })}
         </Banner>
       ) : null}
 

@@ -264,7 +264,7 @@ export default function ChatbotSettings() {
                     <textarea rows={4} value={domains} onChange={(e) => setDomains(e.target.value)} placeholder={tr("example.com\n*.example.com")} disabled={!manage} aria-label={tr("Domains, one per line")} />
                   </span>
                   <span className="vr-help">
-                    {tr("One per line.")} <span className="vr-mono">{tr("example.com")}</span> {tr("covers example.com and www.example.com;")} <span className="vr-mono">{tr("*.example.com")}</span> {tr("covers every subdomain. On any other site the chatbot doesn’t load.")}
+                    {tr("One per line. example.com covers example.com and www.example.com; *.example.com covers every subdomain. On any other site the chatbot doesn’t load.")}
                   </span>
                 </label>
                 {manage ? (

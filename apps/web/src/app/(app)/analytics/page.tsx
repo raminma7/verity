@@ -81,7 +81,7 @@ type Tools = {
   tools: { name: string; calls: number; ok: number; tests: number; success_rate: number | null; latency_p50_ms: number | null; latency_p95_ms: number | null }[];
 };
 type Email = {
-  totals: { received: number; legitimate: number; spam: number; promotion: number; held: number; automatic: number; failed: number; marked_not_spam: number; decided_by_ai: number; spam_rate: number | null };
+  totals: { received: number; legitimate: number; spam: number; promotion: number; held: number; automatic: number; failed: number; marked_not_spam: number; decided_by_ai: number; caught_by_model: number; possible_spam: number; spam_rate: number | null };
   series: Point[];
 };
 type Usage = { name: string; input_tokens: number; output_tokens: number; weighted_tokens: number; calls: number };
@@ -267,7 +267,13 @@ export default function Analytics() {
             {email.data ? (
               <ChartCard
                 title={tr("Incoming email")}
-                subtitle={tr("{received} received · {spam_rate} spam or promotions · {marked_not_spam} marked not spam", { received: fmt(email.data.totals.received), spam_rate: pct(email.data.totals.spam_rate), marked_not_spam: fmt(email.data.totals.marked_not_spam) })}
+                subtitle={tr("{received} received · {spam_rate} spam or promotions · {marked_not_spam} marked not spam · {caught} caught by the spam filter without AI · {possible} tickets marked possible spam", {
+                  received: fmt(email.data.totals.received),
+                  spam_rate: pct(email.data.totals.spam_rate),
+                  marked_not_spam: fmt(email.data.totals.marked_not_spam),
+                  caught: fmt(email.data.totals.caught_by_model),
+                  possible: fmt(email.data.totals.possible_spam),
+                })}
                 chart={
                   <div className="vr-form">
                     <BarChart data={mailSeries} series={MAIL_SERIES} label={tr("Incoming email")} bucket={bucket} />

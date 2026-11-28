@@ -67,7 +67,7 @@ export default function ToolsPage() {
                   </span>
                   <span className="vr-help">
                     {t.chatbots?.length ? tr("Used by {v}", { v: t.chatbots.map((b) => b.name).join(", ") }) : tr("Not used by a chatbot yet")}
-                    {t.last_test_at ? tr(" · Last tested {last_test_at}", { last_test_at: dateTime(t.last_test_at) }) : ""}
+                    {t.last_test_at ? ` · ${tr("Last tested {when}", { when: dateTime(t.last_test_at) })}` : ""}
                   </span>
                 </span>
                 <span className="vr-actions">

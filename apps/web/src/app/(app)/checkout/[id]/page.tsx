@@ -44,19 +44,19 @@ export default function CheckoutPage() {
             {isPackage ? (
               <>
                 <dt>{t("Package")}</dt>
-                <dd>{co.package?.name}{t(", paid once")}</dd>
+                <dd>{t("{package}, paid once", { package: co.package?.name ?? "" })}</dd>
                 <dt>{t("AI tokens")}</dt>
-                <dd className="vr-mono">{compact(co.package?.tokens ?? 0)}{t(", used after the plan’s allowance, expiring in 12 months")}</dd>
+                <dd className="vr-mono">{t("{tokens}, used after the plan’s allowance, expiring in 12 months", { tokens: compact(co.package?.tokens ?? 0) })}</dd>
               </>
             ) : (
               <>
                 <dt>{t("Plan")}</dt>
                 <dd>
-                  {co.plan?.name}{t(", billed every")} {co.plan?.billing_cycle}
+                  {t("{plan}, billed every {cycle}", { plan: co.plan?.name ?? "", cycle: t(co.plan?.billing_cycle ?? "month") })}
                 </dd>
                 <dt>{t("AI tokens")}</dt>
                 <dd className="vr-mono">
-                  {compact(co.plan?.token_allowance ?? 0)} {t("per")} {co.plan?.billing_cycle}
+                  {t("{tokens} per {cycle}", { tokens: compact(co.plan?.token_allowance ?? 0), cycle: t(co.plan?.billing_cycle ?? "month") })}
                 </dd>
               </>
             )}

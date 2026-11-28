@@ -1,6 +1,6 @@
 "use client";
 
-import { t } from "@/i18n";
+import { msg, t } from "@/i18n";
 export class ApiError extends Error {
   status: number;
   code: string;
@@ -129,9 +129,18 @@ export const api = {
   del: <T>(path: string) => request<T>("DELETE", path),
 };
 
+/** The API's message in the user's language (its messages are part of the dictionary), else as sent. */
 export function errorText(e: unknown): string {
-  return e instanceof ApiError ? e.message : "Something went wrong.";
+  return e instanceof ApiError ? t(e.message) : t("Something went wrong.");
 }
+
+// Messages the API builds from parts, kept here so they're translated too.
+export const API_MESSAGES = [
+  msg("You don't have permission to do that."),
+  msg("Enter a valid email address."),
+  msg("Too many attempts. Try again shortly."),
+  msg("Not found."),
+];
 
 // ---- Types shared with the API -------------------------------------------------------------------
 
@@ -158,6 +167,8 @@ export type WorkspaceSummary = {
   permissions: string[];
   subscribed: boolean;
   plan_name: string | null;
+  is_owner: boolean;
+  deletion_requested_at: string | null;
 };
 
 export type Role = { id: string; key: string; name: string; description: string; permissions: string[]; is_system: boolean; rank: number };
@@ -322,6 +333,8 @@ export type Conversation = {
   resolved_at: string | null;
   message_count: number;
   last_message_at: string | null;
+  summary?: string | null;
+  summary_at?: string | null;
   created_at: string;
   confidence?: string | null;
   ticket_number?: number | null;
@@ -438,6 +451,8 @@ export type TicketDetail = {
   reply_channel: { kind: "chat"; email: string | null } | { kind: "email"; to: string; from: string | null } | null;
   can_manage: boolean;
   can_reply: boolean;
+  summary: { text: string; at: string } | null;
+  possible_spam: boolean;
 };
 
 // ---- Email (Phase 4) ---------------------------------------------------------------------------

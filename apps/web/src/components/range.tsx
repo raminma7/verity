@@ -34,7 +34,7 @@ export function RangePicker({ value, onChange, range }: { value: RangeValue; onC
       ) : null}
       {range ? (
         <span className="vr-range-note">
-          {range.days} {t("days ·")} {range.bucket === "week" ? "weekly" : "daily"} {t("· times in")} {range.tz} (<Link href="/settings">{t("change")}</Link>)
+          {t("{days} days · {bucket} · times in {tz}", { days: range.days, bucket: range.bucket === "week" ? t("weekly") : t("daily"), tz: range.tz })} (<Link href="/settings">{t("change")}</Link>)
         </span>
       ) : null}
     </div>

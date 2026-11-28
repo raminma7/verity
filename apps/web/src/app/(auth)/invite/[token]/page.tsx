@@ -48,7 +48,7 @@ export default function Invite() {
         <span className="vr-eyebrow">{t("Invitation")}</span>
         <h1 className="vr-display">{t("Join")} {preview.workspace}</h1>
         <p className="vr-muted">
-          {preview.invited_by} {t("invited")} <b style={{ color: "var(--ink)" }}>{preview.email}</b> {t("to join as")} {preview.role}.
+          {t("{inviter} invited {email} to join as {role}.", { inviter: preview.invited_by, email: preview.email, role: preview.role })}
         </p>
       </div>
       {f.error ? <Banner tone="danger">{f.error}</Banner> : null}
@@ -63,10 +63,10 @@ export default function Invite() {
         </>
       ) : wrongAccount ? (
         <Banner tone="warn" title={t("You’re signed in as {email}.", { email: me.email })}>
-          {t("Sign out and sign in as")} {preview.email} {t("to accept.")}
+          {t("Sign out and sign in as {email} to accept.", { email: preview.email })}
         </Banner>
       ) : !me.email_verified ? (
-        <Banner tone="warn" title={t("Verify your email first.")}>{t("Open the link we sent to")} {me.email}{t(", then come back here.")}</Banner>
+        <Banner tone="warn" title={t("Verify your email first.")}>{t("Open the link we sent to {email}, then come back here.", { email: me.email })}</Banner>
       ) : (
         <Button
           variant="primary"

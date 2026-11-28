@@ -1,5 +1,6 @@
 "use client";
 
+import { DeletionBanners } from "@/components/privacy";
 import { t as tr, msg } from "@/i18n";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
@@ -226,13 +227,13 @@ function NavList({ items, pathname, onNavigate }: { items: NavItem[]; pathname: 
           i.soon ? (
             <a key={i.href} className="is-disabled" aria-disabled="true" title={tr("Arrives in {soon}", { soon: i.soon })}>
               <Icon name={i.icon} size={18} />
-              <span>{i.label}</span>
+              <span>{tr(i.label)}</span>
               <span className="vr-soon">{tr("Soon")}</span>
             </a>
           ) : (
             <Link key={i.href} href={i.href} onClick={onNavigate} className={cx(pathname.startsWith(i.href) && "is-on")} aria-current={pathname.startsWith(i.href) ? "page" : undefined}>
               <Icon name={i.icon} size={18} />
-              <span>{i.label}</span>
+              <span>{tr(i.label)}</span>
             </Link>
           ),
         )}
@@ -280,7 +281,10 @@ export function AppShell({ children }: { children: ReactNode }) {
         <UserMenu />
       </nav>
       <main className="vr-main" id="main">
-        <div className="vr-content">{children}</div>
+        <div className="vr-content">
+          <DeletionBanners />
+          {children}
+        </div>
       </main>
     </div>
   );

@@ -29,7 +29,7 @@ function Chips<T extends string>({ label, options, value, onChange, disabled }: 
               disabled={disabled}
               onClick={() => onChange(on ? value.filter((v) => v !== o.value) : [...value, o.value])}
             >
-              {o.label}
+              {tr(o.label)}
             </button>
           );
         })}
@@ -139,7 +139,7 @@ export default function RoutingSettingsPage() {
               onChange={(v) => setCfg({ ...cfg, default_team_id: v || null })}
               options={[{ value: "", label: tr("Leave the ticket unassigned") }, ...teamList.map((t) => ({ value: t.id, label: tr("Send to {name}", { name: t.name }) }))]}
             />
-            <Button variant="primary" busy={busy === "settings"} onClick={() => act("settings", () => api.put("/routing/settings", cfg), "Routing settings saved.")}>
+            <Button variant="primary" busy={busy === "settings"} onClick={() => act("settings", () => api.put("/routing/settings", cfg), tr("Routing settings saved."))}>
               {tr("Save")}
             </Button>
           </div>
@@ -163,7 +163,7 @@ export default function RoutingSettingsPage() {
                   <span className="vr-actions">
                     <Badge>{`${t.members.length} ${t.members.length === 1 ? "member" : "members"}`}</Badge>
                     {configure ? (
-                      <Button size="sm" variant="ghost" busy={busy === `del-${t.id}`} onClick={() => act(`del-${t.id}`, () => api.del(`/teams/${t.id}`), `${t.name} deleted.`)}>
+                      <Button size="sm" variant="ghost" busy={busy === `del-${t.id}`} onClick={() => act(`del-${t.id}`, () => api.del(`/teams/${t.id}`), tr("{name} deleted.", { name: t.name }))}>
                         {tr("Delete")}
                       </Button>
                     ) : null}
@@ -193,7 +193,7 @@ export default function RoutingSettingsPage() {
             style={{ alignItems: "flex-end", marginTop: 12 }}
             onSubmit={(e) => {
               e.preventDefault();
-              act("team", () => api.post("/teams", { name: newTeam }), `${newTeam} added. Add its members and categories above.`).then(() => setNewTeam(""));
+              act("team", () => api.post("/teams", { name: newTeam }), tr("{newTeam} added. Add its members and categories above.", { newTeam: newTeam })).then(() => setNewTeam(""));
             }}
           >
             <Field label={tr("New team")} value={newTeam} onChange={(e) => setNewTeam(e.target.value)} placeholder={tr("Billing")} maxLength={80} />
@@ -231,7 +231,7 @@ export default function RoutingSettingsPage() {
                     <Button size="sm" variant="ghost" onClick={() => act(`t-${r.id}`, () => api.patch(`/routing/rules/${r.id}`, { enabled: !r.enabled }))}>
                       {r.enabled ? tr("Turn off") : tr("Turn on")}
                     </Button>
-                    <Button size="sm" variant="ghost" onClick={() => act(`d-${r.id}`, () => api.del(`/routing/rules/${r.id}`), "Rule deleted.")}>
+                    <Button size="sm" variant="ghost" onClick={() => act(`d-${r.id}`, () => api.del(`/routing/rules/${r.id}`), tr("Rule deleted."))}>
                       {tr("Delete")}
                     </Button>
                   </span>
@@ -261,7 +261,7 @@ export default function RoutingSettingsPage() {
                     },
                     action: rule.target === "team" ? { team_id: rule.team_id || null } : { assignee_id: rule.assignee_id || null },
                   }),
-                "Rule added.",
+                tr("Rule added."),
               ).then(() => setRule({ ...EMPTY_RULE }));
             }}
           >
@@ -341,7 +341,7 @@ export default function RoutingSettingsPage() {
                         onSubmit={(e) => {
                           e.preventDefault();
                           const v = caps[p.user_id] ?? "";
-                          act(`cap-${p.user_id}`, () => api.put(`/routing/members/${p.user_id}`, v ? { max_open: Number(v) } : { clear_max_open: true }), "Cap saved.");
+                          act(`cap-${p.user_id}`, () => api.put(`/routing/members/${p.user_id}`, v ? { max_open: Number(v) } : { clear_max_open: true }), tr("Cap saved."));
                         }}
                       >
                         <Field
@@ -368,7 +368,7 @@ export default function RoutingSettingsPage() {
                         ariaLabel={`Add a category ${p.name} handles first`}
                         value=""
                         onChange={(v) => v && act(`s-${p.user_id}`, () => api.put(`/routing/members/${p.user_id}`, { skills: [...p.skills, v] }))}
-                        options={[{ value: "", label: p.skills.length ? p.skills.map(catName).join(", ") : tr("Any category") }, ...catOpts.filter((c) => !p.skills.includes(c.value)).map((c) => ({ value: c.value, label: `+ ${c.label}` }))]}
+                        options={[{ value: "", label: p.skills.length ? p.skills.map(catName).join(", ") : tr("Any category") }, ...catOpts.filter((c) => !p.skills.includes(c.value)).map((c) => ({ value: c.value, label: `+ ${tr(c.label)}` }))]}
                       />
                     ) : (
                       <span className="vr-sub">{p.skills.length ? p.skills.map(catName).join(", ") : tr("Any category")}</span>

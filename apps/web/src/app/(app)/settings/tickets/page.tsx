@@ -66,7 +66,7 @@ export default function TicketSettings() {
                       style={{ flex: 1, display: "flex", gap: 8, flexWrap: "wrap", alignItems: "flex-end" }}
                       onSubmit={(e) => {
                         e.preventDefault();
-                        act("edit", () => api.patch(`/ticket-categories/${c.id}`, { name: editing.name, description: editing.description }), "Category saved.").then(() => setEditing(null));
+                        act("edit", () => api.patch(`/ticket-categories/${c.id}`, { name: editing.name, description: editing.description }), t("Category saved.")).then(() => setEditing(null));
                       }}
                     >
                       <Field label={t("Name")} value={editing.name} onChange={(e) => setEditing({ ...editing, name: e.target.value })} maxLength={80} />
@@ -87,7 +87,7 @@ export default function TicketSettings() {
                       {c.archived ? <Badge>{t("Archived")}</Badge> : <span className="vr-num">{c.open_tickets} {t("active")}</span>}
                       {configure ? (
                         c.archived ? (
-                          <Button size="sm" onClick={() => act(`restore-${c.id}`, () => api.post(`/ticket-categories/${c.id}/restore`), `${c.name} restored.`)}>
+                          <Button size="sm" onClick={() => act(`restore-${c.id}`, () => api.post(`/ticket-categories/${c.id}/restore`), t("{name} restored.", { name: c.name }))}>
                             {t("Restore")}
                           </Button>
                         ) : (
@@ -99,7 +99,7 @@ export default function TicketSettings() {
                             <Button size="sm" onClick={() => setEditing({ id: c.id, name: c.name, description: c.description })}>
                               {t("Edit")}
                             </Button>
-                            <Button size="sm" variant="ghost" onClick={() => act(`archive-${c.id}`, () => api.post(`/ticket-categories/${c.id}/archive`), `${c.name} archived.`)}>
+                            <Button size="sm" variant="ghost" onClick={() => act(`archive-${c.id}`, () => api.post(`/ticket-categories/${c.id}/archive`), t("{name} archived.", { name: c.name }))}>
                               {t("Archive")}
                             </Button>
                           </span>
@@ -118,7 +118,7 @@ export default function TicketSettings() {
             style={{ marginTop: 16, alignItems: "flex-end" }}
             onSubmit={(e) => {
               e.preventDefault();
-              act("add", () => api.post("/ticket-categories", { name }), `${name.trim()} added.`).then(() => setName(""));
+              act("add", () => api.post("/ticket-categories", { name }), t("{trim} added.", { trim: name.trim() })).then(() => setName(""));
             }}
           >
             <Field label={t("New category")} placeholder={t("Returns")} value={name} onChange={(e) => setName(e.target.value)} maxLength={80} />
@@ -141,7 +141,7 @@ export default function TicketSettings() {
             act("reopen", async () => {
               await api.patch("/workspace", { settings: { reopen_on_reply: v } });
               await refresh();
-            }, "Saved.");
+            }, t("Saved."));
           }}
         />
       </Card>

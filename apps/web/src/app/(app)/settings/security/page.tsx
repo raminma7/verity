@@ -1,5 +1,6 @@
 "use client";
 
+import { DeleteAccountCard, ExportCard } from "@/components/privacy";
 import { t } from "@/i18n";
 import { useState } from "react";
 
@@ -193,6 +194,8 @@ export default function Security() {
       <PasswordCard />
       <TwoFactorCard />
       <SessionsCard />
+      <ExportCard kind="personal" />
+      <DeleteAccountCard />
     </>
   );
 }

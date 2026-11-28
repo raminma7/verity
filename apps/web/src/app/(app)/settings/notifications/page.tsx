@@ -38,7 +38,7 @@ export default function Notifications() {
       {error ? <Banner tone="danger">{error}</Banner> : null}
       <div style={{ maxWidth: 640 }}>
         {PREFS.map((p) => (
-          <Switch key={p.key} label={p.label} help={p.help} checked={prefs[p.key] ?? false} onChange={(on) => set(p.key, on)} />
+          <Switch key={p.key} label={t(p.label)} help={p.help} checked={prefs[p.key] ?? false} onChange={(on) => set(p.key, on)} />
         ))}
       </div>
       <p className="vr-help" style={{ marginTop: 8 }}>

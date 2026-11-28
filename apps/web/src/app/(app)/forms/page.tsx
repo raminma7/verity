@@ -1,6 +1,6 @@
 "use client";
 
-import { t } from "@/i18n";
+import { t, tp } from "@/i18n";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 
@@ -63,7 +63,7 @@ export default function FormsPage() {
                     </div>
                   </td>
                   <td className="vr-sub">{f.category ?? "—"}</td>
-                  <td className="vr-sub">{f.is_contact ? t("Every chatbot") : f.chatbot_ids.length ? t("{length} chatbot{v}", { length: f.chatbot_ids.length, v: f.chatbot_ids.length === 1 ? "" : "s" }) : t("No chatbot")}</td>
+                  <td className="vr-sub">{f.is_contact ? t("Every chatbot") : f.chatbot_ids.length ? tp("{n} chatbot", "{n} chatbots", f.chatbot_ids.length) : t("No chatbot")}</td>
                   <td className="num">{f.fields.length}</td>
                   <td>
                     {f.is_contact ? (

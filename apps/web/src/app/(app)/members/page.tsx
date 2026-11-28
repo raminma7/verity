@@ -63,7 +63,7 @@ export default function Members() {
               onSubmit={(e) => {
                 e.preventDefault();
                 const rid = roleId || grantable.find((r) => r.key === "agent")?.id || grantable[0]?.id;
-                act("invite", () => api.post("/workspace/invitations", { email, role_id: rid }), `Invitation sent to ${email}.`).then(() => setEmail(""));
+                act("invite", () => api.post("/workspace/invitations", { email, role_id: rid }), t("Invitation sent to {email}.", { email: email })).then(() => setEmail(""));
               }}
             >
               <Field label={t("Email")} type="email" name="invite-email" placeholder={t("teammate@company.com")} value={email} onChange={(e) => setEmail(e.target.value)} disabled={full} />
@@ -113,7 +113,7 @@ export default function Members() {
                     <td>
                       {editable ? (
                         <span style={{ display: "inline-block", minWidth: 200 }}>
-                          <Select value={m.role.id} onChange={(v) => act(`role-${m.id}`, () => api.patch(`/workspace/members/${m.id}`, { role_id: v }), `${m.full_name} is now ${roles.data?.find((r) => r.id === v)?.name}.`)} options={grantable.map((r) => ({ value: r.id, label: r.name }))} />
+                          <Select value={m.role.id} onChange={(v) => act(`role-${m.id}`, () => api.patch(`/workspace/members/${m.id}`, { role_id: v }), t("{full_name} is now {name}.", { full_name: m.full_name, name: roles.data?.find((r) => r.id === v)?.name }))} options={grantable.map((r) => ({ value: r.id, label: r.name }))} />
                         </span>
                       ) : (
                         <Badge tone={m.is_owner ? "brand" : "neutral"}>{m.role.name}</Badge>
@@ -123,12 +123,12 @@ export default function Members() {
                     {manage ? (
                       <td style={{ textAlign: "right" }}>
                         {editable ? (
-                          <Button variant="ghost" size="sm" busy={busy === `rm-${m.id}`} onClick={() => confirm(t("Remove {full_name} from {name}?", { full_name: m.full_name, name: current?.workspace.name })) && act(`rm-${m.id}`, () => api.del(`/workspace/members/${m.id}`), `${m.full_name} was removed.`)}>
+                          <Button variant="ghost" size="sm" busy={busy === `rm-${m.id}`} onClick={() => confirm(t("Remove {full_name} from {name}?", { full_name: m.full_name, name: current?.workspace.name })) && act(`rm-${m.id}`, () => api.del(`/workspace/members/${m.id}`), t("{full_name} was removed.", { full_name: m.full_name }))}>
                             {t("Remove")}
                           </Button>
                         ) : null}
                         {isOwner && !m.is_owner ? (
-                          <Button variant="ghost" size="sm" onClick={() => confirm(t("Make {full_name} the owner? You’ll become a Workspace Administrator.", { full_name: m.full_name })) && act(`own-${m.id}`, () => api.post(`/workspace/transfer-ownership/${m.id}`), "Ownership transferred.")}>
+                          <Button variant="ghost" size="sm" onClick={() => confirm(t("Make {full_name} the owner? You’ll become a Workspace Administrator.", { full_name: m.full_name })) && act(`own-${m.id}`, () => api.post(`/workspace/transfer-ownership/${m.id}`), t("Ownership transferred."))}>
                             {t("Make owner")}
                           </Button>
                         ) : null}
@@ -166,7 +166,7 @@ export default function Members() {
                     <td className="vr-muted">{date(i.expires_at)}</td>
                     {manage ? (
                       <td style={{ textAlign: "right" }}>
-                        <Button variant="ghost" size="sm" busy={busy === `inv-${i.id}`} onClick={() => act(`inv-${i.id}`, () => api.del(`/workspace/invitations/${i.id}`), "Invitation revoked.")}>
+                        <Button variant="ghost" size="sm" busy={busy === `inv-${i.id}`} onClick={() => act(`inv-${i.id}`, () => api.del(`/workspace/invitations/${i.id}`), t("Invitation revoked."))}>
                           {t("Revoke")}
                         </Button>
                       </td>

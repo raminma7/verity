@@ -105,19 +105,19 @@ function BillingPage() {
                     {t("Update payment method")}
                   </Button>
                 ) : null}
-                <Button size="sm" variant="primary" busy={busy === "retry"} onClick={() => act("retry", () => api.post("/billing/retry"), "Payment received. The subscription is active again.")}>
+                <Button size="sm" variant="primary" busy={busy === "retry"} onClick={() => act("retry", () => api.post("/billing/retry"), t("Payment received. The subscription is active again."))}>
                   {t("Retry payment now")}
                 </Button>
               </div>
             ) : null
           }
         >
-          {t("AI answers are paused until it’s paid. Tickets, email and forms keep working until")} {date(s!.grace_ends_at)}{t("; after that the subscription ends.")}
-          {s!.next_retry_at ? t(" We’ll try again on {next_retry_at}.", { next_retry_at: date(s!.next_retry_at) }) : ""}
+          {t("AI answers are paused until it’s paid. Tickets, email and forms keep working until {date}; after that the subscription ends.", { date: date(s!.grace_ends_at) })}
+          {s!.next_retry_at ? ` ${t("We’ll try again on {date}.", { date: date(s!.next_retry_at) })}` : ""}
         </Banner>
       ) : null}
 
-      <Card title={t("Current subscription")} actions={st ? <Badge tone={st.tone} dot>{st.word}</Badge> : null}>
+      <Card title={t("Current subscription")} actions={st ? <Badge tone={st.tone} dot>{t(st.word)}</Badge> : null}>
         {!s || (!s.active && !pastDue) ? (
           <EmptyState icon="card" title={t("No active subscription")} action={can_manage ? <Link className="vr-btn vr-btn-primary vr-btn-md" href="/plans">{t("Choose a plan")}</Link> : null}>
             {s ? t("Your {plan_name} plan ended on {current_period_end}.", { plan_name: s.terms.plan_name, current_period_end: date(s.current_period_end) }) : t("Pick a plan to turn on AI features and resource allowances.")}
@@ -141,7 +141,7 @@ function BillingPage() {
                 <>
                   <dt>{t("Scheduled change")}</dt>
                   <dd>
-                    {t("Switches to")} {s.pending_plan.name} {t("on")} {date(s.current_period_end)}
+                    {t("Switches to {plan} on {date}", { plan: s.pending_plan.name, date: date(s.current_period_end) })}
                   </dd>
                 </>
               ) : null}
@@ -155,7 +155,7 @@ function BillingPage() {
             {can_manage && !pastDue ? (
               <div className="vr-actions">
                 {s.cancel_at_period_end ? (
-                  <Button variant="primary" busy={busy === "resume"} onClick={() => act("resume", () => api.post("/billing/resume"), "The subscription will renew as usual.")}>
+                  <Button variant="primary" busy={busy === "resume"} onClick={() => act("resume", () => api.post("/billing/resume"), t("The subscription will renew as usual."))}>
                     {t("Resume subscription")}
                   </Button>
                 ) : (
@@ -164,14 +164,14 @@ function BillingPage() {
                     busy={busy === "cancel"}
                     onClick={() => {
                       if (confirm(t("Cancel at the end of the period? Everything keeps working until {current_period_end}; then AI features and plan limits stop.", { current_period_end: date(s.current_period_end) })))
-                        act("cancel", () => api.post("/billing/cancel"), `Cancelled. ${s.terms.plan_name} stays active until ${date(s.current_period_end)}.`);
+                        act("cancel", () => api.post("/billing/cancel"), t("Cancelled. {plan_name} stays active until {current_period_end}.", { plan_name: s.terms.plan_name, current_period_end: date(s.current_period_end) }));
                     }}
                   >
                     {t("Cancel subscription")}
                   </Button>
                 )}
                 {s.pending_plan ? (
-                  <Button variant="ghost" busy={busy === "pending"} onClick={() => act("pending", () => api.del("/billing/pending-change"), `You stay on ${s.terms.plan_name}.`)}>
+                  <Button variant="ghost" busy={busy === "pending"} onClick={() => act("pending", () => api.del("/billing/pending-change"), t("You stay on {plan_name}.", { plan_name: s.terms.plan_name }))}>
                     {t("Keep")} {s.terms.plan_name}
                   </Button>
                 ) : null}
@@ -218,13 +218,13 @@ function BillingPage() {
                         <div className="vr-muted vr-caption">
                           {t(KIND[p.kind])}
                           {p.failure_message && p.status === "failed" ? ` · ${p.failure_message}` : ""}
-                          {p.refunded_cents && p.status !== "refunded" ? t(" · {refunded_cents} refunded", { refunded_cents: money(p.refunded_cents, p.currency) }) : ""}
+                          {p.refunded_cents && p.status !== "refunded" ? ` · ${t("{amount} refunded", { amount: money(p.refunded_cents, p.currency) })}` : ""}
                         </div>
                       </td>
                       <td className="vr-muted">{p.kind === "package" || !p.period_start ? "—" : `${date(p.period_start)} – ${date(p.period_end)}`}</td>
                       <td>
                         <Badge tone={ps.tone} dot>
-                          {ps.word}
+                          {t(ps.word)}
                         </Badge>
                       </td>
                       <td className="num">{money(p.tax_cents, p.currency)}</td>

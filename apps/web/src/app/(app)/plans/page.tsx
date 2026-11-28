@@ -47,7 +47,7 @@ function ChangeDialog({ preview, current, busy, error, onConfirm, onClose }: { p
           {up ? (
             <>
               <p className="vr-muted">
-                {p.name} {t("and its")} {compact(p.token_allowance)} {t("tokens start today, with a new billing period. The unused part of")} {current} {t("is credited.")}
+                {t("{plan} and its {tokens} tokens start today, with a new billing period. The unused part of {current} is credited.", { plan: p.name, tokens: compact(p.token_allowance), current })}
               </p>
               <dl className="vr-kv">
                 <dt>{p.name}</dt>
@@ -70,7 +70,7 @@ function ChangeDialog({ preview, current, busy, error, onConfirm, onClose }: { p
             </>
           ) : (
             <p className="vr-muted">
-              {t("You keep")} {current} {t("and everything it includes until")} {date(preview.effective_at)}{t(". Then")} {p.name} {t("starts at")} {money(p.price_cents, p.currency)} / {p.billing_cycle}{t(". Nothing is charged now.")}
+              {t("You keep {current} and everything it includes until {date}. Then {plan} starts at {price} / {cycle}. Nothing is charged now.", { current, date: date(preview.effective_at), plan: p.name, price: money(p.price_cents, p.currency), cycle: t(p.billing_cycle) })}
             </p>
           )}
           {error ? <Banner tone="danger">{error}</Banner> : null}
@@ -191,7 +191,7 @@ export default function Plans() {
                 </ul>
                 {otherCurrency ? (
                   <span className="vr-help">
-                    {t("Priced in")} {p.currency}{t("; this workspace pays in")} {currency}.
+                    {t("Priced in {currency}; this workspace pays in {workspace_currency}.", { currency: p.currency, workspace_currency: currency })}
                   </span>
                 ) : canBuy ? (
                   <Button variant={isCurrent ? "secondary" : "primary"} disabled={isCurrent || !!busy || pastDue} busy={busy === p.id} onClick={() => choose(p)}>

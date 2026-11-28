@@ -63,7 +63,7 @@ export function Legend({ series }: { series: Series[] }) {
       {series.map((s) => (
         <li key={s.key}>
           <span className="vr-legend-key" style={{ background: TONE_VAR[s.tone] }} aria-hidden="true" />
-          {s.label}
+          {t(s.label)}
         </li>
       ))}
     </ul>
@@ -112,7 +112,7 @@ export function BarChart({
               key={p.date}
               type="button"
               className={cx("vr-chart-col", hover === i && "is-on")}
-              aria-label={`${dayLabel(p.date, bucket)}: ${series.map((s) => `${s.label} ${format(Number(p[s.key]) || 0)}`).join(", ")}`}
+              aria-label={`${dayLabel(p.date, bucket)}: ${series.map((s) => `${t(s.label)} ${format(Number(p[s.key]) || 0)}`).join(", ")}`}
               onMouseEnter={() => setHover(i)}
               onFocus={() => setHover(i)}
               onBlur={() => setHover(null)}
@@ -132,7 +132,7 @@ export function BarChart({
             {series.map((s) => (
               <span key={s.key}>
                 {series.length > 1 ? <i style={{ background: TONE_VAR[s.tone] }} aria-hidden="true" /> : null}
-                {s.label} <span className="vr-mono">{format(Number(tip[s.key]) || 0)}</span>
+                {t(s.label)} <span className="vr-mono">{format(Number(tip[s.key]) || 0)}</span>
               </span>
             ))}
           </div>
@@ -230,7 +230,7 @@ export function LineChart({
           <div className="vr-chart-tip" style={{ left: `${x(hover)}%` }} role="status">
             <b>{dayLabel(data[hover].date, bucket, true)}</b>
             <span>
-              {serie.label} <span className="vr-mono">{tipV === null ? t("no data") : format(tipV)}</span>
+              {t(serie.label)} <span className="vr-mono">{tipV === null ? t("no data") : format(tipV)}</span>
             </span>
           </div>
         ) : null}

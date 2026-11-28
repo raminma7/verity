@@ -94,12 +94,12 @@ function Tokens() {
                   <h2 className="vr-h">{pk.name}</h2>
                   <span className="vr-display">{money(pk.price_cents, pk.currency)}</span>
                   <span className="vr-muted vr-caption">
-                    {fmt(pk.tokens)} {t("weighted tokens · plus tax where it applies")}
+                    {t("{tokens} weighted tokens · plus tax where it applies", { tokens: fmt(pk.tokens) })}
                   </span>
                   {pk.description ? <p className="vr-muted" style={{ fontSize: 13 }}>{pk.description}</p> : null}
                   {other ? (
                     <span className="vr-help">
-                      {t("Priced in")} {pk.currency}{t("; this workspace pays in")} {subCurrency}.
+                      {t("Priced in {currency}; this workspace pays in {workspace_currency}.", { currency: pk.currency, workspace_currency: subCurrency })}
                     </span>
                   ) : d.can_buy ? (
                     <Button variant="primary" busy={busy === pk.id} disabled={!!busy} onClick={() => buy(pk.id)}>
