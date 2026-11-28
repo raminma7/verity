@@ -27,6 +27,10 @@ for (const g of t.type.groups)
   for (const s of g.styles) {
     statics.push(`  --text-${s.name}-size: ${s.fontSize};`);
     statics.push(`  --text-${s.name}-line: ${s.lineHeight};`);
+    if (g.family === "display") {
+      statics.push(`  --text-${s.name}-weight: ${s.fontWeight};`);
+      statics.push(`  --text-${s.name}-tracking: ${s.letterSpacing};`);
+    }
   }
 
 const dark = block("dark");
