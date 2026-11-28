@@ -79,9 +79,18 @@ for (const l of LOCALES) {
       continue;
     }
     if (keys.get(k) === "plural") {
-      const [one, other] = k.split("|");
+      const other = k.split("|")[1];
       if (typeof v !== "object" || !v.other) bad.push(`${k} (plural forms needed)`);
-      else if (Object.values(v).some((form) => placeholders(form) !== placeholders(other) && placeholders(form) !== placeholders(one))) bad.push(`${k} (placeholders)`);
+      else {
+        // A form may spell the number as a word (Arabic "one"/"two"), so it may leave {n} out,
+        // but it can't use a placeholder the English lacks, and "other" must keep them all.
+        const allowed = new Set(placeholders(other).split(",").filter(Boolean));
+        const stray = Object.values(v).some((form) => placeholders(form).split(",").filter(Boolean).some((p) => !allowed.has(p)));
+        const otherOk = placeholders(v.other) === placeholders(other);
+        const rest = [...allowed].filter((p) => p !== "n");
+        const keepsRest = Object.values(v).every((form) => rest.every((p) => placeholders(form).split(",").includes(p)));
+        if (stray || !otherOk || !keepsRest) bad.push(`${k} (placeholders)`);
+      }
     } else if (typeof v !== "string" || placeholders(v) !== placeholders(k)) bad.push(`${k} (placeholders)`);
   }
   const extra = Object.keys(dict).filter((k) => !keys.has(k));
