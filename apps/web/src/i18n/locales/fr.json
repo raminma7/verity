@@ -86,6 +86,10 @@
   "one": "{n} passage indexé",
   "other": "{n} passages indexés"
  },
+ "{n} source|{n} sources": {
+  "one": "{n} source",
+  "other": "{n} sources"
+ },
  "{n} year|{n} years": {
   "one": "{n} an",
   "other": "{n} ans"

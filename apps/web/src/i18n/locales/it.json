@@ -86,6 +86,10 @@
   "one": "{n} passaggio ricercabile",
   "other": "{n} passaggi ricercabili"
  },
+ "{n} source|{n} sources": {
+  "one": "{n} fonte",
+  "other": "{n} fonti"
+ },
  "{n} year|{n} years": {
   "one": "{n} anno",
   "other": "{n} anni"

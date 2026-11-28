@@ -15,10 +15,10 @@ export const LOCALES = [
   { value: "ar", label: "العربية" },
 ] as const;
 export type Locale = (typeof LOCALES)[number]["value"];
-type Plural = Partial<Record<Intl.LDMLPluralRule, string>>;
-type Dict = Record<string, string | Plural>;
+export type Plural = Partial<Record<Intl.LDMLPluralRule, string>>;
+export type Dict = Record<string, string | Plural>;
 
-const RTL = new Set<Locale>(["ar"]);
+export const RTL = new Set<Locale>(["ar"]);
 const LOADERS: Record<Exclude<Locale, "en">, () => Promise<{ default: Dict }>> = {
   es: () => import("./locales/es.json"),
   de: () => import("./locales/de.json"),
@@ -88,14 +88,37 @@ function fill(s: string, vars?: Record<string, string | number | null | undefine
   return s.replace(/\{(\w+)\}/g, (m, k: string) => (k in vars ? String(vars[k] ?? "") : m));
 }
 
+type Vars = Record<string, string | number | null | undefined>;
+export type Translator = {
+  t: (text: string, vars?: Vars) => string;
+  tp: (one: string, other: string, n: number, vars?: Vars) => string;
+};
+
+/** A translator bound to one dictionary: no shared state, so it is safe where several languages render at once (the server). */
+export function makeTranslator(d: Dict, l: Locale): Translator {
+  const pr = new Intl.PluralRules(l);
+  return {
+    t(text, vars) {
+      const hit = d[text];
+      return fill(typeof hit === "string" ? hit : text, vars);
+    },
+    tp(one, other, n, vars) {
+      const hit = d[`${one}|${other}`];
+      const all = { n, ...vars };
+      if (hit && typeof hit === "object") return fill(hit[pr.select(n)] ?? hit.other ?? other, all);
+      return fill(n === 1 ? one : other, all);
+    },
+  };
+}
+
 /** Translates `text` (the English source) and fills {placeholders}. */
-export function t(text: string, vars?: Record<string, string | number | null | undefined>): string {
+export function t(text: string, vars?: Vars): string {
   const hit = dict[text];
   return fill(typeof hit === "string" ? hit : text, vars);
 }
 
 /** A count: "{n} ticket" / "{n} tickets", with each language's own plural forms (Arabic has six). */
-export function tp(one: string, other: string, n: number, vars?: Record<string, string | number | null | undefined>): string {
+export function tp(one: string, other: string, n: number, vars?: Vars): string {
   const hit = dict[`${one}|${other}`];
   const all = { n, ...vars };
   if (hit && typeof hit === "object") {

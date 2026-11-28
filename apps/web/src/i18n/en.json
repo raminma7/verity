@@ -53,6 +53,7 @@
  "{n} open ticket breaching now|{n} open tickets breaching now": "plural",
  "{n} page|{n} pages": "plural",
  "{n} searchable chunk|{n} searchable chunks": "plural",
+ "{n} source|{n} sources": "plural",
  "{n} year|{n} years": "plural",
  "{name} (archived)": "string",
  "{name} archived.": "string",

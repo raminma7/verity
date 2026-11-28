@@ -86,6 +86,10 @@
   "one": "{n} fragmento consultable",
   "other": "{n} fragmentos consultables"
  },
+ "{n} source|{n} sources": {
+  "one": "{n} fuente",
+  "other": "{n} fuentes"
+ },
  "{n} year|{n} years": {
   "one": "{n} año",
   "other": "{n} años"

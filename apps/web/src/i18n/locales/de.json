@@ -86,6 +86,10 @@
   "one": "{n} durchsuchbarer Abschnitt",
   "other": "{n} durchsuchbare Abschnitte"
  },
+ "{n} source|{n} sources": {
+  "one": "{n} Quelle",
+  "other": "{n} Quellen"
+ },
  "{n} year|{n} years": {
   "one": "{n} Jahr",
   "other": "{n} Jahre"
