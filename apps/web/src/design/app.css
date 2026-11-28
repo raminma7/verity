@@ -758,3 +758,5 @@ a.vr-att:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 .vr-land-legal p { margin: 0; font-size: var(--text-answer-size); line-height: var(--text-answer-line); }
 /* Arabic is never set in the monospace face (as in the dashboard): its fallback spaces the letters out. */
 [lang="ar"] .vr-land :is(.vr-trace-detail, .vr-trace-ms, .vr-answer-meta, .vr-num, .vr-meter-num) { font-family: var(--font-sans); }
+/* The chatbot's own colour is --brand here: text on it uses --on-brand so it reads in both themes. */
+.vr-land :is(.vr-wpreview-head, .vr-wbtn) { color: var(--on-brand); }
