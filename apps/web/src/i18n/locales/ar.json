@@ -1728,6 +1728,7 @@
  "The mail server didn’t accept this email.": "لم يقبل خادم البريد هذه الرسالة.",
  "The mailbox this email came to is gone.": "صندوق البريد الذي وصلت إليه هذه الرسالة لم يعد موجودًا.",
  "The message couldn’t be sent. Check the details and try again.": "تعذّر إرسال الرسالة. تحقّق من التفاصيل وحاول مرة أخرى.",
+ "The message couldn’t be sent. Try again later.": "تعذّر إرسال الرسالة. حاول لاحقًا.",
  "The new plan and its token allowance start today. A receipt is on its way.": "تبدأ الخطة الجديدة وحصة رموزها اليوم. الإيصال في الطريق.",
  "The next renewal or upgrade fails, as a declined card would.": "يفشل التجديد أو الترقية التالية، كما لو رُفضت البطاقة.",
  "The order number": "رقم الطلب",

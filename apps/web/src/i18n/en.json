@@ -1637,6 +1637,7 @@
  "The mail server didn’t accept this email.": "string",
  "The mailbox this email came to is gone.": "string",
  "The message couldn’t be sent. Check the details and try again.": "string",
+ "The message couldn’t be sent. Try again later.": "string",
  "The new plan and its token allowance start today. A receipt is on its way.": "string",
  "The next renewal or upgrade fails, as a declined card would.": "string",
  "The order number": "string",

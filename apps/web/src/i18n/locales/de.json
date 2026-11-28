@@ -1676,6 +1676,7 @@
  "The mail server didn’t accept this email.": "Der Mailserver hat diese E-Mail nicht angenommen.",
  "The mailbox this email came to is gone.": "Das Postfach, an das diese E-Mail ging, gibt es nicht mehr.",
  "The message couldn’t be sent. Check the details and try again.": "Die Nachricht konnte nicht gesendet werden. Prüfe die Angaben und versuche es erneut.",
+ "The message couldn’t be sent. Try again later.": "Die Nachricht konnte nicht gesendet werden. Versuche es später erneut.",
  "The new plan and its token allowance start today. A receipt is on its way.": "Der neue Plan und sein Token-Kontingent beginnen heute. Ein Beleg ist unterwegs.",
  "The next renewal or upgrade fails, as a declined card would.": "Die nächste Verlängerung oder das nächste Upgrade schlägt fehl, wie bei einer abgelehnten Karte.",
  "The order number": "Die Bestellnummer",

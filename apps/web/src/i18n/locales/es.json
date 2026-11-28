@@ -1676,6 +1676,7 @@
  "The mail server didn’t accept this email.": "El servidor de correo no aceptó este email.",
  "The mailbox this email came to is gone.": "El buzón al que llegó este email ya no existe.",
  "The message couldn’t be sent. Check the details and try again.": "No se pudo enviar el mensaje. Revisa los datos e inténtalo de nuevo.",
+ "The message couldn’t be sent. Try again later.": "No se pudo enviar el mensaje. Inténtalo más tarde.",
  "The new plan and its token allowance start today. A receipt is on its way.": "El nuevo plan y su asignación de tokens empiezan hoy. El recibo va de camino.",
  "The next renewal or upgrade fails, as a declined card would.": "La próxima renovación o mejora falla, como lo haría una tarjeta rechazada.",
  "The order number": "El número de pedido",

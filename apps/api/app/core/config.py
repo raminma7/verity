@@ -35,6 +35,14 @@ class Settings(BaseSettings):
     smtp_tls: bool = False
     email_from: str = "Verity <no-reply@verity.local>"
 
+    # The landing page's contact form: a message is emailed to `contact_email` (a support mailbox that is connected to a
+    # workspace, which turns it into a ticket). It is sent from `contact_from` (default: the address in email_from) with the
+    # visitor in Reply-To; only mail from that address has its requester taken from Reply-To. Unset: the form is off.
+    contact_email: str | None = None
+    contact_from: str | None = None
+    rl_contact_ip: str = "5/3600"
+    rl_contact_email: str = "3/3600"
+
     # Rate limits: "<count>/<seconds>"
     rl_login: str = "10/60"
     rl_register: str = "5/600"
@@ -122,6 +130,15 @@ class Settings(BaseSettings):
     # Client IP for rate limits and audit logs: X-Forwarded-For is only believed when the connection comes from
     # one of these proxies (the Next.js server proxies /api from the same host).
     trusted_proxies: list[str] = ["127.0.0.1/32", "::1/128"]
+
+    @property
+    def contact_sender(self) -> str | None:
+        """The address contact-form mail is sent from, or None when the form is off."""
+        if not self.contact_email:
+            return None
+        from email.utils import parseaddr
+
+        return (self.contact_from or parseaddr(self.email_from)[1]).strip().lower() or None
 
     @property
     def is_dev(self) -> bool:
