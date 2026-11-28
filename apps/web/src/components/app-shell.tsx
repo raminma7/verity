@@ -1,5 +1,6 @@
 "use client";
 
+import { Logo } from "@/components/logo";
 import { DeletionBanners } from "@/components/privacy";
 import { t as tr, msg } from "@/i18n";
 import Link from "next/link";
@@ -251,15 +252,15 @@ export function AppShell({ children }: { children: ReactNode }) {
   return (
     <div className={cx("vr-shell", open && "is-open")}>
       <div className="vr-topbar">
-        <Link href="/dashboard" className="vr-logo">
-          {tr("Verity")}
+        <Link href="/dashboard" className="vr-logo-link">
+          <Logo size={24} />
         </Link>
         <Button variant="ghost" icon="menu" aria-label={tr("Open navigation")} onClick={() => setOpen(true)} />
       </div>
       {open ? <div className="vr-scrim" onClick={close} /> : null}
       <nav className="vr-side" aria-label={tr("Main")}>
-        <Link href="/dashboard" className="vr-logo" style={{ padding: "0 8px" }} onClick={close}>
-          {tr("Verity")}
+        <Link href="/dashboard" className="vr-logo-link" style={{ padding: "0 8px" }} onClick={close}>
+          <Logo size={30} />
         </Link>
         <WorkspaceSwitcher />
         <div className="vr-side-nav">

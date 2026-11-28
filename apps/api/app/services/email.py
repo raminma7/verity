@@ -52,14 +52,18 @@ def _html(text: str, links: list[str], locale: str = "en") -> str:
             esc,
             f'<a href="{esc}" style="color:#0d6655;font-weight:500">{esc}</a>',
         )
+    logo_url = get_settings().app_url.rstrip("/") + "/brand/logo-symbol.png"
     return (
         '<div style="font-family:Geist,system-ui,sans-serif;font-size:14px;line-height:22px;color:#15171a;'
         'background:#f5f3ed;padding:32px">'
         '<div style="max-width:520px;margin:0 auto;background:#fff;border:1px solid #d9d5c9;border-radius:10px;'
         'padding:24px">'
-        "<div style=\"font-family:'Instrument Serif',Georgia,serif;font-size:28px;margin-bottom:16px\">Verity"
-        '<span style="display:inline-block;width:8px;height:8px;border-radius:2px;background:#d6f35b;'
-        'margin-left:6px"></span></div>'
+        # The logo: the symbol as a hosted PNG (mail clients strip inline SVG) and the wordmark as text. Clients that
+        # block images still show the wordmark.
+        '<div style="margin-bottom:16px;line-height:28px" dir="ltr">'
+        f'<img src="{html.escape(logo_url)}" width="26" height="26" alt="" style="vertical-align:middle;border:0">'
+        '<span style="vertical-align:middle;margin-left:7px;font-family:Geist,system-ui,sans-serif;font-size:28px;'
+        'font-weight:600;letter-spacing:-0.045em;color:#15171a">Verity</span></div>'
         f'<div style="white-space:pre-line" dir="{"rtl" if locale == "ar" else "ltr"}" lang="{locale}">{body}</div></div></div>'
     )
 

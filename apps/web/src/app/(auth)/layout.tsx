@@ -2,6 +2,7 @@
 
 import { useEffect, useState, type ReactNode } from "react";
 
+import { Logo } from "@/components/logo";
 import { preferredLocale, setLocale, t } from "@/i18n";
 
 /** The split sign-in layout from the design system's WebAuth screen: teal story panel, form on the right.
@@ -15,7 +16,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
   return (
     <div className="vr-auth">
       <section className="vr-auth-story" aria-hidden="true">
-        <span className="vr-logo">{t("Verity")}</span>
+        <Logo theme="teal" size={32} />
         <div className="vr-auth-sheet">
           <span style={{ width: "92%" }} />
           <span style={{ width: "74%" }} />
@@ -32,7 +33,7 @@ export default function AuthLayout({ children }: { children: ReactNode }) {
         </div>
       </section>
       <main className="vr-auth-form">
-        <span className="vr-logo vr-auth-mobile-logo">{t("Verity")}</span>
+        <Logo className="vr-auth-mobile-logo" size={26} />
         {children}
       </main>
     </div>

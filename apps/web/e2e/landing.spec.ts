@@ -67,7 +67,7 @@ test("Arabic reads right to left, with the page laid out from the right", async 
   const box = (await h1.boundingBox())!;
   const vw = page.viewportSize()!.width;
   expect(box.x + box.width / 2).toBeGreaterThan(vw / 2); // the copy sits on the right, the sample on the left
-  const logo = (await page.locator(".vr-land-head .vr-logo").boundingBox())!;
+  const logo = (await page.locator(".vr-land-head .vr-logo-link").boundingBox())!;
   expect(logo.x).toBeGreaterThan(vw / 2);
   // Arabic samples on every page keep their own direction, and the code line stays left to right.
   await page.goto("/");

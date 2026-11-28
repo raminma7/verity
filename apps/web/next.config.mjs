@@ -6,6 +6,8 @@ const nextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
   output: "standalone",
+  // The OG image reads its font from disk, so the standalone build must carry it.
+  outputFileTracingIncludes: { "/\\[locale\\]/opengraph-image": ["./src/assets/fonts/**"] },
   async rewrites() {
     return [{ source: "/api/:path*", destination: `${apiUrl}/api/:path*` }];
   },
