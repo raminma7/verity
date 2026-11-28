@@ -1,0 +1,144 @@
+# Legitimate customer-support email written for Verity's spam model (no corpus text). One message per line:
+# subject<TAB>body. The SpamAssassin corpus's legitimate mail is personal and mailing-list mail, so support
+# vocabulary (order, refund, invoice, price, discount, free trial, upgrade) otherwise reads as spam.
+Order 10442 still not delivered	Hi, my order 10442 was supposed to arrive on Monday and the tracking hasn't moved since Friday. Could you look into it? Thanks, Priya
+Package marked delivered but not here	Hello, the tracking says my parcel was delivered yesterday at 3pm but there is nothing at my door or with my neighbours. Order #88231. What can we do?
+Wrong size sent	Hi there, I ordered the blue hoodie in medium and received a large. Can I exchange it? Order 55410.
+Exchange for a different colour	Hello, could I swap the black backpack I bought last week for the green one? It's unused and still in the box.
+Missing item in my order	Hi, my order arrived today but the charger cable is missing from the box. Order number 77120. Can you send it separately?
+Damaged on arrival	The lamp arrived with a cracked base. I've attached two photos of the box and the lamp. Would you replace it or refund it?
+Can I change my delivery date?	Hi, I'm away next week. Is it possible to delay the delivery of order 30981 until the 14th?
+Tracking link doesn't work	Hello, the tracking link in my confirmation email gives an error page. Could you send me the tracking number directly?
+Return label please	Hi, I'd like to return the shoes from order 66213, they're too small. Could you send me a return label?
+How long do returns take?	I sent my return back ten days ago with the label you gave me. How long until it's processed? Order 41290.
+Refund not received yet	Hello, you confirmed my refund on the 3rd but it hasn't shown up on my card. Can you check whether it was sent? Thanks, Daniel
+Partial refund question	Hi, I returned two of the three items but only got money back for one. Order 50877. Could you check?
+Charged twice	I see two charges of 49.00 on my bank statement for the same order this morning. Please refund one of them.
+Invoice with our company details	Hello, could you reissue invoice INV-2291 with our company name and VAT number? Acme Logistics GmbH, DE123456789.
+Need a copy of last month's invoice	Hi, our accountant needs the invoice for October. I can't find it in my account. Could you email it to me?
+VAT number on invoices	Where can I add our VAT number so it appears on future invoices?
+Payment failed but I have money on the card	My renewal payment failed today but the card works everywhere else. Can you tell me what the error was?
+Update credit card	Hi, my card expired. How do I add the new one before the next renewal?
+Annual plan pricing	Hello, how much is the annual plan for a team of eight? Do you charge per seat or per workspace?
+Discount for nonprofits?	Hi, we're a small charity. Do you offer any discount for nonprofit organisations?
+Student discount	Hello, is there a student price? I'm writing my thesis and only need it for six months.
+Upgrade mid-month	If I upgrade from Starter to Growth today, will I be charged the full price or just the difference?
+Downgrade at renewal	Please move us to the smaller plan from next month. We don't need as many seats any more.
+Cancel my subscription	Hi, please cancel my subscription. I've switched to a different tool. Thanks for everything.
+Pause instead of cancel?	Can I pause my plan for two months over the summer instead of cancelling it?
+Free trial ended early	My free trial says it ended but I signed up only nine days ago. I thought it was fourteen days?
+Extend trial	Hi, we haven't finished evaluating yet. Could you extend our trial by a week? We're close to deciding.
+Can't log in after password reset	I reset my password twice but the login page still says it's wrong. Could you help me get back in?
+Two-factor code not working	The codes from my authenticator app are rejected. I changed phones last week. How do I reset two-factor?
+Lost access to my email	I no longer have access to the email address on my account. Can I change it to my new work address?
+Locked out of my account	It says my account is locked after too many attempts. How long do I have to wait?
+Delete my account	Please delete my account and all my data. I'm not using the service any more.
+Export my data	Hi, before I leave I'd like a copy of all my tickets and conversations. How can I export them?
+Change account owner	Our office manager is leaving. How do we transfer ownership of the workspace to me?
+Add a colleague	How do I invite a colleague to our workspace? I can't find the button.
+Remove a former employee	Please remove john@ourcompany.example from our workspace, he left last month.
+SSO with Google Workspace	Do you support single sign-on with Google Workspace? Our IT team requires it.
+API rate limits	Hi, what are the rate limits on your API? We're getting 429 responses during our nightly sync.
+Webhook not firing	Our webhook endpoint stopped receiving events yesterday. Nothing changed on our side. Can you check your logs?
+Integration with Shopify	Does your product integrate with Shopify, or do we need to use the API ourselves?
+Error when uploading a PDF	I get "processing failed" when I upload our manual as a PDF. It's 8 MB. Is there a size limit?
+App crashes on startup	Since the last update the iPhone app closes as soon as I open it. iOS 18, iPhone 13.
+Page is very slow	The dashboard takes about 20 seconds to load since this morning. Is something going on?
+Feature request: dark mode	Love the product. Any plans for a dark mode? Working late is hard on the eyes.
+Bug: dates show in the wrong format	Dates in the reports show month first, but we're in Germany. Can we change that?
+Export to CSV is empty	When I export last month's report to CSV the file only has the header row.
+Question about data storage	Where is our data stored? We need to know for our GDPR documentation.
+Do you sign a DPA?	Hi, our legal team needs a data processing agreement before we can sign up. Do you have one?
+Security questionnaire	We're evaluating vendors and have a short security questionnaire. Who should I send it to?
+Opening hours	What are your support hours? I tried to call on Saturday and nobody answered.
+Phone number for support	Is there a phone number I can call? It's urgent and email is too slow.
+Thank you	Just a quick note to say thanks to Sara for sorting out my order so quickly. Great service.
+Great support	Thanks a lot for the help yesterday, the issue is solved and everything works now.
+Complaint about delivery driver	The driver left my parcel in the rain outside the gate. The box was soaked. Not happy.
+Still waiting for an answer	I wrote three days ago about my missing refund and nobody has replied. Ticket #2231. Please respond.
+Follow-up on ticket 3310	Hi, any update on my ticket? You said you'd get back to me by Wednesday.
+Booking change	Hello, can I move my appointment from Thursday at 10 to Friday afternoon?
+Cancel my booking	Please cancel my reservation for the 21st. Booking reference KX3391.
+Gift card balance	How can I check how much is left on my gift card?
+Gift card not working	The gift card code I received for my birthday says invalid at checkout.
+Promo code didn't apply	I entered the code SPRING10 at checkout but the price didn't change. Can you apply it to my order?
+Price changed after I ordered	The price dropped two days after I bought it. Can I get the difference back?
+Price match	A shop near me sells the same blender for 20 less. Do you match prices?
+Out of stock item	When will the grey sofa be back in stock? I'd like to order it.
+Pre-order question	If I pre-order now, when will I be charged, now or when it ships?
+Warranty claim	My headphones stopped charging after eight months. Are they still under warranty?
+Repair options	Do you repair coffee machines, or should I send it to the manufacturer?
+Instructions missing	The assembly instructions weren't in the box for the shelf. Is there a PDF somewhere?
+Product compatibility	Will this case fit the Pixel 9 Pro or only the regular Pixel 9?
+Allergy information	Do your protein bars contain nuts or are they made in a facility that handles nuts?
+Size guide	I'm usually a 40 in shoes. Do your boots run small or large?
+Bulk order for our office	We'd like to order 30 chairs for our new office. Is there a business price for that quantity?
+Quote for 50 licences	Hi, could you send us a quote for 50 licences on the annual plan? We need it for our budget approval.
+Purchase order	Our finance team can only pay by purchase order and bank transfer. Is that possible?
+Bank transfer instead of card	Can we pay the yearly invoice by bank transfer instead of credit card?
+Receipt for expenses	I need a receipt with my name on it for my expense report. Can you send one?
+Address change for billing	We moved offices. Please update the billing address to 12 Harbour Street, Leeds LS1 4AB.
+Wrong name on the order	I made a typo in the delivery name. It should be Katarzyna, not Katarzyan. Order 90012.
+Order confirmation not received	I placed an order an hour ago and paid, but I didn't get a confirmation email. Did it go through?
+Did my payment go through?	The checkout page froze after I clicked pay. I don't know if the order was placed.
+Cancel order before shipping	Please cancel order 41177, I ordered the wrong model by mistake. It hasn't shipped yet.
+International shipping	Do you ship to Canada, and how much would delivery cost?
+Customs fees	I had to pay customs fees on delivery. Weren't those supposed to be included in the price?
+Delivery to a pickup point	Can I have my parcel delivered to a pickup point instead of my home address?
+Leave parcel with neighbour	Could the courier leave the parcel with my neighbour at number 14 if I'm not home?
+Courier never came	I waited at home all day for the delivery slot and the courier never came. What happened?
+Account shows wrong plan	My account still shows the free plan although I paid for Pro yesterday.
+Seats limit reached	It says we reached our member limit but we only have four people. Can you check?
+Can't find a setting	Where do I change the language of the dashboard? I'd like it in Spanish.
+Notification emails too frequent	I get an email for every single ticket. Can I get a daily summary instead?
+Unsubscribe from product news	Please stop sending me the product update newsletter. I still want the billing emails.
+Chatbot gives wrong answer	Our chatbot told a customer that we ship on Sundays, which isn't true. Where is it getting that from?
+Chatbot not showing on our site	We pasted the snippet but the chat bubble doesn't appear on our website. Our domain is shop.example.
+Training new staff	Do you have any guides or videos for onboarding new support agents?
+Report for our manager	Can I schedule a weekly report of response times to be sent to our team lead?
+Meeting request	Could we schedule a call with your team next week to go over our setup? Tuesday or Wednesday works.
+Complaint about rude reply	I didn't appreciate the tone of the last reply I got from your team. I'd like someone else to look at my case.
+Escalate please	This is the fourth time I'm writing about the same problem. Please escalate to a manager.
+Question about your privacy policy	Do you share my email address with any third parties? I couldn't find it in the privacy policy.
+Request to correct my data	My date of birth is wrong in my profile and I can't edit it. Please correct it to 3 May 1988.
+Old account merge	I have two accounts with different emails. Can you merge them into one?
+Referral bonus not credited	I referred a friend and she signed up, but I didn't get the credit you mention on the website.
+Loyalty points missing	My last two orders didn't add any loyalty points to my account.
+Subscription box skip a month	Can I skip next month's box? I'll be travelling.
+Change delivery frequency	Please change my coffee subscription from every two weeks to every month.
+Recipe question	Your pancake mix says 200 ml of milk, but is that per cup of mix or for the whole bag?
+Membership card	I haven't received my membership card in the post yet. I joined three weeks ago.
+Event tickets	Can I transfer my concert ticket to a friend? I can't make it on the 18th.
+Refund for cancelled event	The event on Saturday was cancelled. How do I get my money back for the tickets?
+Course access	I bought the course yesterday but it still shows as locked in my account.
+Certificate not generated	I finished all the modules but the certificate download button is greyed out.
+Hotel booking wrong dates	My confirmation shows the 12th to the 14th but I booked the 13th to the 15th. Please fix it.
+Late checkout	Is it possible to have a late checkout on Sunday, around 2pm?
+Car rental deposit	When will the deposit for my car rental be released? I returned the car on Monday.
+Insurance claim status	I submitted my claim on the 2nd with all documents. Could you tell me where it stands?
+Doctor appointment	I need to cancel my appointment tomorrow at 9:30 because my daughter is sick.
+Prescription refill	Could you send my usual prescription refill to the pharmacy on Main Street?
+School enrolment documents	Which documents do I need to bring for my son's enrolment on Monday?
+Lease question	Our apartment's heating hasn't worked for three days. Who can come and fix it?
+Internet outage	Our internet has been down since this morning in the whole building. Is there a known outage?
+Router replacement	The router you sent keeps restarting every hour. Can I get a replacement?
+Moving house	We're moving on the 30th. How do we transfer our broadband to the new address?
+Contract end date	When does my contract end? I want to know before I renew.
+Pedido no recibido	Hola, mi pedido 22018 todavía no ha llegado. ¿Podéis revisar el envío? Gracias, Lucía
+Rechnung korrigieren	Hallo, bitte stellen Sie die Rechnung 4471 auf unsere Firma aus: Müller Bau GmbH. Danke!
+Remboursement en attente	Bonjour, j'attends toujours le remboursement de ma commande 30122 retournée il y a deux semaines.
+Problema con l'accesso	Ciao, non riesco più ad accedere al mio account dopo aver cambiato telefono. Potete aiutarmi?
+Wholesale enquiry	Hi, I own a gift shop in Bristol and would like to stock your candles. What are your trade terms and minimum order quantity? Best, Hannah
+Becoming a stockist	Hello, we run three bike shops in the Netherlands and are interested in carrying your helmets. Who should I talk to about becoming a stockist?
+Distribution in Scandinavia	Good morning, our company distributes outdoor gear in Sweden and Norway. We'd like to discuss distributing your tents. Is there a sales contact?
+Partnership with our school	Hi, I teach at a primary school and we'd love to use your app with our pupils. Do you have an education programme or a contact for schools?
+Press request	Hello, I'm a journalist at a regional newspaper writing about local startups. Could I interview your founder next week for a short article?
+Podcast invitation	Hi, I host a small podcast about small business tools and our listeners use your product. Would someone from your team join us for an episode?
+Job application	Dear team, I saw the customer support role on your careers page and attached my CV. I have four years of experience in e-commerce support.
+Internship question	Hello, are you taking interns this summer? I'm studying marketing and would love to learn from your team.
+Supplier introduction from our meeting	Hi, it was good to meet you at the trade fair on Tuesday. As promised, here are the packaging samples we discussed. Let me know your thoughts.
+Corporate gifts order	Hello, we'd like to order personalised notebooks for 120 employees for the end of the year. Could you tell us whether that is possible and the lead time?
+Event sponsorship request	Hi, we organise a charity run in June and wondered whether your company would like to sponsor the water stations. Happy to share details.
+Affiliate programme	Hello, I write a cooking blog with about 20,000 monthly readers and often recommend your knives. Do you have an affiliate programme I could join?
+Integration partner	Hi, we build booking software for salons and many of our customers use your payments product. Could we talk about an official integration?
+Request for a demo	Hello, we're a team of 30 agents looking at new help desk tools. Could we book a demo with someone from your team next week?

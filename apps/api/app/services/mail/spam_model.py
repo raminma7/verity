@@ -34,7 +34,10 @@ SPAM_AT = 0.95  # at or above: spam, no AI call
 HAM_AT = 0.35  # at or below: legitimate
 WEAK_RULE_SPAM_AT = 0.6  # a weak spam rule hit lowers the bar
 LEARN_FULL_WEIGHT_AT = 50  # reviewed messages before the workspace layer counts fully
-MAX_WORKSPACE_SHIFT = 6.0  # the workspace layer can move the log-odds at most this far
+MAX_WORKSPACE_SHIFT = 10.0  # the workspace layer can move the log-odds at most this far
+# The base model's log-odds are clamped to this, so a workspace that has reviewed enough mail always has the last
+# word (6 - 10 < logit(HAM_AT), -6 + 10 > logit(SPAM_AT)). Both thresholds lie inside it: no base-only decision changes.
+BASE_CLAMP = 6.0
 MAX_FEATURES = 400
 WEIGHTS = Path(__file__).with_name("spam_base.json")
 
@@ -93,7 +96,7 @@ def base_model() -> tuple[float, dict[int, float]]:
     return float(data["bias"]), {int(k): float(v) for k, v in data["w"].items()}
 
 
-MIN_KNOWN_WORDS = 4  # fewer words the model knows than this: too little to call it spam
+MIN_KNOWN_WORDS = 6  # fewer words the model knows than this: too little to call it spam
 
 
 def base_logit(idx: list[int]) -> float:
@@ -132,7 +135,7 @@ async def workspace_shift(db: AsyncSession, workspace_id: uuid.UUID, idx: list[i
 async def score(db: AsyncSession, workspace_id: uuid.UUID, subject: str, text_body: str, html: str | None, from_addr: str) -> dict:
     names = features(subject, text_body, html, from_addr)
     idx = hashed(names)
-    base = base_logit(idx)
+    base = max(-BASE_CLAMP, min(BASE_CLAMP, base_logit(idx)))
     shift = await workspace_shift(db, workspace_id, idx)
     p = sigmoid(base + shift)
     known = known_words(names)

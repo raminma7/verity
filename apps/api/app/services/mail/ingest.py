@@ -311,11 +311,12 @@ async def process_incoming(db: AsyncSession, account: EmailAccount, raw: RawMail
         s = await spam_model.score(db, ws.id, p.subject, p.text, p.html, p.from_addr)
         row.verdict = {**row.verdict, "model": s}
         pz = s["p_spam"]
-        if pz >= spam_model.SPAM_AT or (rules.verdict == "spam" and pz >= spam_model.WEAK_RULE_SPAM_AT):
-            return await _finish(db, row, "spam", decided_by="model")
-        # Bulk-mail headers (lists, newsletter services) mark a promotion; promotional words alone need the model too.
+        # Bulk-mail headers (lists, newsletter services) mark a promotion: held in Spam either way, but filed as what
+        # it is. Promotional words alone need the model too.
         if rules.verdict == "promotion" and any(not h.startswith("word:") for h in rules.hits):
             return await _finish(db, row, "promotion", decided_by="rules")
+        if pz >= spam_model.SPAM_AT or (rules.verdict == "spam" and pz >= spam_model.WEAK_RULE_SPAM_AT):
+            return await _finish(db, row, "spam", decided_by="model")
         if rules.verdict == "promotion" and pz > spam_model.HAM_AT:
             return await _finish(db, row, "promotion", decided_by="model")
         row.verdict["decided_by"] = "model"

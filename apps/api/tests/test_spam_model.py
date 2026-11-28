@@ -29,7 +29,7 @@ def test_base_model_on_examples_it_never_saw():
     ham = [p_base(e) for e in EXAMPLES["legitimate"]]
     assert all(p >= spam_model.SPAM_AT for p in spam), spam  # every spam example is caught without AI
     assert all(p < spam_model.SPAM_AT for p in ham), ham  # no customer email is called spam
-    assert sum(p <= spam_model.HAM_AT for p in ham) >= len(ham) * 2 / 3  # most aren't even "possible spam"
+    assert sum(p <= spam_model.HAM_AT for p in ham) >= len(ham) * 0.9  # nearly none is even "possible spam"
 
 
 def test_features_hold_no_text_and_the_weights_no_messages():
@@ -81,7 +81,7 @@ async def test_possible_spam_becomes_a_ticket_and_move_to_spam_teaches_the_model
     ws = uuid.UUID(client.headers["X-Workspace-Id"])
     clients = await team(client)
     a = await connect(client)
-    e = EXAMPLES["legitimate"][1]  # a billing question the base model isn't sure about
+    e = EXAMPLES["uncertain"][0]  # a business inquiry the base model isn't sure about
     await deliver(client, a["id"], mail(e["subject"], e["body"], sender=e["from"])[0])
     [t] = await tickets(client)
     detail = (await client.get(f"/api/tickets/{t['id']}")).json()
@@ -121,3 +121,39 @@ async def test_deleting_spam_teaches_the_model(client):
     async with SessionLocal() as s:
         assert (await s.get(SpamModelStats, ws)).spam_docs == 1
     assert await usage_ops() == []
+
+
+async def test_a_workspace_can_overrule_the_base_model_on_its_own_kind_of_mail(client, db):
+    """Distributor and wholesale inquiries read like spam to the base model; a workspace that gets them teaches it."""
+    await owner(client)
+    ws = uuid.UUID(client.headers["X-Workspace-Id"])
+    msg = (
+        "Reselling your products",
+        "Hello, we are a distributor in Poland and would like to resell your products. "
+        "Could you send your wholesale price list and conditions?",
+    )
+    before = await spam_model.score(db, ws, *msg, None, "mike@reseller.example")
+    assert before["p_spam"] >= spam_model.SPAM_AT
+    for i in range(40):
+        await spam_model.learn(
+            db,
+            ws,
+            spam=False,
+            subject=f"Distributor inquiry {i}",
+            text_body="We are a distributor and would like your wholesale price list and conditions to resell your products.",
+            html=None,
+            from_addr=f"buyer{i}@shop{i}.example",
+        )
+    for i in range(20):
+        await spam_model.learn(
+            db,
+            ws,
+            spam=True,
+            subject=f"WIN a prize {i}",
+            text_body="Claim your free prize now, click here!!!",
+            html=None,
+            from_addr="x@spam.example",
+        )
+    await db.commit()
+    after = await spam_model.score(db, ws, *msg, None, "mike@reseller.example")
+    assert after["p_spam"] <= spam_model.HAM_AT, after
