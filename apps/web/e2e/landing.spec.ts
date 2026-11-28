@@ -247,3 +247,12 @@ test("screenshots: light, dark and Arabic", async ({ page }) => {
   await page.emulateMedia({ colorScheme: "light" });
   await shot(page, "landing-ar-light");
 });
+
+test("Verity's own chatbot is added only when VERITY_SITE_CHATBOT_KEY is set", async ({ page }) => {
+  await page.goto("/");
+  await page.waitForTimeout(500);
+  // CI doesn't set the key. Where it is set, the normal embed adds one iframe for that chatbot.
+  const frames = await page.locator("iframe[data-verity]").count();
+  expect(frames).toBeLessThanOrEqual(1);
+  if (frames) await expect(page.locator("iframe[data-verity]")).toHaveAttribute("src", /\/widget\/vb_/);
+});

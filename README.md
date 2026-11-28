@@ -123,7 +123,8 @@ The public page for signed-out visitors, in the six languages: English at `/`, a
 - **Plans** come from `GET /api/plans` at request time (cached five minutes), so the web build needs no API. If it can't be reached, the section shows no prices.
 - **Contact form.** It is shown only when the API has `VERITY_CONTACT_EMAIL` (`GET /api/public/contact` answers 404 otherwise). `POST /api/public/contact` (rate limited per address and per connection, with a hidden field for bots) emails that address from `VERITY_CONTACT_FROM` with the visitor in `Reply-To`. Connect that address as a mailbox in a workspace and each message becomes a ticket for the visitor: for mail from that one sender, the requester is taken from `Reply-To`; for every other sender `Reply-To` is ignored. The sender must not be one of the workspace's own mailbox addresses.
 - **Privacy page.** The text describes what the product does and is a draft until the company supplies and approves the wording: while `PRIVACY_REVIEWED` in `src/landing/privacy.tsx` is `false`, the page says so and is `noindex`.
-- **Settings.** `VERITY_SITE_URL` (web; else `VERITY_APP_URL`) for canonical links and the sitemap, and `VERITY_CONTACT_EMAIL` / `VERITY_CONTACT_FROM` (API). **The translations were written for launch and should be reviewed by native speakers.**
+- **Verity's own chatbot.** With `VERITY_SITE_CHATBOT_KEY` set to a chatbot's key (`vb_…`), the landing page loads the normal embed script (`/widget.js`) for it. Add the site's address to that chatbot's authorized domains in the dashboard, or the widget won't open. Unset: nothing is added.
+- **Settings.** `VERITY_SITE_CHATBOT_KEY` (web), `VERITY_SITE_URL` (web; else `VERITY_APP_URL`) for canonical links and the sitemap, and `VERITY_CONTACT_EMAIL` / `VERITY_CONTACT_FROM` (API). **The translations were written for launch and should be reviewed by native speakers.**
 
 ## Run it
 
