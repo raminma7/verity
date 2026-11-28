@@ -18,11 +18,12 @@ export function FileTag({ type }: { type?: string | null }) {
   return <span className={cx("vr-filetag", `vr-filetag-${t === "web" ? "md" : t}`)}>{t === "web" ? tr("WEB") : t.toUpperCase().slice(0, 4)}</span>;
 }
 
-export function RelevanceMeter({ score, label = "Relevance" }: { score: number; label?: string }) {
+export function RelevanceMeter({ score, label }: { score: number; label?: string }) {
+  const tr = useTr();
   const s = Math.max(0, Math.min(1, Number(score) || 0));
   const tier = s >= 0.75 ? "high" : s >= 0.5 ? "mid" : "low";
   return (
-    <span className={cx("vr-meter", `vr-meter-${tier}`)} role="meter" aria-valuemin={0} aria-valuemax={1} aria-valuenow={s} aria-label={label}>
+    <span className={cx("vr-meter", `vr-meter-${tier}`)} role="meter" aria-valuemin={0} aria-valuemax={1} aria-valuenow={s} aria-label={label ?? tr("Relevance")}>
       <span className="vr-meter-track">
         <span className="vr-meter-fill" style={{ width: `${Math.round(s * 100)}%` }} />
       </span>

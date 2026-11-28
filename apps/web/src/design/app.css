@@ -610,3 +610,151 @@ a.vr-att:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 [dir="rtl"] :is(.vr-mailbody, .vr-bubble, .vr-mail-addr, .vr-title, input, textarea),
 [dir="rtl"] .vr-kv dd { unicode-bidi: plaintext; }
 [lang="ar"] .vr-mono:not(pre):not(code) { font-family: var(--font-sans); }
+
+/* ---- Landing: the public page (src/landing) -------------------------------------------------------
+   Built only from the design tokens and the vr- components, in the same language as the product: teal acts,
+   lime marks evidence, no gradients, status always carries a word, only the AnswerCard is raised. Every
+   mock is the real component with sample content and says so. Logical properties throughout, so Arabic
+   flips by itself. */
+.vr-land { --land-wrap: calc(var(--space-12) * 24); --land-gap: calc(var(--space-12) * 1.5); min-height: 100vh; background: var(--ground); color: var(--ink); }
+.vr-land-wrap { inline-size: 100%; max-inline-size: var(--land-wrap); margin-inline: auto; padding-inline: var(--space-6); }
+.vr-land a:not(.vr-btn):not(.vr-logo) { color: inherit; }
+.vr-land a:focus-visible, .vr-land summary:focus-visible, .vr-land main:focus-visible { outline: 2px solid var(--focus); outline-offset: 2px; border-radius: var(--radius-sm); }
+.vr-land main:focus-visible { outline: 0; }
+.vr-land a.vr-btn { text-decoration: none; }
+.vr-land a.vr-btn-primary { color: var(--on-brand); }
+
+.vr-land-skip { position: absolute; inset-inline-start: var(--space-4); inset-block-start: -100px; z-index: 20; padding: var(--space-2) var(--space-4); border-radius: var(--radius-md); background: var(--ink); color: var(--ground); text-decoration: none; font-weight: 500; }
+.vr-land-skip:focus { inset-block-start: var(--space-4); }
+
+/* Header */
+.vr-land-head { position: sticky; inset-block-start: 0; z-index: 10; background: var(--ground); border-block-end: 1px solid var(--line); }
+.vr-land-head-row { display: flex; align-items: center; gap: var(--space-6); min-block-size: calc(var(--space-12) + var(--space-4)); }
+.vr-land-nav { display: flex; gap: var(--space-1); margin-inline-start: var(--space-4); }
+.vr-land-nav a { padding: var(--space-2) var(--space-3); border-radius: var(--radius-md); color: var(--ink-muted); text-decoration: none; font-size: var(--text-body-size); }
+.vr-land-nav a:hover { color: var(--ink); background: var(--surface-sunken); }
+.vr-land-tools { display: flex; align-items: center; gap: var(--space-2); margin-inline-start: auto; }
+.vr-land-lang { position: relative; }
+.vr-land-lang summary { display: inline-flex; align-items: center; gap: var(--space-2); block-size: 30px; padding-inline: var(--space-3); border-radius: var(--radius-md); color: var(--ink-muted); font-size: var(--text-body-size); cursor: pointer; list-style: none; }
+.vr-land-lang summary::-webkit-details-marker { display: none; }
+.vr-land-lang summary:hover, .vr-land-lang[open] summary { background: var(--surface-sunken); color: var(--ink); }
+.vr-land-lang ul { position: absolute; inset-inline-end: 0; margin: var(--space-1) 0 0; padding: var(--space-1); list-style: none; min-inline-size: 160px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-md); box-shadow: var(--shadow-pop); }
+.vr-land-lang li a { display: block; padding: var(--space-2) var(--space-3); border-radius: var(--radius-sm); text-decoration: none; font-size: var(--text-body-size); }
+.vr-land-lang li a:hover { background: var(--surface-sunken); }
+.vr-land-lang li a[aria-current] { color: var(--brand); font-weight: 600; }
+
+/* Sections */
+.vr-land-section { padding-block: var(--land-gap); scroll-margin-block-start: var(--space-12); }
+.vr-land-section.is-sunken { background: var(--surface-sunken); }
+.vr-land-head-block { display: flex; flex-direction: column; gap: var(--space-3); max-inline-size: calc(var(--space-12) * 14); margin-block-end: var(--space-8); }
+.vr-land-h1 { margin: 0; font-size: var(--text-display-size); line-height: var(--text-display-line); }
+.vr-land-h2 { margin: 0; font-size: var(--text-title-size); line-height: var(--text-title-line); }
+.vr-land-sub, .vr-land-lead { margin: 0; font-size: var(--text-answer-size); line-height: var(--text-answer-line); color: var(--ink-muted); max-inline-size: calc(var(--space-12) * 13); }
+.vr-land-copy { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-4); min-inline-size: 0; }
+.vr-land-cta { display: flex; flex-wrap: wrap; gap: var(--space-3); }
+.vr-land-flip { transform: none; }
+[dir="rtl"] .vr-land-flip { transform: scaleX(-1); }
+
+/* Hero and feature rows */
+.vr-land-hero { padding-block: calc(var(--space-12) * 1.5) var(--land-gap); }
+.vr-land-hero-grid, .vr-land-feature, .vr-land-contact { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: var(--space-12); align-items: center; }
+.vr-land-feature.is-flip .vr-land-visual { order: -1; }
+.vr-land-visual { min-inline-size: 0; display: flex; flex-direction: column; gap: var(--space-4); }
+.vr-land-fig { margin: 0; display: flex; flex-direction: column; gap: var(--space-3); min-inline-size: 0; }
+.vr-land-caption .vr-badge { background: var(--surface); box-shadow: inset 0 0 0 1px var(--line); }
+.vr-land-caption { display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-caption-size); line-height: var(--text-caption-line); color: var(--ink-muted); }
+.vr-land-points { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-3); }
+.vr-land-points li { display: flex; gap: var(--space-3); align-items: flex-start; font-size: var(--text-body-size); line-height: var(--text-body-line); }
+.vr-land-points .vr-icon { color: var(--brand); margin-block-start: 3px; }
+
+/* Product mocks */
+.vr-land-demo { display: flex; flex-direction: column; gap: var(--space-4); }
+.vr-land-sources { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-3); }
+.vr-land-trace { padding-block-start: var(--space-3); border-block-start: 1px solid var(--line); }
+.vr-land-pad { padding: var(--space-6); }
+.vr-land-chat { block-size: auto; box-shadow: none; }
+.vr-land-chat .vr-wpreview-body { background: var(--ground); }
+.vr-land-ticket { display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-4); }
+.vr-land-ticket-top { display: flex; align-items: center; gap: var(--space-2); flex-wrap: wrap; }
+.vr-land-form { box-shadow: none; }
+.vr-land-mail { list-style: none; margin: 0; padding: 0; }
+.vr-land-mail li { flex-direction: column; align-items: flex-start; gap: var(--space-2); }
+.vr-land-mail-text { display: flex; flex-direction: column; min-inline-size: 0; font-size: var(--text-body-size); }
+.vr-land-alert { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; margin: var(--space-4) 0 0; font-size: var(--text-body-size); }
+.vr-land-lang-demo { margin: var(--space-8) 0 0; display: flex; flex-direction: column; gap: var(--space-2); max-inline-size: calc(var(--space-12) * 10); }
+
+/* The loop, the grid of smaller strengths, the steps */
+.vr-land-loop, .vr-land-steps, .vr-land-grid { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--space-4); }
+.vr-land-loop { grid-template-columns: repeat(5, minmax(0, 1fr)); }
+.vr-land-loop li, .vr-land-item { display: flex; flex-direction: column; gap: var(--space-2); padding: var(--space-4); }
+.vr-land-loop h3, .vr-land-item h3, .vr-land-steps h3 { margin: 0; font-size: var(--text-heading-size); line-height: var(--text-heading-line); font-weight: 600; letter-spacing: -0.01em; }
+.vr-land-loop p, .vr-land-item p, .vr-land-steps p { margin: 0; font-size: var(--text-body-size); line-height: var(--text-body-line); }
+.vr-land-loop-top { display: flex; align-items: center; justify-content: space-between; color: var(--brand); }
+.vr-land-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.vr-land-item .vr-icon { color: var(--brand); }
+.vr-land-steps { grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-6); }
+.vr-land-steps li { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-2); min-inline-size: 0; }
+.vr-land-code { margin: var(--space-2) 0 0; inline-size: 100%; padding: var(--space-3); border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-sunken); font-family: var(--font-mono); font-size: var(--text-mono-size); line-height: var(--text-mono-line); white-space: pre-wrap; overflow-wrap: anywhere; unicode-bidi: isolate; text-align: start; }
+
+/* Pricing */
+.vr-land .vr-plan .vr-land-limits { margin: 0; display: flex; flex-direction: column; gap: var(--space-2); font-size: var(--text-body-size); }
+.vr-land-limits > div { display: flex; justify-content: space-between; gap: var(--space-3); padding-block-end: var(--space-2); border-block-end: 1px solid var(--line); }
+.vr-land-limits dt { color: var(--ink-muted); }
+.vr-land-limits dd { margin: 0; }
+.vr-land-note { margin-block-start: var(--space-4); }
+.vr-land .vr-plan-price .vr-display { font-size: var(--text-display-size); line-height: var(--text-display-line); }
+
+/* FAQ: native details, so it works with the keyboard and without script */
+.vr-land-faq-wrap { max-inline-size: calc(var(--space-12) * 17); }
+.vr-land-faq { border: 1px solid var(--line); border-radius: var(--radius-md); background: var(--surface); }
+.vr-land-faq details { border-block-end: 1px solid var(--line); }
+.vr-land-faq details:last-child { border-block-end: 0; }
+.vr-land-faq summary { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); padding: var(--space-4); cursor: pointer; font-weight: 500; list-style: none; }
+.vr-land-faq summary::-webkit-details-marker { display: none; }
+.vr-land-faq summary .vr-icon { color: var(--ink-muted); transition: transform .15s; }
+.vr-land-faq details[open] summary .vr-icon { transform: rotate(180deg); }
+.vr-land-faq details p { margin: 0; padding: 0 var(--space-4) var(--space-4); font-size: var(--text-body-size); line-height: var(--text-body-line); max-inline-size: calc(var(--space-12) * 14); }
+
+/* Contact, closing call to action, footer */
+.vr-land-trap { position: absolute; inline-size: 1px; block-size: 1px; overflow: hidden; clip-path: inset(50%); }
+.vr-land-closing .vr-land-wrap { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-6); }
+.vr-land-foot { padding-block: var(--space-12); border-block-start: 1px solid var(--line); }
+.vr-land-foot-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: var(--space-8); }
+.vr-land-foot-brand { display: flex; flex-direction: column; gap: var(--space-2); }
+.vr-land-foot-brand p { margin: 0; }
+.vr-land-foot h2 { margin: 0 0 var(--space-3); }
+.vr-land-foot ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: var(--space-2); font-size: var(--text-body-size); }
+.vr-land-foot li a { text-decoration: none; color: var(--ink-muted); }
+.vr-land-foot li a:hover, .vr-land-foot li a[aria-current] { color: var(--ink); }
+
+@media (max-width: 1100px) {
+  .vr-land-loop { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .vr-land-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .vr-land-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 860px) {
+  .vr-land { --land-gap: var(--space-12); }
+  .vr-land-hero-grid, .vr-land-feature, .vr-land-contact { grid-template-columns: minmax(0, 1fr); gap: var(--space-8); }
+  .vr-land-feature.is-flip .vr-land-visual { order: 0; }
+  .vr-land-nav { display: none; }
+  .vr-land-h1 { font-size: var(--text-title-size); line-height: var(--text-title-line); }
+  .vr-land-foot-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 720px) {
+  .vr-land-wrap { padding-inline: var(--space-4); }
+  .vr-land-head-row { gap: var(--space-2); }
+  .vr-land-signin { display: none; }
+  .vr-land-loop, .vr-land-steps, .vr-land-grid { grid-template-columns: minmax(0, 1fr); }
+  .vr-land-cta .vr-btn { inline-size: 100%; }
+}
+@media (max-width: 480px) {
+  .vr-land-tools .vr-btn-primary { padding-inline: var(--space-2); font-size: var(--text-caption-size); }
+  .vr-land-lang summary span { display: none; }
+}
+
+/* Privacy page */
+.vr-land-legal { max-inline-size: calc(var(--space-12) * 17); display: flex; flex-direction: column; gap: var(--space-6); }
+.vr-land-legal section { display: flex; flex-direction: column; gap: var(--space-2); }
+.vr-land-legal p { margin: 0; font-size: var(--text-answer-size); line-height: var(--text-answer-line); }
+/* Arabic is never set in the monospace face (as in the dashboard): its fallback spaces the letters out. */
+[lang="ar"] .vr-land :is(.vr-trace-detail, .vr-trace-ms, .vr-answer-meta, .vr-num, .vr-meter-num) { font-family: var(--font-sans); }
