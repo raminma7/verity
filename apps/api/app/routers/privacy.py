@@ -88,9 +88,7 @@ async def delete_workspace(body: DeleteWorkspaceIn, request: Request, db: Db, ct
     erase_on = await privacy.request_workspace_deletion(db, ws, ctx.user, ip=client_ip(request))
     await db.commit()
     for address, locale in await privacy.workspace_member_emails(db, ws.id):
-        await mail.send_workspace_deletion_scheduled(
-            address, ws.name, erase_on.strftime("%d %b %Y"), address == ctx.user.email, locale=locale
-        )
+        await mail.send_workspace_deletion_scheduled(address, ws.name, erase_on, address == ctx.user.email, locale=locale)
     return {"erase_on": erase_on}
 
 
@@ -135,7 +133,7 @@ async def delete_account(body: DeleteAccountIn, request: Request, response: Resp
         )
     erase_on = await privacy.request_account_deletion(db, user, ip=client_ip(request))
     await db.commit()
-    await mail.send_account_deletion_scheduled(user.email, erase_on.strftime("%d %b %Y"), locale=user.locale)
+    await mail.send_account_deletion_scheduled(user.email, erase_on, locale=user.locale)
     response.delete_cookie(get_settings().session_cookie, path="/")
     return {"erase_on": erase_on}
 

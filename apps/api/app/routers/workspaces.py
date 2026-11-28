@@ -209,7 +209,8 @@ async def invite(body: InviteIn, request: Request, db: Db, ctx: WorkspaceContext
         ip=client_ip(request),
     )
     await db.commit()
-    await mail.send_invitation(email, ctx.user.full_name, ctx.workspace.name, role.name, token)
+    invitee_locale = (await db.execute(select(User.locale).where(User.email == email))).scalar_one_or_none()
+    await mail.send_invitation(email, ctx.user.full_name, ctx.workspace.name, role.name, token, locale=invitee_locale or ctx.user.locale)
     return {"id": inv.id, "email": email}
 
 

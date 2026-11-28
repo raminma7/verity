@@ -330,5 +330,5 @@ async def check_thresholds(db: AsyncSession, ledger_id: uuid.UUID) -> list[int]:
     await db.commit()
     for u in await billing_contacts(db, ws.id):
         if u.notification_prefs.get("usage_alerts", True):
-            await mail.send_usage_alert(u.email, ws.name, min(t, 100), remaining)
+            await mail.send_usage_alert(u.email, ws.name, min(t, 100), remaining, locale=u.locale)
     return fired

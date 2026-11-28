@@ -520,7 +520,7 @@ async def build_export(db: AsyncSession, export_id: uuid.UUID) -> DataExport | N
         await db.commit()
         user = await db.get(User, ex.user_id)
         ws = await db.get(Workspace, ex.workspace_id) if ex.workspace_id else None
-        await mail.send_export_ready(user.email, ws.name if ws else None, token, ex.expires_at.strftime("%d %b %Y"), locale=user.locale)
+        await mail.send_export_ready(user.email, ws.name if ws else None, token, ex.expires_at, locale=user.locale)
     except Exception as e:  # noqa: BLE001 - recorded on the export, shown to the person
         await db.rollback()
         ex = await db.get(DataExport, export_id)

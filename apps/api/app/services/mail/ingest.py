@@ -199,7 +199,7 @@ async def create_ticket(
 
     for u in await responders(db, ws.id, "tickets.manage"):
         if u.notification_prefs.get("tickets", True):
-            await platform_mail.send_ticket_created(u.email, ws.name, t.number, t.subject, str(t.id))
+            await platform_mail.send_ticket_created(u.email, ws.name, t.number, t.subject, str(t.id), locale=u.locale)
     if not suppress_reply:
         await auto_reply.send(db, ws, account, t, row)
     return t

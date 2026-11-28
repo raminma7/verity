@@ -114,7 +114,7 @@ async def register(body: RegisterIn, request: Request, db: Db):
         if not existing.is_verified:
             token = await _issue_email_token(db, existing, "verify")
             await db.commit()
-            await mail.send_verification(existing.email, existing.full_name, token)
+            await mail.send_verification(existing.email, existing.full_name, token, locale=existing.locale)
         return GENERIC_SENT | {"email": email}
     user = User(full_name=body.full_name, email=email, password_hash=hash_password(body.password))
     db.add(user)
@@ -122,7 +122,7 @@ async def register(body: RegisterIn, request: Request, db: Db):
     token = await _issue_email_token(db, user, "verify")
     audit(db, "user.registered", actor_id=user.id, target_type="user", target_id=user.id, ip=client_ip(request))
     await db.commit()
-    await mail.send_verification(user.email, user.full_name, token)
+    await mail.send_verification(user.email, user.full_name, token, locale=user.locale)
     return GENERIC_SENT | {"email": email}
 
 
@@ -135,7 +135,7 @@ async def resend_verification(body: EmailIn, request: Request, db: Db):
     if user is not None and not user.is_verified:
         token = await _issue_email_token(db, user, "verify")
         await db.commit()
-        await mail.send_verification(user.email, user.full_name, token)
+        await mail.send_verification(user.email, user.full_name, token, locale=user.locale)
     return GENERIC_SENT
 
 
@@ -225,7 +225,7 @@ async def forgot_password(body: EmailIn, request: Request, db: Db):
     if user is not None and user.status == "active":
         token = await _issue_email_token(db, user, "reset")
         await db.commit()
-        await mail.send_password_reset(user.email, user.full_name, token)
+        await mail.send_password_reset(user.email, user.full_name, token, locale=user.locale)
     return GENERIC_SENT
 
 

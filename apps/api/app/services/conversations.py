@@ -347,7 +347,7 @@ async def escalate(
         await _enqueue("summarize_conversation", key=f"summary:conv:{conv.id}", conversation_id=str(conv.id))
         for u in await responders(db, ws.id):
             if u.notification_prefs.get("escalations", True):
-                await mail.send_escalation(u.email, ws.name, bot.name if bot else "the assistant", conv.title, str(conv.id))
+                await mail.send_escalation(u.email, ws.name, bot.name if bot else None, conv.title, str(conv.id), locale=u.locale)
         esc = (bot.escalation if bot else {}) or {}
         # An email reply on a conversation that already has an open ticket is the ticket's business: no new check.
         already_ticketed = reason == "email_reply" and await tk.open_ticket_for(db, conv.id) is not None
@@ -371,7 +371,7 @@ async def escalate(
             await db.refresh(t)
         for u in await responders(db, ws.id, "tickets.manage"):
             if u.notification_prefs.get("tickets", True):
-                await mail.send_ticket_created(u.email, ws.name, t.number, t.subject, str(t.id))
+                await mail.send_ticket_created(u.email, ws.name, t.number, t.subject, str(t.id), locale=u.locale)
     return result
 
 
