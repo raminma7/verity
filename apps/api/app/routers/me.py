@@ -22,11 +22,12 @@ from app.models import Membership, Notification, Session, Workspace
 from app.models.base import utcnow
 from app.schemas import CodeIn, Disable2faIn, PasswordChangeIn, ProfileIn, UserOut
 from app.services.audit import audit
+from app.services.email_text import LOCALES as INTERFACE_LOCALES
 from app.services.subscriptions import get_subscription, is_active
 
 router = APIRouter(prefix="/me", tags=["me"])
 
-LOCALES = {"en", "de", "fr", "es", "fa", "ar", "tr"}
+LOCALES = set(INTERFACE_LOCALES)  # the dashboard's languages; the chatbot widget has its own list
 
 
 @router.get("")

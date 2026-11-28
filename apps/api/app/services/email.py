@@ -2,6 +2,7 @@
 
 import asyncio
 import html
+import json
 import logging
 import smtplib
 from dataclasses import dataclass, field
@@ -25,6 +26,22 @@ class Sent:
 
 # The "memory" backend keeps messages here (tests and local runs without Mailpit).
 OUTBOX: list[Sent] = []
+DEV_OUTBOX_KEY = "verity:dev:outbox"
+
+
+async def _mirror(m: Sent) -> None:
+    """In development, also keeps the message in Redis, so /api/dev/outbox shows mail the worker sent too."""
+    if not get_settings().is_dev:
+        return
+    try:
+        from app.core.ratelimit import get_redis
+
+        r = get_redis()
+        row = {"to": m.to, "subject": m.subject, "text": m.text, "links": m.links, "headers": m.headers}
+        await r.rpush(DEV_OUTBOX_KEY, json.dumps(row))
+        await r.ltrim(DEV_OUTBOX_KEY, -500, -1)
+    except Exception:  # noqa: BLE001 - a development convenience; never block sending
+        log.debug("dev outbox mirror unavailable", exc_info=True)
 
 
 def _html(text: str, links: list[str], locale: str = "en") -> str:
@@ -61,7 +78,9 @@ async def send_email(to: str, subject: str, text: str, links: list[str] | None =
     s = get_settings()
     links = links or []
     if s.email_backend == "memory":
-        OUTBOX.append(Sent(to, subject, text, links, {"Content-Language": locale}))
+        sent = Sent(to, subject, text, links, {"Content-Language": locale})
+        OUTBOX.append(sent)
+        await _mirror(sent)
         return
     if s.email_backend == "console":
         log.warning("EMAIL to=%s subject=%s\n%s", to, subject, text)

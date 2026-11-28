@@ -93,3 +93,13 @@ async def test_invitation_uses_the_invitees_language_when_they_have_an_account(c
     r = await client.post("/api/workspace/invitations", json={"email": "new@example.com", "role_id": agent})
     assert r.status_code == 201, r.text
     assert mail.OUTBOX[-1].headers["Content-Language"] == "en"
+
+
+async def test_the_profile_accepts_exactly_the_six_interface_languages(client):
+    await signup(client, "poly@example.com", "Poly Glot")
+    for locale in ("en", "es", "de", "fr", "it", "ar"):
+        r = await client.patch("/api/me", json={"locale": locale})
+        assert r.status_code == 200 and r.json()["locale"] == locale, (locale, r.text)
+    for locale in ("fa", "tr", "pt"):
+        r = await client.patch("/api/me", json={"locale": locale})
+        assert r.status_code == 422 and r.json()["detail"]["code"] == "invalid_locale"

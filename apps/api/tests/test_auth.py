@@ -183,7 +183,7 @@ async def test_cross_site_write_refused(client):
 async def test_profile_update(client, db):
     await signup(client, "p@example.com")
     r = await client.patch(
-        "/api/me", json={"full_name": "Ada  King", "timezone": "Asia/Tehran", "locale": "fa", "notification_prefs": {"usage_alerts": False}}
+        "/api/me", json={"full_name": "Ada  King", "timezone": "Asia/Tehran", "locale": "it", "notification_prefs": {"usage_alerts": False}}
     )
     assert r.status_code == 200
     body = r.json()
