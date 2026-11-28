@@ -1,5 +1,8 @@
 import type { Metadata, Viewport } from "next";
+import { headers } from "next/headers";
 import type { ReactNode } from "react";
+
+import { isLocale, RTL } from "@/i18n";
 
 import "@/design/tokens.css";
 import "@/design/verity.css";
@@ -20,9 +23,13 @@ export const viewport: Viewport = {
 // Applies the saved theme before paint so there's no flash.
 const themeScript = `try{var t=localStorage.getItem("verity.theme");if(t==="light"||t==="dark")document.documentElement.dataset.theme=t}catch(e){}`;
 
-export default function RootLayout({ children }: { children: ReactNode }) {
+/** The public pages are rendered per language on the server: middleware passes it on in a header. The dashboard
+ *  sets its own language in the browser, as before. */
+export default async function RootLayout({ children }: { children: ReactNode }) {
+  const wanted = (await headers()).get("x-verity-locale");
+  const locale = isLocale(wanted) ? wanted : "en";
   return (
-    <html lang="en" suppressHydrationWarning>
+    <html lang={locale} dir={RTL.has(locale) ? "rtl" : "ltr"} suppressHydrationWarning>
       <head>
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />

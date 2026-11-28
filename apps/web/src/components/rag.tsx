@@ -1,6 +1,7 @@
 "use client";
 
 import { t as tr, tp, msg } from "@/i18n";
+import { useTp, useTr } from "@/i18n/scope";
 /**
  * Verity design system: the Ask, Sources and Library components (QueryBar, AnswerCard, Citation,
  * SourceCard, RelevanceMeter, PipelineTrace, DocumentRow, FileTag), ported from the design system bundle
@@ -12,15 +13,17 @@ import { Fragment, useState, type ReactNode } from "react";
 import { Badge, Button, cx, Icon } from "./ui";
 
 export function FileTag({ type }: { type?: string | null }) {
+  const tr = useTr();
   const t = String(type || "doc").toLowerCase();
   return <span className={cx("vr-filetag", `vr-filetag-${t === "web" ? "md" : t}`)}>{t === "web" ? tr("WEB") : t.toUpperCase().slice(0, 4)}</span>;
 }
 
-export function RelevanceMeter({ score, label = "Relevance" }: { score: number; label?: string }) {
+export function RelevanceMeter({ score, label }: { score: number; label?: string }) {
+  const tr = useTr();
   const s = Math.max(0, Math.min(1, Number(score) || 0));
   const tier = s >= 0.75 ? "high" : s >= 0.5 ? "mid" : "low";
   return (
-    <span className={cx("vr-meter", `vr-meter-${tier}`)} role="meter" aria-valuemin={0} aria-valuemax={1} aria-valuenow={s} aria-label={label}>
+    <span className={cx("vr-meter", `vr-meter-${tier}`)} role="meter" aria-valuemin={0} aria-valuemax={1} aria-valuenow={s} aria-label={label ?? tr("Relevance")}>
       <span className="vr-meter-track">
         <span className="vr-meter-fill" style={{ width: `${Math.round(s * 100)}%` }} />
       </span>
@@ -30,6 +33,7 @@ export function RelevanceMeter({ score, label = "Relevance" }: { score: number; 
 }
 
 export function Citation({ n, title, active, onClick }: { n: number; title?: string; active?: boolean; onClick?: () => void }) {
+  const tr = useTr();
   return (
     <button type="button" className={cx("vr-cite", active && "is-active")} onClick={onClick} title={title} aria-label={tr("Source {n}{v}", { n: n, v: title ? `: ${title}` : "" })}>
       {n}
@@ -106,6 +110,7 @@ const CONF: Record<string, [tone: "brand" | "warn" | "danger" | "neutral", label
 };
 
 export function ConfidenceBadge({ confidence }: { confidence: Confidence }) {
+  const tr = useTr();
   const c = CONF[confidence ?? "none"] ?? CONF.none;
   return (
     <Badge tone={c[0]} dot>
@@ -135,7 +140,9 @@ export function AnswerCard({
   onRegenerate?: () => void;
   label?: string;
 }) {
-  const meta = [sourceCount != null ? `${sourceCount} source${sourceCount === 1 ? "" : "s"}` : null, model, latencyMs != null ? `${(latencyMs / 1000).toFixed(1)}s` : null]
+  const tr = useTr();
+  const tp = useTp();
+  const meta = [sourceCount != null ? tp("{n} source", "{n} sources", sourceCount) : null, model, latencyMs != null ? `${(latencyMs / 1000).toFixed(1)}s` : null]
     .filter(Boolean)
     .join("  ·  ");
   return (
@@ -264,6 +271,7 @@ export function QueryBar({
 export type TraceStep = { name: string; detail?: string; ms?: number | null; state?: "done" | "running" | "pending" | "error"; kind?: "tool" };
 
 export function PipelineTrace({ steps }: { steps: TraceStep[] }) {
+  const tr = useTr();
   return (
     <ol className="vr-trace">
       {steps.map((s, i) => {

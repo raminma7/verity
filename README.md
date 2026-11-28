@@ -114,6 +114,17 @@ docs/      product plan
 
 **The spam model.** `services/mail/spam_model.py` is a logistic regression over hashed features (words of the subject and body, the sender's domain, links, money and capitals signals), in plain Python. Its base weights (`spam_base.json`) were trained offline by `scripts/train_spam.py` on the Apache SpamAssassin public corpus plus support mail written for this project (`scripts/support_ham.txt`, and spam that imitates it in `support_spam.txt`), because the corpus alone read everyday support words (refund, invoice, pricing) as spam. Weights are averaged over five seeded runs. The corpus has no formal licence (it is offered "as a service to spam filter developers"; copyright stays with each sender), so only learned weights ship, never message text, and the CI fixture is written by hand. Each workspace adds its own Naive Bayes layer (`spam_features`), learned from "Not spam", "Delete" and "Move to Spam"; once it has seen enough mail it can overrule the base model either way (base log-odds clamped to ±6, the workspace may shift ±11). Mail with p(spam) ≥ 0.99 goes to Spam; ≤ 0.35 is legitimate; in between it becomes a ticket marked **Possible spam**, which "Move to Spam" (`tickets.manage`) closes while filing the email and teaching the model. Fewer than six words the model knows is too little evidence to call spam. Spam never costs an AI call; Analytics → Email shows what the model caught. Held out: 97.6% precision and 95.5% recall at 0.99 on the corpus, no support mail sent to Spam, 92% of support-styled spam caught. A known limit: distributor and wholesale inquiries can read like spam; "Not spam" teaches the workspace.
 
+### Landing page
+
+The public page for signed-out visitors, in the six languages: English at `/`, and `/es`, `/de`, `/fr`, `/it`, `/ar` (Arabic sets `dir="rtl"`), plus `/privacy` in each. A signed-in visitor on `/` goes straight to `/dashboard` (middleware checks only that the session cookie exists). It is server-rendered, with a title, description, canonical link, hreflang alternates (and `x-default`), Open Graph tags, `sitemap.xml`, `robots.txt` and an OG image per language route.
+
+- **Code** is in `apps/web/src/landing`, with the routes in `src/app/[locale]`. Its styles are the "Landing" section of `src/design/app.css`, built only from the design tokens and the `vr-` components. The product visuals are the real `AnswerCard`, `CitedText`, `SourceCard`, `PipelineTrace` and chatbot form, with fixed sample content that each mock labels as a sample; there are no customers, logos, statistics or testimonials on the page.
+- **Languages.** The dashboard's `t()` keeps its language in module state, which is unsafe when one server renders several languages at once, so the landing never uses it. `src/i18n/server.ts` gives each request its own translator (`makeTranslator`) over the same dictionaries, named `t`/`tp` so `npm run i18n` extracts and checks the landing strings with everything else. Shared product components read an optional `I18nScope` (`useTr`) and fall back to the global `t()`, so the dashboard is unchanged. Middleware passes the language to the root layout in a header so `<html lang dir>` is right in the first byte.
+- **Plans** come from `GET /api/plans` at request time (cached five minutes), so the web build needs no API. If it can't be reached, the section shows no prices.
+- **Contact form.** It is shown only when the API has `VERITY_CONTACT_EMAIL` (`GET /api/public/contact` answers 404 otherwise). `POST /api/public/contact` (rate limited per address and per connection, with a hidden field for bots) emails that address from `VERITY_CONTACT_FROM` with the visitor in `Reply-To`. Connect that address as a mailbox in a workspace and each message becomes a ticket for the visitor: for mail from that one sender, the requester is taken from `Reply-To`; for every other sender `Reply-To` is ignored. The sender must not be one of the workspace's own mailbox addresses.
+- **Privacy page.** The text describes what the product does and is a draft until the company supplies and approves the wording: while `PRIVACY_REVIEWED` in `src/landing/privacy.tsx` is `false`, the page says so and is `noindex`.
+- **Settings.** `VERITY_SITE_URL` (web; else `VERITY_APP_URL`) for canonical links and the sitemap, and `VERITY_CONTACT_EMAIL` / `VERITY_CONTACT_FROM` (API). **The translations were written for launch and should be reviewed by native speakers.**
+
 ## Run it
 
 ### With Docker
@@ -153,7 +164,7 @@ Payments use the test provider unless `VERITY_PAYMENT_PROVIDER=stripe`. For Stri
 ## Tests
 
 ```bash
-make test-api   # 421 API tests: Phase 1, plus parsers, chunker, crawler and SSRF guard, every plan limit (with parallel uploads), metering,
+make test-api   # 432 API tests: Phase 1, plus parsers, chunker, crawler and SSRF guard, every plan limit (with parallel uploads), metering,
                 #   hybrid retrieval and citations, chatbot and widget, handoff, the Redis worker, roles and tenant isolation;
                 #   Phase 3: categories, every field type and rule, tickets and their workflow, search, reopen on reply, form
                 #   activation, prefill and confirmation, the handoff timeout (with a real worker), every role and tenant isolation;
@@ -172,6 +183,7 @@ make test-api   # 421 API tests: Phase 1, plus parsers, chunker, crawler and SSR
                 #   renewals, the portal, refunds, price changes); token packages (spent after the allowance, rollover, expiry,
                 #   refunds, 50 parallel reservations, no-token fallbacks); every analytics metric, time-zone buckets, weekly
                 #   buckets, SLA targets, platform reports per currency; trusted proxies; every role and tenant isolation;
+                #   Landing: the contact form (off without an address, Reply-To only from its sender, limits, honeypot, headers);
                 #   Phase 6: retention per kind and the admin caps, the sweep, deleting and restoring a workspace or an account,
                 #   final erasure (rows and files), Stripe cancellation, exports (contents, one use, rate limit), summaries
                 #   (metering, no-token fallbacks, framing), the spam model (accuracy on a written fixture, per-workspace
@@ -191,6 +203,8 @@ make e2e        # Playwright: Phase 1 flows, plus upload → indexed → Ask wit
                 #   Phase 6: retention under an admin cap → a workspace export by one-time link → delete and restore a workspace →
                 #   spam filed by the model with no AI call → a possible-spam ticket moved to Spam → a ticket summary → the
                 #   interface in Arabic (RTL, light and dark), Spanish, German, French and Italian → an export email in French;
+                #   Landing: all six languages (lang, dir, hreflang), pricing from the API, the calls to action, the privacy page, the sitemap,
+                #   signed-in visitors sent to the dashboard;
                 #   all specs from one address need VERITY_RL_REGISTER=30/600 and VERITY_RL_WIDGET_IP=600/60, as in CI)
 ```
 

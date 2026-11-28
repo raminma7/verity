@@ -163,6 +163,13 @@ def parse(raw: bytes) -> ParsedMail:
     raw_html = "\n".join(html_parts) if html_parts else None
     text = "\n\n".join(t.strip() for t in text_parts if t.strip()) or (html_to_text(raw_html) if raw_html else "")
     from_name, from_addr = parseaddr(_header(msg, "From"))
+    # The website's contact form: mail sent by Verity itself, with the visitor in Reply-To. For that one sender (and
+    # only when the form is configured) the visitor is the requester; for anyone else Reply-To is ignored.
+    trusted = get_settings().contact_sender
+    if trusted and (from_addr or "").strip().lower() == trusted:
+        reply_name, reply_addr = parseaddr(_header(msg, "Reply-To"))
+        if reply_addr and "@" in reply_addr:
+            from_name, from_addr = reply_name, reply_addr
     message_id = normalize_mid(_header(msg, "Message-ID"))
     if not message_id:
         # No Message-ID: derive a stable one from the bytes, so a re-delivery is still recognised.

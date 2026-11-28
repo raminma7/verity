@@ -25,6 +25,9 @@ x-api-env: &api-env
   VERITY_VOYAGE_API_KEY: ${VERITY_VOYAGE_API_KEY:-}
   # Connected mailboxes: "imap" (real IMAP/SMTP servers) or "fake" (mailboxes in Redis, fed by /api/dev/mailbox).
   VERITY_MAIL_TRANSPORT: ${VERITY_MAIL_TRANSPORT:-imap}
+  # The landing page's contact form (off while VERITY_CONTACT_EMAIL is empty): see README, "Landing page".
+  VERITY_CONTACT_EMAIL: ${VERITY_CONTACT_EMAIL:-}
+  VERITY_CONTACT_FROM: ${VERITY_CONTACT_FROM:-}
 
 services:
   postgres:
@@ -71,6 +74,9 @@ services:
       args:
         VERITY_API_URL: http://api:8000
     ports: ["3000:3000"]
+    environment:
+      # Canonical links, hreflang and the sitemap of the public pages; defaults to VERITY_APP_URL's value.
+      VERITY_SITE_URL: ${VERITY_SITE_URL:-http://localhost:3000}
     depends_on: [api]
 
 volumes:
