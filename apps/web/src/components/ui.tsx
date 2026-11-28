@@ -1,6 +1,6 @@
 "use client";
 
-import { intlLocale, t } from "@/i18n";
+import { intlLocale, numberLocale, t } from "@/i18n";
 /**
  * Verity design system components, ported from the design system bundle (window.Verity) to typed React.
  * Class names (vr-*) and behaviour match the bundle so src/design/verity.css styles them unchanged.
@@ -368,15 +368,15 @@ export function useToggle(initial = false) {
 }
 
 export function fmt(n: number) {
-  return new Intl.NumberFormat(intlLocale()).format(n);
+  return new Intl.NumberFormat(numberLocale()).format(n);
 }
 
 export function compact(n: number) {
-  return new Intl.NumberFormat(intlLocale(), { notation: "compact", maximumFractionDigits: 1 }).format(n);
+  return new Intl.NumberFormat(numberLocale(), { notation: "compact", maximumFractionDigits: 1 }).format(n);
 }
 
 export function money(cents: number, currency = "USD") {
-  return new Intl.NumberFormat(intlLocale(), { style: "currency", currency, minimumFractionDigits: cents % 100 ? 2 : 0 }).format(cents / 100);
+  return new Intl.NumberFormat(numberLocale(), { style: "currency", currency, currencyDisplay: "narrowSymbol", minimumFractionDigits: cents % 100 ? 2 : 0 }).format(cents / 100);
 }
 
 export function date(iso: string | null | undefined) {

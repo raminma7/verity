@@ -11,8 +11,9 @@ import { Banner, Card, compact, EmptyState, fmt, PageHeader, Spinner } from "@/c
 import type { ToolCallStatus } from "@/lib/api";
 import { useSession } from "@/lib/session";
 import { SOURCE } from "@/lib/tickets";
-import { OPS } from "@/lib/usage";
+import { opLabel } from "@/lib/usage";
 import { useData } from "@/lib/use-data";
+import { roleName } from "@/lib/roles";
 
 type TicketTotals = {
   created: number;
@@ -281,8 +282,8 @@ export default function Analytics() {
                       label={tr("Incoming email by verdict")}
                       rows={[
                         { name: tr("Became tickets or replies"), value: email.data.totals.legitimate },
-                        { name: "Spam", value: email.data.totals.spam },
-                        { name: "Promotions", value: email.data.totals.promotion },
+                        { name: tr("Spam"), value: email.data.totals.spam },
+                        { name: tr("Promotions"), value: email.data.totals.promotion },
                         { name: tr("Held (per-sender limit)"), value: email.data.totals.held },
                         { name: tr("Automatic (bounces, out of office, loops)"), value: email.data.totals.automatic },
                         { name: tr("Couldn’t be processed"), value: email.data.totals.failed, tone: "danger" as const },
@@ -308,13 +309,13 @@ export default function Analytics() {
                 title={tr("By feature and model")}
                 chart={
                   <div className="vr-form">
-                    <BarList label={tr("Weighted tokens by feature")} rows={ai.data.by_feature.map((f) => ({ name: OPS[f.name] ?? f.name, value: f.weighted_tokens }))} format={compact} />
+                    <BarList label={tr("Weighted tokens by feature")} rows={ai.data.by_feature.map((f) => ({ name: opLabel(f.name), value: f.weighted_tokens }))} format={compact} />
                     <BarList label={tr("Weighted tokens by model")} rows={ai.data.by_model.map((f) => ({ name: f.name, value: f.weighted_tokens }))} format={compact} tone="s1" />
                   </div>
                 }
                 table={{
                   columns: [tr("Feature or model"), "Requests", "Input", "Output", "Weighted"],
-                  rows: [...ai.data.by_feature.map((f) => ({ ...f, name: OPS[f.name] ?? f.name })), ...ai.data.by_model].map((f) => [f.name, fmt(f.calls), fmt(f.input_tokens), fmt(f.output_tokens), fmt(f.weighted_tokens)]),
+                  rows: [...ai.data.by_feature.map((f) => ({ ...f, name: opLabel(f.name) })), ...ai.data.by_model].map((f) => [f.name, fmt(f.calls), fmt(f.input_tokens), fmt(f.output_tokens), fmt(f.weighted_tokens)]),
                 }}
               />
             </div>
@@ -461,7 +462,7 @@ function AgentsSection({ agents }: { agents: Agents }) {
                 <tr key={m.id}>
                   <td>
                     {m.name}
-                    <div className="vr-muted vr-caption">{m.role}</div>
+                    <div className="vr-muted vr-caption">{roleName(m.role)}</div>
                   </td>
                   <td>
                     <span className="vr-avail">

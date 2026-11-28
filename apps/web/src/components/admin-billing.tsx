@@ -10,7 +10,7 @@ import { BarChart, BarList, ChartCard, delta, KPI, type Series, seriesTable } fr
 import { RangePicker, rangeQuery, type RangeOut } from "@/components/range";
 import { Badge, Banner, Button, Card, compact, date, dateTime, EmptyState, Field, fmt, money, Spinner, Switch, type Tone } from "@/components/ui";
 import { api, errorText } from "@/lib/api";
-import { OPS } from "@/lib/usage";
+import { opLabel } from "@/lib/usage";
 import { useData } from "@/lib/use-data";
 
 type Pkg = { id: string; key: string; name: string; description: string; tokens: number; price_cents: number; currency: string; is_public: boolean; is_active: boolean; sort_order: number };
@@ -263,10 +263,10 @@ export function PlatformReports() {
                 chart={
                   <div className="vr-form">
                     <BarList label={t("Cost by model")} rows={costs.data.by_model.map((m) => ({ name: m.name, value: m.cost_usd }))} format={usd} tone="s1" />
-                    <BarList label={t("Cost by feature")} rows={costs.data.by_feature.map((m) => ({ name: OPS[m.name] ?? m.name, value: m.cost_usd }))} format={usd} />
+                    <BarList label={t("Cost by feature")} rows={costs.data.by_feature.map((m) => ({ name: opLabel(m.name), value: m.cost_usd }))} format={usd} />
                   </div>
                 }
-                table={{ columns: [t("Model or feature"), "Cost (USD)"], rows: [...costs.data.by_model, ...costs.data.by_feature.map((f) => ({ ...f, name: OPS[f.name] ?? f.name }))].map((m) => [m.name, usd(m.cost_usd)]) }}
+                table={{ columns: [t("Model or feature"), t("Cost (USD)")], rows: [...costs.data.by_model, ...costs.data.by_feature.map((f) => ({ ...f, name: opLabel(f.name) }))].map((m) => [m.name, usd(m.cost_usd)]) }}
               />
             </div>
           ) : null}

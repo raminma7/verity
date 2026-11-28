@@ -6,7 +6,7 @@ import Link from "next/link";
 import { Banner, Card, compact, date, EmptyState, fmt, PageHeader, Spinner, Stat, UsageMeter } from "@/components/ui";
 import type { UsageSummary } from "@/lib/api";
 import { useSession } from "@/lib/session";
-import { OPS } from "@/lib/usage";
+import { opLabel } from "@/lib/usage";
 import { useData } from "@/lib/use-data";
 
 type Row = { key: string; input_tokens: number; output_tokens: number; weighted: number; requests: number };
@@ -146,7 +146,7 @@ export default function Usage() {
       {daily.data ? <Daily rows={daily.data} /> : null}
 
       <div className="vr-grid vr-grid-2">
-        <Breakdown title={t("By feature")} rows={breakdown.data?.by_operation ?? []} label={(k) => OPS[k] ?? k} />
+        <Breakdown title={t("By feature")} rows={breakdown.data?.by_operation ?? []} label={(k) => opLabel(k)} />
         <Breakdown title={t("By model")} rows={breakdown.data?.by_model ?? []} label={(k) => k} />
       </div>
 
@@ -172,7 +172,7 @@ export default function Usage() {
                   <td className="vr-mono" style={{ fontSize: 13 }}>
                     {m.model}
                   </td>
-                  <td>{m.operation === "*" ? t("All features") : (t(OPS[m.operation]) ?? m.operation)}</td>
+                  <td>{m.operation === "*" ? t("All features") : opLabel(m.operation)}</td>
                   <td className="num">×{m.input_multiplier}</td>
                   <td className="num">×{m.output_multiplier}</td>
                 </tr>

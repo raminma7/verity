@@ -377,11 +377,11 @@ export function seriesTable(data: Point[], series: Series[], bucket: "day" | "we
 
 export function minutes(m: number | null | undefined) {
   if (m === null || m === undefined) return "—";
-  if (m === 0) return "0 min";
-  if (m < 1) return `${Math.max(1, Math.round(m * 60))} s`;
-  if (m < 60) return `${Math.round(m)} min`;
-  if (m < 48 * 60) return `${(m / 60).toFixed(m < 600 ? 1 : 0)} h`;
-  return `${(m / 1440).toFixed(1)} days`;
+  if (m === 0) return t("{v} min", { v: 0 });
+  if (m < 1) return t("{v} s", { v: Math.max(1, Math.round(m * 60)) });
+  if (m < 60) return t("{v} min", { v: Math.round(m) });
+  if (m < 48 * 60) return t("{v} h", { v: (m / 60).toFixed(m < 600 ? 1 : 0) });
+  return t("{v} d", { v: (m / 1440).toFixed(1) });
 }
 
 export function pct(v: number | null | undefined) {

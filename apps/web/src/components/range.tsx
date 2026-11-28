@@ -11,9 +11,9 @@ export type RangeOut = { preset: string; from: string; to: string; days: number;
 export type RangeValue = { preset: string; from: string; to: string };
 
 const PRESETS = [
-  { value: "7d", label: "7 days" },
-  { value: "30d", label: "30 days" },
-  { value: "90d", label: "90 days" },
+  { value: "7d", label: msg("7 days") },
+  { value: "30d", label: msg("30 days") },
+  { value: "90d", label: msg("90 days") },
   { value: "custom", label: msg("Custom") },
 ];
 

@@ -10,6 +10,7 @@ import { api } from "@/lib/api";
 import { useSession } from "@/lib/session";
 
 import { Avatar, Button, compact, cx, Icon, type IconName } from "./ui";
+import { roleName } from "@/lib/roles";
 
 type NavItem = { href: string; label: string; icon: IconName; perm?: string | string[]; soon?: string };
 
@@ -96,7 +97,7 @@ function WorkspaceSwitcher() {
                 {w.name[0]?.toUpperCase()}
               </span>
               <span style={{ flex: 1, minWidth: 0, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{w.name}</span>
-              {w.id === ws?.id ? <Icon name="check" /> : <span className="vr-caption vr-muted">{w.role.name.replace("Workspace ", "")}</span>}
+              {w.id === ws?.id ? <Icon name="check" /> : <span className="vr-caption vr-muted">{roleName(w.role.name)}</span>}
             </button>
           ))}
           <hr />
@@ -171,7 +172,7 @@ function UserMenu() {
         <span style={{ display: "flex", flexDirection: "column", flex: 1, minWidth: 0 }}>
           <span style={{ fontSize: 13, fontWeight: 500, overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{user.full_name}</span>
           <span className="vr-muted" style={{ fontSize: 12 }}>
-            {current?.role.name ?? (user.is_system_admin ? tr("System administrator") : tr("No workspace"))}
+            {(current ? roleName(current.role.name) : null) ?? (user.is_system_admin ? tr("System administrator") : tr("No workspace"))}
             {availability ? (
               <>
                 <br />
@@ -204,7 +205,7 @@ function TokenMeter() {
   const pct = usage.total ? Math.min(100, (usage.used / usage.total) * 100) : 0;
   return (
     <Link href="/usage" style={{ display: "flex", flexDirection: "column", gap: 8, padding: 12, borderRadius: "var(--radius-md)", background: "var(--surface-sunken)", textDecoration: "none", color: "var(--ink)" }}>
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, lineHeight: "16px" }}>
+      <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", columnGap: 8, fontSize: 12, lineHeight: "16px" }}>
         <span className="vr-muted">{tr("AI tokens")}</span>
         <span className="vr-mono">
           {compact(usage.used)} / {compact(usage.total)}

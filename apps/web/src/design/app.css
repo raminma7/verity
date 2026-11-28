@@ -603,3 +603,10 @@ a.vr-att:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 .vr-export-list li { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
 .vr-danger-zone { border-color: color-mix(in srgb, var(--danger) 40%, var(--line)); }
 .vr-danger-zone .vr-panel-head .vr-h { color: var(--danger); }
+
+/* Right to left: what customers and the AI wrote keeps its own direction (an English email stays left to right,
+   with its punctuation in place), and Arabic is never set in the monospace face, whose fallback spaces it out. */
+[dir="rtl"] :is(.vr-mailbody, .vr-bubble, .vr-summary) :is(p, div, li, pre, blockquote, h1, h2, h3, h4, td),
+[dir="rtl"] :is(.vr-mailbody, .vr-bubble, .vr-mail-addr, .vr-title, input, textarea),
+[dir="rtl"] .vr-kv dd { unicode-bidi: plaintext; }
+[lang="ar"] .vr-mono:not(pre):not(code) { font-family: var(--font-sans); }

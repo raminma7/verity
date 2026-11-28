@@ -1,4 +1,4 @@
-import { msg } from "@/i18n";
+import { msg, t } from "@/i18n";
 /** Names of metered AI operations, as customers see them. */
 export const OPS: Record<string, string> = {
   chat_response: msg("Chatbot answers"),
@@ -11,3 +11,8 @@ export const OPS: Record<string, string> = {
   auto_reply: msg("Automatic replies"),
   embedding: msg("Embeddings"),
 };
+
+/** An operation's name in the viewer's language (unknown operations show their key). */
+export function opLabel(key: string): string {
+  return OPS[key] ? t(OPS[key]) : key;
+}

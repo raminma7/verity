@@ -26,6 +26,12 @@ export default function SpamPage() {
   if (reason) query.set("reason", reason);
   if (term) query.set("q", term);
   const data = useData<Listing>(review ? `/email/spam?${query.toString()}` : null);
+  const { reload } = data;
+  useEffect(() => {
+    // New mail is filed by the worker within moments; pick it up without a manual refresh.
+    const t = setInterval(reload, 15000);
+    return () => clearInterval(t);
+  }, [reload]);
   const [openId, setOpenId] = useState<string | null>(null);
   const detail = useData<HeldEmail>(openId ? `/email/messages/${openId}` : null);
   const [picked, setPicked] = useState<Set<string>>(new Set());

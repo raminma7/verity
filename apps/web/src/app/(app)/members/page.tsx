@@ -8,6 +8,7 @@ import { Avatar, Badge, Banner, Button, Card, date, EmptyState, Field, PageHeade
 import { api, errorText, type Role } from "@/lib/api";
 import { useSession } from "@/lib/session";
 import { useData } from "@/lib/use-data";
+import { roleName } from "@/lib/roles";
 
 type Member = { id: string; user_id: string; full_name: string; email: string; status: string; role: Role; is_owner: boolean; joined_at: string };
 type Invite = { id: string; email: string; role: Role; expires_at: string; created_at: string };
@@ -116,7 +117,7 @@ export default function Members() {
                           <Select value={m.role.id} onChange={(v) => act(`role-${m.id}`, () => api.patch(`/workspace/members/${m.id}`, { role_id: v }), t("{full_name} is now {name}.", { full_name: m.full_name, name: roles.data?.find((r) => r.id === v)?.name }))} options={grantable.map((r) => ({ value: r.id, label: r.name }))} />
                         </span>
                       ) : (
-                        <Badge tone={m.is_owner ? "brand" : "neutral"}>{m.role.name}</Badge>
+                        <Badge tone={m.is_owner ? "brand" : "neutral"}>{roleName(m.role.name)}</Badge>
                       )}
                     </td>
                     <td className="vr-muted">{date(m.joined_at)}</td>
@@ -161,7 +162,7 @@ export default function Members() {
                   <tr key={i.id}>
                     <td>{i.email}</td>
                     <td>
-                      <Badge>{i.role.name}</Badge>
+                      <Badge>{roleName(i.role.name)}</Badge>
                     </td>
                     <td className="vr-muted">{date(i.expires_at)}</td>
                     {manage ? (

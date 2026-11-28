@@ -44,6 +44,11 @@ export function intlLocale(): string {
   return current === "ar" ? "ar-u-nu-latn" : current === "en" ? "en-GB" : current;
 }
 
+/** BCP 47 tag for numbers and money: as intlLocale(), but English uses en-US ("1M", "$29" rather than "1m", "US$29"). */
+export function numberLocale(): string {
+  return current === "en" ? "en-US" : intlLocale();
+}
+
 export function isRtl(): boolean {
   return RTL.has(current);
 }
