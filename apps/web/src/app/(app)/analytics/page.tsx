@@ -1,6 +1,6 @@
 "use client";
 
-import { t as tr, msg } from "@/i18n";
+import { t as tr, msg, tp } from "@/i18n";
 import Link from "next/link";
 import { useMemo, useState } from "react";
 
@@ -141,7 +141,7 @@ export default function Analytics() {
             <KPI label={tr("Reopen rate")} value={pct(t.totals.reopen_rate)} note={tr("{reopened} reopened of {resolutions} resolutions", { reopened: fmt(t.totals.reopened), resolutions: fmt(t.totals.resolutions) })} />
           </div>
           <div className="vr-grid vr-grid-4">
-            <KPI label={tr("SLA breaches")} value={fmt(sla.data?.breaches ?? 0)} note={sla.data ? `${sla.data.breaching_now.length ? `${sla.data.breaching_now.length} open tickets breaching now` : "No open ticket is breaching now"}` : null} />
+            <KPI label={tr("SLA breaches")} value={fmt(sla.data?.breaches ?? 0)} note={sla.data ? (sla.data.breaching_now.length ? tp("{n} open ticket breaching now", "{n} open tickets breaching now", sla.data.breaching_now.length) : tr("No open ticket is breaching now")) : null} />
             <KPI label={tr("Chatbot deflection")} value={pct(chat.data?.totals.deflection_rate)} note={chat.data ? tr("{deflected} of {conversations} conversations answered without a person", { deflected: fmt(chat.data.totals.deflected), conversations: fmt(chat.data.totals.conversations) }) : null} />
             <KPI label={tr("Handoff rate")} value={pct(chat.data?.totals.handoff_rate)} note={chat.data ? tr("{handed_off} went to the team", { handed_off: fmt(chat.data.totals.handed_off) }) : null} />
             <KPI label={tr("AI tokens")} value={compact(ai.data?.totals.weighted_tokens ?? 0)} note={ai.data ? delta(ai.data.totals.weighted_tokens, ai.data.previous.weighted_tokens, days) : null} />
@@ -259,7 +259,7 @@ export default function Analytics() {
                   </div>
                 }
                 table={{
-                  columns: ["Tool", "Calls", "Succeeded", "Tests", "Typical ms", "95% ms"],
+                  columns: ["Tool", "Calls", "Succeeded", "Tests", tr("Typical ms"), "95% ms"],
                   rows: tools.data.tools.map((x) => [x.name, fmt(x.calls), pct(x.success_rate), fmt(x.tests), x.latency_p50_ms ?? "—", x.latency_p95_ms ?? "—"]),
                 }}
               />
@@ -280,12 +280,12 @@ export default function Analytics() {
                     <BarList
                       label={tr("Incoming email by verdict")}
                       rows={[
-                        { name: "Became tickets or replies", value: email.data.totals.legitimate },
+                        { name: tr("Became tickets or replies"), value: email.data.totals.legitimate },
                         { name: "Spam", value: email.data.totals.spam },
                         { name: "Promotions", value: email.data.totals.promotion },
-                        { name: "Held (per-sender limit)", value: email.data.totals.held },
-                        { name: "Automatic (bounces, out of office, loops)", value: email.data.totals.automatic },
-                        { name: "Couldn’t be processed", value: email.data.totals.failed, tone: "danger" as const },
+                        { name: tr("Held (per-sender limit)"), value: email.data.totals.held },
+                        { name: tr("Automatic (bounces, out of office, loops)"), value: email.data.totals.automatic },
+                        { name: tr("Couldn’t be processed"), value: email.data.totals.failed, tone: "danger" as const },
                       ].filter((x) => x.value > 0)}
                     />
                   </div>
@@ -313,7 +313,7 @@ export default function Analytics() {
                   </div>
                 }
                 table={{
-                  columns: ["Feature or model", "Requests", "Input", "Output", "Weighted"],
+                  columns: [tr("Feature or model"), "Requests", "Input", "Output", "Weighted"],
                   rows: [...ai.data.by_feature.map((f) => ({ ...f, name: OPS[f.name] ?? f.name })), ...ai.data.by_model].map((f) => [f.name, fmt(f.calls), fmt(f.input_tokens), fmt(f.output_tokens), fmt(f.weighted_tokens)]),
                 }}
               />

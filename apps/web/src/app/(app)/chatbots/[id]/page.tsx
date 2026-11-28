@@ -11,7 +11,7 @@ import { useSession } from "@/lib/session";
 import { useData } from "@/lib/use-data";
 
 const LANGS = [
-  ["auto", "Same as the customer"],
+  ["auto", msg("Same as the customer")],
   ["en", "English"],
   ["de", "German"],
   ["fr", "French"],
@@ -107,7 +107,7 @@ export default function ChatbotSettings() {
         actions={
           manage ? (
             <>
-              <Button onClick={() => save({ status: bot.status === "active" ? "paused" : "active" }, bot.status === "active" ? "Chatbot paused." : "Chatbot is live.")}>
+              <Button onClick={() => save({ status: bot.status === "active" ? "paused" : "active" }, bot.status === "active" ? tr("Chatbot paused.") : tr("Chatbot is live."))}>
                 {bot.status === "active" ? tr("Pause") : tr("Resume")}
               </Button>
               <Button variant="primary" busy={busy} onClick={saveAll}>
@@ -269,7 +269,7 @@ export default function ChatbotSettings() {
                 </label>
                 {manage ? (
                   <div style={{ marginTop: 12 }}>
-                    <Button busy={busy} onClick={() => save({ allowed_domains: domains.split(/[\n,]/).map((d) => d.trim()).filter(Boolean) }, "Domains saved.")}>
+                    <Button busy={busy} onClick={() => save({ allowed_domains: domains.split(/[\n,]/).map((d) => d.trim()).filter(Boolean) }, tr("Domains saved."))}>
                       {tr("Save domains")}
                     </Button>
                   </div>

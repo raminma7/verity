@@ -1,6 +1,6 @@
 "use client";
 
-import { t as tr } from "@/i18n";
+import { intlLocale, t as tr } from "@/i18n";
 import { useEffect, useState } from "react";
 
 import { Badge, Banner, Button, Card, EmptyState, Field, Segmented, Select, Spinner, Switch } from "@/components/ui";
@@ -76,11 +76,11 @@ export default function RoutingSettingsPage() {
   }, [settings.data]);
 
   const catOpts = (cats.data ?? []).map((c) => ({ value: c.id, label: c.name }));
-  const catName = (id: string) => cats.data?.find((c) => c.id === id)?.name ?? "a deleted category";
+  const catName = (id: string) => cats.data?.find((c) => c.id === id)?.name ?? tr("a deleted category");
   const teamList = teams.data?.items ?? [];
   const people = members.data?.items ?? [];
-  const personName = (id?: string) => people.find((p) => p.user_id === id)?.name ?? "someone who can’t take tickets";
-  const teamName = (id?: string) => teamList.find((t) => t.id === id)?.name ?? "a deleted team";
+  const personName = (id?: string) => people.find((p) => p.user_id === id)?.name ?? tr("someone who can’t take tickets");
+  const teamName = (id?: string) => teamList.find((t) => t.id === id)?.name ?? tr("a deleted team");
 
   async function act(key: string, fn: () => Promise<unknown>, ok?: string) {
     setBusy(key);
@@ -104,15 +104,16 @@ export default function RoutingSettingsPage() {
 
   function describe(r: RoutingRule) {
     const c = r.conditions;
+    const or = (xs: string[]) => new Intl.ListFormat(intlLocale(), { type: "disjunction" }).format(xs);
     const parts = [
-      c.sources?.length ? `from ${c.sources.map((s) => SOURCE[s as keyof typeof SOURCE] ?? s).join(" or ")}` : "",
-      c.category_ids?.length ? `in ${c.category_ids.map(catName).join(" or ")}` : "",
-      c.priorities?.length ? `${c.priorities.map((p) => PRIORITY[p as keyof typeof PRIORITY]?.label ?? p).join(" or ")} priority` : "",
-      c.keywords?.length ? `mentioning ${c.keywords.map((k) => `“${k}”`).join(" or ")}` : "",
-      c.requester_domains?.length ? `from @${c.requester_domains.join(", @")}` : "",
+      c.sources?.length ? tr("from {sources}", { sources: or(c.sources.map((s) => tr(SOURCE[s as keyof typeof SOURCE] ?? s))) }) : "",
+      c.category_ids?.length ? tr("in {categories}", { categories: or(c.category_ids.map(catName)) }) : "",
+      c.priorities?.length ? tr("{priorities} priority", { priorities: or(c.priorities.map((p) => tr(PRIORITY[p as keyof typeof PRIORITY]?.label ?? p))) }) : "",
+      c.keywords?.length ? tr("mentioning {words}", { words: or(c.keywords.map((k) => `“${k}”`)) }) : "",
+      c.requester_domains?.length ? tr("from {domains}", { domains: or(c.requester_domains.map((d) => `@${d}`)) }) : "",
     ].filter(Boolean);
-    const to = r.action.team_id ? `team “${teamName(r.action.team_id)}”` : personName(r.action.assignee_id);
-    return `${parts.length ? `Tickets ${parts.join(", ")}` : "Every ticket"} → ${to}`;
+    const to = r.action.team_id ? tr("team “{team}”", { team: teamName(r.action.team_id) }) : personName(r.action.assignee_id);
+    return parts.length ? tr("Tickets {conditions} → {to}", { conditions: parts.join(", "), to }) : tr("Every ticket → {to}", { to });
   }
 
   if (teams.loading && !teams.data) return <Spinner />;
@@ -365,7 +366,7 @@ export default function RoutingSettingsPage() {
                   <td>
                     {configure ? (
                       <Select
-                        ariaLabel={`Add a category ${p.name} handles first`}
+                        ariaLabel={tr("Add a category {name} handles first", { name: p.name })}
                         value=""
                         onChange={(v) => v && act(`s-${p.user_id}`, () => api.put(`/routing/members/${p.user_id}`, { skills: [...p.skills, v] }))}
                         options={[{ value: "", label: p.skills.length ? p.skills.map(catName).join(", ") : tr("Any category") }, ...catOpts.filter((c) => !p.skills.includes(c.value)).map((c) => ({ value: c.value, label: `+ ${tr(c.label)}` }))]}

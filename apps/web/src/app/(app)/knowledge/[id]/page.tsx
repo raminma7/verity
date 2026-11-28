@@ -96,7 +96,7 @@ export default function SourcePage() {
         actions={
           manage ? (
             <>
-              <Button icon="refresh" disabled={active} onClick={() => act(() => api.post(`/knowledge/sources/${s.id}/reprocess`), web ? "Re-sync started." : "Reprocessing started.")}>
+              <Button icon="refresh" disabled={active} onClick={() => act(() => api.post(`/knowledge/sources/${s.id}/reprocess`), web ? tr("Re-sync started.") : tr("Reprocessing started."))}>
                 {web ? tr("Re-sync now") : tr("Reprocess")}
               </Button>
               <Button
@@ -252,7 +252,7 @@ function WebsiteSettings({ source, onSaved }: { source: Source; onSaved: () => v
           setMsg(null);
           try {
             await api.patch(`/knowledge/sources/${source.id}`, { sync_interval: sync, max_depth: Number(depth), include_paths: lines(include), exclude_paths: lines(exclude) });
-            setMsg("Saved. Changes apply from the next sync.");
+            setMsg(tr("Saved. Changes apply from the next sync."));
             onSaved();
           } catch (e2) {
             setMsg(errorText(e2));

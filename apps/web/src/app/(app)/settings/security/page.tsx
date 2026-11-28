@@ -12,7 +12,7 @@ import { useData } from "@/lib/use-data";
 type Sess = { id: string; ip: string | null; user_agent: string | null; created_at: string; last_seen_at: string; current: boolean };
 
 function browser(ua: string | null) {
-  if (!ua) return "Unknown device";
+  if (!ua) return t("Unknown device");
   const b = /Edg\//.test(ua) ? "Edge" : /Chrome\//.test(ua) ? "Chrome" : /Firefox\//.test(ua) ? "Firefox" : /Safari\//.test(ua) ? "Safari" : "Browser";
   const os = /Windows/.test(ua) ? "Windows" : /Mac OS X/.test(ua) ? "macOS" : /Android/.test(ua) ? "Android" : /iPhone|iPad/.test(ua) ? "iOS" : /Linux/.test(ua) ? "Linux" : "";
   return os ? `${b} on ${os}` : b;

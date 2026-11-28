@@ -48,7 +48,7 @@ export default function EmailSettingsPage() {
   if (!manage) return <Banner tone="neutral">{t("Your role can’t change email settings.")}</Banner>;
   if (!data.data || !reply) return data.error ? <Banner tone="danger">{data.error.message}</Banner> : <Spinner />;
   const s = data.data;
-  const ws = current?.workspace.name ?? "your workspace";
+  const ws = current?.workspace.name ?? t("your workspace");
   const boxes = (accounts.data?.items ?? []).filter((a) => a.status !== "disconnected");
 
   async function save(key: string, patch: Record<string, unknown>, ok = "Saved.") {
@@ -72,7 +72,7 @@ export default function EmailSettingsPage() {
           className="vr-form"
           onSubmit={(e) => {
             e.preventDefault();
-            save("reply", { auto_reply: reply }, "Automatic reply saved.");
+            save("reply", { auto_reply: reply }, t("Automatic reply saved."));
           }}
         >
           <p className="vr-muted" style={{ margin: 0 }}>
@@ -122,7 +122,7 @@ export default function EmailSettingsPage() {
               {t("Save automatic reply")}
             </Button>
             {reply.mode === "ai" ? (
-              <Select label={t("Model")} value={s.model} onChange={(v) => save("model", { model: v }, "Model saved.")} options={s.models.map((m) => ({ value: m, label: m }))} />
+              <Select label={t("Model")} value={s.model} onChange={(v) => save("model", { model: v }, t("Model saved."))} options={s.models.map((m) => ({ value: m, label: m }))} />
             ) : null}
           </div>
           <p className="vr-help" style={{ margin: 0 }}>
@@ -164,7 +164,7 @@ export default function EmailSettingsPage() {
           className="vr-form"
           onSubmit={(e) => {
             e.preventDefault();
-            save("lists", { allow_senders: lines(allow), block_senders: lines(block) }, "Sender lists saved.");
+            save("lists", { allow_senders: lines(allow), block_senders: lines(block) }, t("Sender lists saved."));
           }}
         >
           <Switch

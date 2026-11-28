@@ -31,7 +31,7 @@ function Return() {
             return;
           }
           if (c.status === "expired" || c.status === "failed") {
-            setFailed(c.status === "expired" ? "This checkout expired before it was paid." : "The payment didn’t go through.");
+            setFailed(c.status === "expired" ? t("This checkout expired before it was paid.") : t("The payment didn’t go through."));
             return;
           }
         } catch {

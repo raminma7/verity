@@ -130,7 +130,7 @@ export default function RetrievalSettings() {
                 <PipelineTrace steps={results.trace} />
                 {results.results.map((r, i) => (
                   <div key={r.chunk_id} style={{ opacity: r.kept ? 1 : 0.5 }}>
-                    <SourceCard n={r.kept ? i + 1 : undefined} type={r.type} title={r.title} section={`${r.section ? `${r.section} · ` : ""}${r.kept ? "used" : "below cut-off"}`} score={r.relevance} excerpt={r.content.slice(0, 280)} />
+                    <SourceCard n={r.kept ? i + 1 : undefined} type={r.type} title={r.title} section={`${r.section ? `${r.section} · ` : ""}${r.kept ? t("used") : t("below cut-off")}`} score={r.relevance} excerpt={r.content.slice(0, 280)} />
                   </div>
                 ))}
               </div>

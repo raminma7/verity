@@ -46,7 +46,7 @@ export default function TestPortal() {
           <Segmented
             label={t("Test card")}
             value={card}
-            onChange={(v) => run("card", () => api.put("/billing/test-card", { card: v }), v === "ok" ? "The test card now approves payments." : "The test card now declines payments.")}
+            onChange={(v) => run("card", () => api.put("/billing/test-card", { card: v }), v === "ok" ? t("The test card now approves payments.") : t("The test card now declines payments."))}
             options={[
               { value: "ok", label: t("Test card that pays") },
               { value: "declines", label: t("Use a card that declines") },

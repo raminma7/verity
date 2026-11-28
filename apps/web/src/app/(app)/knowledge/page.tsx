@@ -15,7 +15,7 @@ import { useData } from "@/lib/use-data";
 function of(used: number, limit: number, noun: string) {
   if (limit < 0) return `Unlimited ${noun}`;
   const left = Math.max(0, limit - used);
-  return left === 0 ? `Plan limit of ${fmt(limit)} reached` : `${fmt(left)} of ${fmt(limit)} left on your plan`;
+  return left === 0 ? tr("Plan limit of {limit} reached", { limit: fmt(limit) }) : tr("{left} of {limit} left on your plan", { left: fmt(left), limit: fmt(limit) });
 }
 
 export default function KnowledgeBase() {

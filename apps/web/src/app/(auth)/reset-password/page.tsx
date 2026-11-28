@@ -49,7 +49,7 @@ function Reset() {
       </div>
       {f.error ? <Banner tone="danger">{f.error}</Banner> : null}
       <Field label={t("New password")} name="password" type="password" autoComplete="new-password" value={password} onChange={(e) => setPassword(e.target.value)} error={f.fieldErrors.password} help={t("At least 10 characters, with upper and lower case letters and a number.")} />
-      <Field label={t("Confirm new password")} name="confirm" type="password" autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} error={mismatch ? "The passwords don’t match." : null} />
+      <Field label={t("Confirm new password")} name="confirm" type="password" autoComplete="new-password" value={confirm} onChange={(e) => setConfirm(e.target.value)} error={mismatch ? t("The passwords don’t match.") : null} />
       <Button type="submit" variant="primary" size="lg" busy={f.busy} disabled={!password || mismatch}>
         {t("Save password")}
       </Button>

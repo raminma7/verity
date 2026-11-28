@@ -45,7 +45,7 @@ export default function AddKnowledge() {
       list.map(async (f, i) => {
         const key = fresh[i].key;
         let patch: Partial<Item>;
-        if (f.size > max) patch = { error: `Larger than ${stats.data?.max_upload_mb ?? 25} MB.` };
+        if (f.size > max) patch = { error: tr("Larger than {v} MB.", { v: stats.data?.max_upload_mb ?? 25 }) };
         else {
           try {
             patch = { source: await api.upload<Source>("/knowledge/files", f) };
@@ -157,7 +157,7 @@ function QueueRow({ item }: { item: Item }) {
         : s.status === "failed"
           ? s.error_message
           : s.status === "processing"
-            ? "Parsing, chunking and embedding…"
+            ? tr("Parsing, chunking and embedding…")
             : "Waiting for a worker…";
   return (
     <div style={{ gap: 14 }}>

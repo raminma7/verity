@@ -13,7 +13,7 @@ import { useData } from "@/lib/use-data";
 
 function greeting() {
   const h = new Date().getHours();
-  return h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening";
+  return h < 12 ? t("Good morning") : h < 18 ? t("Good afternoon") : t("Good evening");
 }
 
 function Step({ done, icon, title, body, href, cta, soon }: { done?: boolean; icon: IconName; title: string; body: string; href?: string; cta?: string; soon?: string }) {
@@ -130,10 +130,10 @@ function Dashboard() {
       <section style={{ display: "flex", flexDirection: "column", gap: 12 }}>
         <span className="vr-eyebrow">{t("Set up your workspace")}</span>
         <div className="vr-grid vr-grid-4">
-          <Step done={subscribed} icon="card" title={t("Choose a plan")} body="Pick the allowance and limits that fit your support volume." href="/plans" cta="Compare plans" />
-          <Step done={current.usage.seats > 1} icon="users" title={t("Invite your team")} body="Add administrators, support agents and viewers." href="/members" cta="Invite people" />
-          <Step icon="book" title={t("Add knowledge")} body="Upload documents and crawl your help centre so answers cite real sources." soon="Phase 2" />
-          <Step icon="chat" title={t("Install the chatbot")} body="Embed one script on your site and start answering customers." soon="Phase 2" />
+          <Step done={subscribed} icon="card" title={t("Choose a plan")} body={t("Pick the allowance and limits that fit your support volume.")} href="/plans" cta={t("Compare plans")} />
+          <Step done={current.usage.seats > 1} icon="users" title={t("Invite your team")} body={t("Add administrators, support agents and viewers.")} href="/members" cta={t("Invite people")} />
+          <Step icon="book" title={t("Add knowledge")} body={t("Upload documents and crawl your help centre so answers cite real sources.")} href="/knowledge" cta={t("Add documents or a website")} />
+          <Step icon="chat" title={t("Install the chatbot")} body={t("Embed one script on your site and start answering customers.")} href="/chatbots" cta={t("New chatbot")} />
         </div>
       </section>
 

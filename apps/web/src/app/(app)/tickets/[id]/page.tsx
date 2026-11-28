@@ -374,38 +374,41 @@ function TimelineItem({
       </div>
     );
   const who = e.author ?? "Verity";
-  const label = (s: unknown) => STATUS[s as keyof typeof STATUS]?.label ?? String(s);
+  const label = (s: unknown) => tr(STATUS[s as keyof typeof STATUS]?.label ?? String(s));
+  const team = e.data.team ?? "";
   const text =
     e.kind === "created"
       ? e.data.source === "chatbot_form"
-        ? `Opened from the chatbot form “${e.data.form ?? formName ?? "form"}”.`
+        ? tr("Opened from the chatbot form “{form}”.", { form: e.data.form ?? formName ?? tr("form") })
         : e.data.source === "email"
-          ? "Opened from an incoming email."
-        : e.data.source === "conversation"
-          ? `${who} turned a chat conversation into this ticket.`
-          : `${who} opened this ticket.`
+          ? tr("Opened from an incoming email.")
+          : e.data.source === "conversation"
+            ? tr("{who} turned a chat conversation into this ticket.", { who })
+            : tr("{who} opened this ticket.", { who })
       : e.kind === "status"
-        ? `${who} changed the status from ${label(e.data.from)} to ${label(e.data.to)}.`
+        ? tr("{who} changed the status from {from} to {to}.", { who, from: label(e.data.from), to: label(e.data.to) })
         : e.kind === "priority"
-          ? `${who} set the priority to ${PRIORITY[e.data.to as keyof typeof PRIORITY]?.label ?? e.data.to}.`
+          ? tr("{who} set the priority to {priority}.", { who, priority: tr(PRIORITY[e.data.to as keyof typeof PRIORITY]?.label ?? String(e.data.to)) })
           : e.kind === "category"
-            ? `${who} moved it to ${catName(e.data.to)}.`
+            ? tr("{who} moved it to {category}.", { who, category: catName(e.data.to) })
             : e.kind === "assignment"
               ? e.data.to
-                ? `${who} assigned it to ${personName(e.data.to)}.`
-                : `${who} unassigned it.`
+                ? tr("{who} assigned it to {person}.", { who, person: personName(e.data.to) })
+                : tr("{who} unassigned it.", { who })
               : e.kind === "reopened"
-                ? "Reopened: the customer replied."
+                ? tr("Reopened: the customer replied.")
                 : e.kind === "routed"
                   ? e.data.assignee
-                    ? `Routed to ${e.data.assignee}${e.data.team ? ` in ${e.data.team}` : ""} (${e.data.reason}).`
-                    : e.data.team
-                      ? `Routed to ${e.data.team}’s queue: ${e.data.reason}.`
-                      : `Not routed: ${e.data.reason}.`
+                    ? team
+                      ? tr("Routed to {person} in {team} ({reason}).", { person: e.data.assignee, team, reason: e.data.reason })
+                      : tr("Routed to {person} ({reason}).", { person: e.data.assignee, reason: e.data.reason })
+                    : team
+                      ? tr("Routed to the {team} queue: {reason}.", { team, reason: e.data.reason })
+                      : tr("Not routed: {reason}.", { reason: e.data.reason })
                   : e.kind === "team"
                     ? e.data.to
-                      ? `${who} moved it to the team ${e.data.team ?? ""}.`
-                      : `${who} removed it from its team.`
+                      ? tr("{who} moved it to the team {team}.", { who, team })
+                      : tr("{who} removed it from its team.", { who })
                     : e.kind;
   return (
     <div className="vr-event" role="note">

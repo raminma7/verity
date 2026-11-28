@@ -90,7 +90,7 @@ export function SlaTargets() {
         </div>
         {edit ? (
           <div className="vr-actions">
-            <Button variant="primary" busy={busy} onClick={() => save(form, "Targets saved. Analytics uses them from now on, for past tickets too.")}>
+            <Button variant="primary" busy={busy} onClick={() => save(form, t("Targets saved. Analytics uses them from now on, for past tickets too."))}>
               {t("Save targets")}
             </Button>
             <Button
@@ -98,7 +98,7 @@ export function SlaTargets() {
               disabled={busy}
               onClick={() => {
                 const defaults = Object.fromEntries(PRIORITIES.map(([p]) => [p, { frt: String(d.data!.defaults[p].first_response_minutes / 60), res: String(d.data!.defaults[p].resolution_minutes / 60) }]));
-                save(defaults, "Default targets restored.");
+                save(defaults, t("Default targets restored."));
               }}
             >
               {t("Restore defaults")}

@@ -9,15 +9,21 @@ import { AnswerCard, CitedText, PipelineTrace, SourceCard } from "./rag";
 import { Badge, dateTime, Segmented } from "./ui";
 
 export const EVENT_TEXT: Record<string, (m: ChatMessage) => string> = {
-  escalated: (m) => `Handed to the team${m.data.reason === "no_answer" ? " (no answer found)" : m.data.reason === "ai_unavailable" ? " (AI unavailable)" : ""}. The assistant stays quiet until it’s resolved.`,
-  agent_joined: (m) => `${m.data.name ?? "A team member"} joined the conversation.`,
-  resolved: (m) => `${m.data.name ?? "The team"} resolved the conversation. The assistant answers new messages again.`,
+  escalated: (m) =>
+    m.data.reason === "no_answer"
+      ? t("Handed to the team (no answer found). The assistant stays quiet until it’s resolved.")
+      : m.data.reason === "ai_unavailable"
+        ? t("Handed to the team (AI unavailable). The assistant stays quiet until it’s resolved.")
+        : t("Handed to the team. The assistant stays quiet until it’s resolved."),
+  agent_joined: (m) => (m.data.name ? t("{name} joined the conversation.", { name: m.data.name }) : t("A team member joined the conversation.")),
+  resolved: (m) =>
+    m.data.name ? t("{name} resolved the conversation. The assistant answers new messages again.", { name: m.data.name }) : t("The team resolved the conversation. The assistant answers new messages again."),
   ticket_created: (m) =>
     m.data.reason === "agent_conversion"
-      ? `Turned into ticket #${m.data.ticket_number}.`
+      ? t("Turned into ticket #{n}.", { n: m.data.ticket_number })
       : m.data.reason === "handoff_timeout"
-        ? `Nobody replied in time: ticket #${m.data.ticket_number} opened with the visitor’s email. The assistant has the chat again.`
-        : `The customer sent a form: ticket #${m.data.ticket_number}. The assistant has the chat again.`,
+        ? t("Nobody replied in time: ticket #{n} opened with the visitor’s email. The assistant has the chat again.", { n: m.data.ticket_number })
+        : t("The customer sent a form: ticket #{n}. The assistant has the chat again.", { n: m.data.ticket_number }),
 };
 
 /** An assistant answer: AnswerCard with cited text; clicking a citation selects its source. */

@@ -9,7 +9,7 @@ import type { ApiTool, ToolCallStatus } from "@/lib/api";
 const TOOL_STATUS: Record<ApiTool["status"], [Tone, string]> = {
   active: ["brand", "Active"],
   draft: ["neutral", "Draft"],
-  disabled: ["warn", "Turned off"],
+  disabled: ["warn", msg("Turned off")],
 };
 
 export function ToolStatusBadge({ status }: { status: ApiTool["status"] }) {

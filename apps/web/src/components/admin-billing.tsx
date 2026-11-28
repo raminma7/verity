@@ -266,7 +266,7 @@ export function PlatformReports() {
                     <BarList label={t("Cost by feature")} rows={costs.data.by_feature.map((m) => ({ name: OPS[m.name] ?? m.name, value: m.cost_usd }))} format={usd} />
                   </div>
                 }
-                table={{ columns: ["Model or feature", "Cost (USD)"], rows: [...costs.data.by_model, ...costs.data.by_feature.map((f) => ({ ...f, name: OPS[f.name] ?? f.name }))].map((m) => [m.name, usd(m.cost_usd)]) }}
+                table={{ columns: [t("Model or feature"), "Cost (USD)"], rows: [...costs.data.by_model, ...costs.data.by_feature.map((f) => ({ ...f, name: OPS[f.name] ?? f.name }))].map((m) => [m.name, usd(m.cost_usd)]) }}
               />
             </div>
           ) : null}

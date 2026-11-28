@@ -53,7 +53,7 @@ function Overview() {
           <Button icon="refresh" busy={a.busy === "renew"} onClick={() => a.run("renew", () => api.post<{ renewed: number; canceled: number }>("/admin/jobs/renewals"), (r) => `Renewed ${r.renewed}, ended ${r.canceled}.`).then(o.reload)}>
             {tr("Run renewals")}
           </Button>
-          <Button icon="clock" busy={a.busy === "stale"} onClick={() => a.run("stale", () => api.post<{ released: number }>("/admin/jobs/release-stale-reservations"), (r) => `Released ${r.released} stale token holds.`)}>
+          <Button icon="clock" busy={a.busy === "stale"} onClick={() => a.run("stale", () => api.post<{ released: number }>("/admin/jobs/release-stale-reservations"), (r) => tr("Released {released} stale token holds.", { released: r.released }))}>
             {tr("Release stale holds")}
           </Button>
         </div>
@@ -152,9 +152,9 @@ function Users() {
                         busy={a.busy === u.id}
                         onClick={() => {
                           const next = u.status === "suspended" ? "active" : "suspended";
-                          const reason = next === "suspended" ? prompt(`Why suspend ${u.email}? (kept in the audit log)`) : "";
+                          const reason = next === "suspended" ? prompt(tr("Why suspend {email}? (kept in the audit log)", { email: u.email })) : "";
                           if (reason === null) return;
-                          a.run(u.id, async () => { await api.patch(`/admin/users/${u.id}/status`, { status: next, reason }); await users.reload(); }, next === "suspended" ? `${u.email} suspended and signed out.` : `${u.email} reactivated.`);
+                          a.run(u.id, async () => { await api.patch(`/admin/users/${u.id}/status`, { status: next, reason }); await users.reload(); }, next === "suspended" ? tr("{email} suspended and signed out.", { email: u.email }) : tr("{email} reactivated.", { email: u.email }));
                         }}
                       >
                         {u.status === "suspended" ? tr("Reactivate") : tr("Suspend")}
@@ -221,9 +221,9 @@ function Workspaces() {
                         variant="ghost"
                         size="sm"
                         onClick={() => {
-                          const raw = prompt(`Add (or remove, with a minus) weighted tokens for ${w.name}:`, "100000");
+                          const raw = prompt(tr("Add (or remove, with a minus) weighted tokens for {name}:", { name: w.name }), "100000");
                           if (!raw) return;
-                          const reason = prompt("Reason (kept in the audit log):", "Goodwill credit");
+                          const reason = prompt(tr("Reason (kept in the audit log):"), tr("Goodwill credit"));
                           if (!reason) return;
                           a.run(`t-${w.id}`, async () => { await api.post(`/admin/workspaces/${w.id}/tokens`, { delta: parseInt(raw, 10), reason }); await list.reload(); }, tr("Adjusted {name} by {fmt} tokens.", { name: w.name, fmt: fmt(parseInt(raw, 10)) }));
                         }}
@@ -237,7 +237,7 @@ function Workspaces() {
                       busy={a.busy === w.id}
                       onClick={() => {
                         const next = w.status === "active" ? "suspended" : "active";
-                        const reason = next === "suspended" ? prompt(`Why suspend ${w.name}?`) : "";
+                        const reason = next === "suspended" ? prompt(tr("Why suspend {name}?", { name: w.name })) : "";
                         if (reason === null) return;
                         a.run(w.id, async () => { await api.patch(`/admin/workspaces/${w.id}/status`, { status: next, reason }); await list.reload(); });
                       }}

@@ -21,7 +21,7 @@ export default function Invite() {
   const f = useForm();
 
   useEffect(() => {
-    api.get<Preview>(`/invitations/${token}`).then(setPreview).catch((e) => setProblem(e instanceof ApiError ? e.message : "This invitation can’t be opened."));
+    api.get<Preview>(`/invitations/${token}`).then(setPreview).catch((e) => setProblem(e instanceof ApiError ? e.message : t("This invitation can’t be opened.")));
     api.get<{ user: User }>("/auth/session").then((r) => setMe(r.user)).catch(() => setMe(null));
   }, [token]);
 

@@ -1,6 +1,6 @@
 "use client";
 
-import { t as tr, tp } from "@/i18n";
+import { t as tr, tp, msg } from "@/i18n";
 /**
  * Verity design system: the Ask, Sources and Library components (QueryBar, AnswerCard, Citation,
  * SourceCard, RelevanceMeter, PipelineTrace, DocumentRow, FileTag), ported from the design system bundle
@@ -99,17 +99,17 @@ export function SourceCard({
 export type Confidence = "high" | "medium" | "low" | "none" | null | undefined;
 
 const CONF: Record<string, [tone: "brand" | "warn" | "danger" | "neutral", label: string]> = {
-  high: ["brand", "High confidence"],
-  medium: ["warn", "Partial evidence"],
-  low: ["danger", "Low confidence"],
-  none: ["danger", "No sources found"],
+  high: ["brand", msg("High confidence")],
+  medium: ["warn", msg("Partial evidence")],
+  low: ["danger", msg("Low confidence")],
+  none: ["danger", msg("No sources found")],
 };
 
 export function ConfidenceBadge({ confidence }: { confidence: Confidence }) {
   const c = CONF[confidence ?? "none"] ?? CONF.none;
   return (
     <Badge tone={c[0]} dot>
-      {c[1]}
+      {tr(c[1])}
     </Badge>
   );
 }
@@ -204,8 +204,8 @@ export function CitedText({
 }
 
 export function QueryBar({
-  placeholder = "Ask a question about your documents…",
-  hint = "⏎ to ask",
+  placeholder = tr("Ask a question about your documents…"),
+  hint = tr("⏎ to ask"),
   scopes,
   rows = 2,
   busy,

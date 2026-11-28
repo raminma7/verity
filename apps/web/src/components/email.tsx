@@ -51,23 +51,31 @@ export const HELD_REASON: Record<string, { label: string; tone: Tone }> = {
 };
 
 const RULE_WORDS: Record<string, string> = {
-  spam_flag_header: "the receiving server flagged it as spam",
-  authentication_failed: "the sender’s domain didn’t authenticate it (SPF and DMARC/DKIM failed)",
-  block_list: "the sender is on your block list",
-  list_unsubscribe: "it has an unsubscribe link",
-  list_id: "it was sent to a mailing list",
-  precedence_bulk: "it was sent as bulk mail",
-  sender_rate_limit: "this sender sent more new requests than the hourly limit",
+  spam_flag_header: msg("the receiving server flagged it as spam"),
+  authentication_failed: msg("the sender’s domain didn’t authenticate it (SPF and DMARC/DKIM failed)"),
+  block_list: msg("the sender is on your block list"),
+  list_unsubscribe: msg("it has an unsubscribe link"),
+  list_id: msg("it was sent to a mailing list"),
+  precedence_bulk: msg("it was sent as bulk mail"),
+  sender_rate_limit: msg("this sender sent more new requests than the hourly limit"),
 };
 
-/** Why a message is held, in words: the rules that matched and whether the AI decided. */
+/** Why a message is held, in words: the rules that matched and who decided (a rule, the spam filter or the AI). */
 export function heldReason(m: HeldEmail): string {
-  const hits = (m.verdict.rules ?? []).map((r) => RULE_WORDS[r] ?? (r.startsWith("esp:") ? "it came from a bulk-mail service" : r.startsWith("word:") ? `it says “${r.slice(5)}”` : r));
-  const unique = Array.from(new Set(hits));
-  if (m.verdict.decided_by === "ai") {
-    return unique.length ? `The AI judged it ${m.status === "spam" ? "spam" : "promotional"}; also, ${unique.join("; ")}.` : `The AI judged it ${m.status === "spam" ? "spam" : "promotional"}.`;
+  const hits = (m.verdict.rules ?? []).map((r) =>
+    RULE_WORDS[r] ? t(RULE_WORDS[r]) : r.startsWith("esp:") ? t("it came from a bulk-mail service") : r.startsWith("word:") ? t("it says “{word}”", { word: r.slice(5) }) : r,
+  );
+  const reasons = Array.from(new Set(hits)).join("; ");
+  const spam = m.status === "spam";
+  if (m.verdict.decided_by === "model" && m.verdict.model) {
+    const percent = Math.round(m.verdict.model.p_spam * 100);
+    return reasons ? t("The spam filter rated it {percent}% likely to be spam; also, {reasons}.", { percent, reasons }) : t("The spam filter rated it {percent}% likely to be spam.", { percent });
   }
-  return unique.length ? `Held because ${unique.join("; ")}.` : "Held by a rule.";
+  if (m.verdict.decided_by === "ai") {
+    if (reasons) return spam ? t("The AI judged it spam; also, {reasons}.", { reasons }) : t("The AI judged it promotional; also, {reasons}.", { reasons });
+    return spam ? t("The AI judged it spam.") : t("The AI judged it promotional.");
+  }
+  return reasons ? t("Held because {reasons}.", { reasons }) : t("Held by a rule.");
 }
 
 const BLOCKED: Record<string, string> = {
@@ -142,15 +150,15 @@ const DELIVERY: Record<string, { label: string; tone: Tone }> = {
 
 const OUT_KIND: Record<string, string> = {
   auto_reply: msg("Automatic first reply"),
-  agent_reply: "replied by email",
-  chat_reply: "chat reply, also sent by email",
+  agent_reply: msg("replied by email"),
+  chat_reply: msg("chat reply, also sent by email"),
   form_confirmation: msg("Confirmation email"),
 };
 
 /** One email of a ticket's thread: who wrote, to whom, the body, attachments and (for outgoing mail) delivery. */
 export function EmailCard({ m, author, onRetry, retrying }: { m: TicketEmail; author?: string | null; onRetry?: () => void; retrying?: boolean }) {
   const out = m.direction === "out";
-  const who = out ? (m.kind === "agent_reply" || m.kind === "chat_reply" ? author ?? "Team" : OUT_KIND[m.kind ?? ""] ?? "Verity") : m.from_name || m.from_addr;
+  const who = out ? (m.kind === "agent_reply" || m.kind === "chat_reply" ? author ?? t("Team") : t(OUT_KIND[m.kind ?? ""] ?? "Verity")) : m.from_name || m.from_addr;
   const d = DELIVERY[m.status];
   return (
     <article className={cx("vr-tl-item", "vr-mail", out ? "is-agent" : "is-customer")} aria-label={out ? t("Email sent") : t("Email received")}>
@@ -158,7 +166,7 @@ export function EmailCard({ m, author, onRetry, retrying }: { m: TicketEmail; au
         <Icon name="mail" size={14} />
         <span className="vr-tl-meta">
           <b>{who}</b>
-          {out && (m.kind === "agent_reply" || m.kind === "chat_reply") ? ` ${OUT_KIND[m.kind]}` : out ? "" : ` ${t("wrote by email")}`} ·{" "}
+          {out && (m.kind === "agent_reply" || m.kind === "chat_reply") ? ` ${t(OUT_KIND[m.kind])}` : out ? "" : ` ${t("wrote by email")}`} ·{" "}
           <span className="vr-mono">{dateTime(m.sent_at ?? m.received_at ?? m.created_at)}</span>
         </span>
         {out && d ? (

@@ -508,7 +508,7 @@ export type HeldEmail = {
   to: string[];
   subject: string;
   snippet: string;
-  verdict: { rules?: string[]; decided_by?: "rules" | "ai"; ai_used?: boolean; confidence?: string; ai_note?: string; loop?: string[] };
+  verdict: { rules?: string[]; decided_by?: "rules" | "ai" | "model"; model?: { p_spam: number }; ai_used?: boolean; confidence?: string; ai_note?: string; loop?: string[] };
   ticket_id: string | null;
   received_at: string | null;
   text?: string;

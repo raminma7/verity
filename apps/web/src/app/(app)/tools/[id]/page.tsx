@@ -161,7 +161,7 @@ export default function ToolEditor() {
         await api.patch(`/tools/${id}`, { status });
         await tool.reload();
       },
-      status === "active" ? "The tool is on. Link it to a chatbot under Chatbots → API tools." : "The tool is off and no chatbot offers it.",
+      status === "active" ? tr("The tool is on. Link it to a chatbot under Chatbots → API tools.") : tr("The tool is off and no chatbot offers it."),
     );
 
   const test = () =>
