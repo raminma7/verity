@@ -1,11 +1,13 @@
 import { t } from "@/i18n";
 import Link from "next/link";
 
+import { Logo } from "@/components/logo";
+
 export default function NotFound() {
   return (
     <main className="vr-auth-form" style={{ minHeight: "100vh" }}>
       <div className="vr-auth-box">
-        <span className="vr-logo">{t("Verity")}</span>
+        <Logo />
         <div className="vr-auth-title">
           <h1 className="vr-display">{t("Page not found")}</h1>
           <p className="vr-muted">{t("That address doesn’t match any page in Verity.")}</p>

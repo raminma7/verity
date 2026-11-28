@@ -36,7 +36,7 @@ export default async function RootLayout({ children }: { children: ReactNode }) 
         {/* eslint-disable-next-line @next/next/no-page-custom-font */}
         <link
           rel="stylesheet"
-          href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap"
+          href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap"
         />
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>

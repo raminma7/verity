@@ -1,7 +1,7 @@
 /* Verity — generated from tokens.json by scripts/build-tokens.mjs. Do not edit. */
 :root {
   color-scheme: light;
-  --font-display: "Instrument Serif", "Iowan Old Style", Georgia, serif;
+  --font-display: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-sans: "Geist", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
   --font-mono: "Geist Mono", ui-monospace, "SF Mono", Menlo, monospace;
   --space-1: 4px;
@@ -17,8 +17,20 @@
   --radius-pill: 999px;
   --text-display-size: 56px;
   --text-display-line: 60px;
+  --text-display-weight: 600;
+  --text-display-tracking: -0.035em;
   --text-title-size: 32px;
   --text-title-line: 38px;
+  --text-title-weight: 600;
+  --text-title-tracking: -0.025em;
+  --text-h1-size: 40px;
+  --text-h1-line: 44px;
+  --text-h1-weight: 600;
+  --text-h1-tracking: -0.025em;
+  --text-question-size: 28px;
+  --text-question-line: 34px;
+  --text-question-weight: 600;
+  --text-question-tracking: -0.02em;
   --text-heading-size: 18px;
   --text-heading-line: 26px;
   --text-answer-size: 16px;
@@ -52,6 +64,9 @@
   --warn-soft: #fbecd9;
   --danger: #b42318;
   --danger-soft: #fbe4e1;
+  --logo-bubble-1: #0d6655;
+  --logo-bubble-2: #15171a;
+  --logo-wordmark: #15171a;
   --focus: var(--brand);
   --shadow-raised: 0 1px 2px rgba(21,23,26,0.06), 0 4px 16px rgba(21,23,26,0.05);
   --shadow-pop: 0 8px 32px rgba(21,23,26,0.14);
@@ -76,6 +91,9 @@
     --warn-soft: #33230b;
     --danger: #ff7a6b;
     --danger-soft: #3a1512;
+    --logo-bubble-1: #4fd6b9;
+    --logo-bubble-2: #f5f3ed;
+    --logo-wordmark: #eef0ea;
     --focus: var(--brand);
     --shadow-raised: 0 1px 2px rgba(0,0,0,0.5), 0 4px 16px rgba(0,0,0,0.35);
     --shadow-pop: 0 8px 32px rgba(0,0,0,0.6);
@@ -100,6 +118,9 @@
   --warn-soft: #33230b;
   --danger: #ff7a6b;
   --danger-soft: #3a1512;
+  --logo-bubble-1: #4fd6b9;
+  --logo-bubble-2: #f5f3ed;
+  --logo-wordmark: #eef0ea;
   --focus: var(--brand);
   --shadow-raised: 0 1px 2px rgba(0,0,0,0.5), 0 4px 16px rgba(0,0,0,0.35);
   --shadow-pop: 0 8px 32px rgba(0,0,0,0.6);

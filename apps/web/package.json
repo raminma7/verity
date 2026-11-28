@@ -10,6 +10,7 @@
     "typecheck": "tsc --noEmit",
     "test:e2e": "playwright test --trace off",
     "tokens": "node scripts/build-tokens.mjs",
+    "icons": "node scripts/build-icons.mjs",
     "i18n": "node scripts/i18n.cjs"
   },
   "dependencies": {

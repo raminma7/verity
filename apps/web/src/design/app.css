@@ -26,6 +26,11 @@ a.vr-btn { text-decoration: none; }
 .vr-caption { font-size: 12px; line-height: 16px; }
 .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
 
+/* Logo: the component sets its own colours; these only lay it out. */
+.vr-logo { display: inline-flex; align-items: center; color: var(--ink); }
+.vr-logo-link { display: inline-flex; text-decoration: none; border-radius: var(--radius-sm); }
+.vr-logo-link:focus-visible { outline: 2px solid var(--focus); outline-offset: 4px; }
+
 /* Shell ------------------------------------------------------------------------------------------ */
 .vr-shell { display: flex; min-height: 100vh; }
 .vr-shell .vr-side { position: sticky; top: 0; height: 100vh; overflow-y: auto; }
@@ -103,7 +108,7 @@ a.vr-btn { text-decoration: none; }
 .vr-plan.is-current { border-color: var(--brand); box-shadow: 0 0 0 1px var(--brand); }
 .vr-plan-head { display: flex; justify-content: space-between; align-items: center; gap: var(--space-2); }
 .vr-plan-price { display: flex; align-items: baseline; gap: 6px; }
-.vr-plan-price .vr-display { font-size: 48px; line-height: 50px; }
+.vr-plan-price .vr-display { font-size: 48px; line-height: 50px; letter-spacing: var(--text-display-tracking); }
 .vr-plan ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; font-size: 14px; }
 .vr-plan li { display: flex; gap: 8px; align-items: flex-start; }
 .vr-plan li .vr-icon { color: var(--brand); margin-top: 3px; }
@@ -149,12 +154,10 @@ a.vr-btn { text-decoration: none; }
 /* Auth ------------------------------------------------------------------------------------------- */
 .vr-auth { display: flex; min-height: 100vh; background: var(--ground); }
 .vr-auth-story { flex: 1; position: relative; overflow: hidden; display: flex; flex-direction: column; justify-content: space-between; padding: var(--space-12); background: var(--brand); color: var(--on-brand); }
-.vr-auth-story .vr-logo { color: var(--on-brand); font-size: 32px; line-height: 36px; }
-.vr-auth-story .vr-logo::after { box-shadow: none; }
 .vr-auth-sheet { position: absolute; right: -40px; top: 120px; width: 380px; padding: 32px; border-radius: 24px; background: var(--highlight); display: flex; flex-direction: column; gap: 14px; transform: rotate(-4deg); }
 .vr-auth-sheet span { height: 10px; border-radius: 5px; background: var(--on-highlight); }
 .vr-auth-pitch { position: relative; display: flex; flex-direction: column; gap: var(--space-4); max-width: 460px; }
-.vr-auth-pitch h2 { font-size: 56px; line-height: 58px; }
+.vr-auth-pitch h2 { font-size: var(--text-display-size); line-height: 58px; letter-spacing: var(--text-display-tracking); }
 .vr-auth-pitch p { font-size: 16px; line-height: 26px; opacity: .9; }
 .vr-auth-form { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: var(--space-8); padding: var(--space-12) var(--space-6); }
 .vr-auth-mobile-logo { display: none; }
@@ -176,7 +179,6 @@ a.vr-btn { text-decoration: none; }
   .vr-shell .vr-side { position: fixed; z-index: 30; inset: 0 auto 0 0; height: 100vh; transform: translateX(-100%); transition: transform .15s; }
   .vr-shell.is-open .vr-side { transform: none; box-shadow: var(--shadow-pop); }
   .vr-topbar { display: flex; align-items: center; justify-content: space-between; gap: var(--space-3); padding: 12px 16px; background: var(--surface); border-bottom: 1px solid var(--line); position: sticky; top: 0; z-index: 10; }
-  .vr-topbar .vr-logo { font-size: 24px; line-height: 28px; }
   .vr-shell .vr-main { padding: var(--space-6) 16px 64px; }
   .vr-grid-2, .vr-grid-3, .vr-grid-4, .vr-form-row, .vr-perms { grid-template-columns: 1fr; }
   .vr-auth-story { display: none; }
@@ -187,6 +189,7 @@ a.vr-btn { text-decoration: none; }
   .vr-kv dd { margin-bottom: 10px; }
   .vr-stat-num { font-size: 32px; line-height: 36px; }
   .vr-title { font-size: 28px; line-height: 34px; }
+  .vr-greet { font-size: var(--text-title-size); line-height: var(--text-title-line); letter-spacing: var(--text-title-tracking); }
   .vr-scrim { position: fixed; inset: 0; z-index: 25; background: rgba(0,0,0,.3); }
 }
 
@@ -647,7 +650,7 @@ a.vr-att:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 .vr-land-section { padding-block: var(--land-gap); scroll-margin-block-start: var(--space-12); }
 .vr-land-section.is-sunken { background: var(--surface-sunken); }
 .vr-land-head-block { display: flex; flex-direction: column; gap: var(--space-3); max-inline-size: calc(var(--space-12) * 14); margin-block-end: var(--space-8); }
-.vr-land-h1 { margin: 0; font-size: var(--text-display-size); line-height: var(--text-display-line); }
+.vr-land-h1 { margin: 0; font-size: var(--text-display-size); line-height: var(--text-display-line); letter-spacing: var(--text-display-tracking); }
 .vr-land-h2 { margin: 0; font-size: var(--text-title-size); line-height: var(--text-title-line); }
 .vr-land-sub, .vr-land-lead { margin: 0; font-size: var(--text-answer-size); line-height: var(--text-answer-line); color: var(--ink-muted); max-inline-size: calc(var(--space-12) * 13); }
 .vr-land-copy { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-4); min-inline-size: 0; }
@@ -702,7 +705,7 @@ a.vr-att:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 .vr-land-limits dt { color: var(--ink-muted); }
 .vr-land-limits dd { margin: 0; }
 .vr-land-note { margin-block-start: var(--space-4); }
-.vr-land .vr-plan-price .vr-display { font-size: var(--text-display-size); line-height: var(--text-display-line); }
+.vr-land .vr-plan-price .vr-display { font-size: var(--text-display-size); line-height: var(--text-display-line); letter-spacing: var(--text-display-tracking); }
 
 /* FAQ: native details, so it works with the keyboard and without script */
 .vr-land-faq-wrap { max-inline-size: calc(var(--space-12) * 17); }
@@ -737,7 +740,7 @@ a.vr-att:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
   .vr-land-hero-grid, .vr-land-feature, .vr-land-contact { grid-template-columns: minmax(0, 1fr); gap: var(--space-8); }
   .vr-land-feature.is-flip .vr-land-visual { order: 0; }
   .vr-land-nav { display: none; }
-  .vr-land-h1 { font-size: var(--text-title-size); line-height: var(--text-title-line); }
+  .vr-land-h1 { font-size: var(--text-title-size); line-height: var(--text-title-line); letter-spacing: var(--text-title-tracking); }
   .vr-land-foot-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 720px) {
@@ -760,3 +763,10 @@ a.vr-att:focus-visible { outline: 2px solid var(--brand); outline-offset: 2px; }
 [lang="ar"] .vr-land :is(.vr-trace-detail, .vr-trace-ms, .vr-answer-meta, .vr-num, .vr-meter-num) { font-family: var(--font-sans); }
 /* The chatbot's own colour is --brand here: text on it uses --on-brand so it reads in both themes. */
 .vr-land :is(.vr-wpreview-head, .vr-wbtn) { color: var(--on-brand); }
+
+/* Dashboard greeting and the upload drop zone's title: display type at sizes of their own. */
+.vr-greet { font-size: var(--text-display-size); line-height: var(--text-display-line); letter-spacing: var(--text-display-tracking); }
+.vr-drop-title { font-size: var(--text-question-size); line-height: var(--text-question-line); letter-spacing: var(--text-question-tracking); }
+
+/* Arabic letters join, so display type is never tracked tighter in right-to-left languages. */
+[dir="rtl"] { --text-display-tracking: 0; --text-title-tracking: 0; --text-h1-tracking: 0; --text-question-tracking: 0; }

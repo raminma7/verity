@@ -100,7 +100,7 @@ export default function AddKnowledge() {
               </svg>
             </span>
             <span style={{ display: "flex", flexDirection: "column", gap: 4 }}>
-              <span className="vr-display" style={{ fontSize: 28, lineHeight: "34px" }}>
+              <span className="vr-display vr-drop-title">
                 {tr("Drop files here")}
               </span>
               <span className="vr-muted">{tr("PDF, DOCX, TXT, CSV or XLSX · up to")} {stats.data?.max_upload_mb ?? 25} {tr("MB each")}</span>

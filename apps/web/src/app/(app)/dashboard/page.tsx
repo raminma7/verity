@@ -77,7 +77,7 @@ function Dashboard() {
         <Badge tone={subscribed ? "brand" : "warn"} dot>
           {subscribed ? t("{plan_name} plan · active", { plan_name: current.subscription!.plan_name }) : t("No active plan")}
         </Badge>
-        <h1 className="vr-display" style={{ fontSize: 56, lineHeight: "60px", letterSpacing: "-0.015em" }}>
+        <h1 className="vr-display vr-greet">
           {greeting()}, {first}.
           <br />
           <span className="vr-muted">{subscribed ? t("Here’s {name}.", { name: current.workspace.name }) : t("Let’s get your workspace ready.")}</span>

@@ -6,6 +6,7 @@ import Link from "next/link";
 import type { ReactNode } from "react";
 
 import type { ChatFormCopy } from "@/components/chat-form";
+import { Logo } from "@/components/logo";
 import { PipelineTrace } from "@/components/rag";
 import { Badge, Icon, type IconName } from "@/components/ui";
 import type { Dict, Locale, Translator } from "@/i18n";
@@ -103,8 +104,8 @@ export function Header({ t, locale }: Pick<Ctx, "t" | "locale">) {
   return (
     <header className="vr-land-head">
       <div className="vr-land-wrap vr-land-head-row">
-        <a className="vr-logo" href={home} aria-label={t("Verity")}>
-          {t("Verity")}
+        <a className="vr-logo-link" href={home}>
+          <Logo size={26} />
         </a>
         <nav className="vr-land-nav" aria-label={t("Main")}>
           <a href={`${home === "/" ? "" : home}#features`}>{t("Features")}</a>
@@ -134,7 +135,7 @@ export function Footer({ t, locale }: Pick<Ctx, "t" | "locale">) {
     <footer className="vr-land-foot">
       <div className="vr-land-wrap vr-land-foot-grid">
         <div className="vr-land-foot-brand">
-          <span className="vr-logo">{t("Verity")}</span>
+          <Logo size={26} />
           <p className="vr-muted">{t("Support answers you can check.")}</p>
         </div>
         <nav aria-label={t("Product")}>
