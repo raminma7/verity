@@ -20,11 +20,14 @@ async function ancestors(key: string): Promise<string[]> {
   if (hit && Date.now() - hit.at < TTL) return hit.ancestors;
   try {
     const r = await fetch(`${apiUrl}/api/widget/${encodeURIComponent(key)}/frame-policy`, { cache: "no-store" });
-    const list = r.ok ? ((await r.json()) as { ancestors: string[] }).ancestors : [];
+    if (!r.ok) throw new Error(`frame-policy answered ${r.status}`);
+    const list = ((await r.json()) as { ancestors: string[] }).ancestors;
     const safe = list.filter((a) => /^https?:\/\/(\*\.)?[a-z0-9.-]+(:\*|:\d+)?$/i.test(a));
     cache.set(key, { at: Date.now(), ancestors: safe });
     return safe;
-  } catch {
+  } catch (e) {
+    // Not cached, so the next request tries again; the widget stays unframable meanwhile. Say why, as this is a setup problem.
+    console.error(`widget frame policy: could not read ${apiUrl}/api/widget/…/frame-policy: ${e instanceof Error ? e.message : e}`);
     return [];
   }
 }

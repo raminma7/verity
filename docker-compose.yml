@@ -75,6 +75,8 @@ services:
         VERITY_API_URL: http://api:8000
     ports: ["3000:3000"]
     environment:
+      # Where the web server itself calls the API (widget frame policy, landing plans and contact form).
+      VERITY_API_URL: http://api:8000
       # Canonical links, hreflang and the sitemap of the public pages; defaults to VERITY_APP_URL's value.
       VERITY_SITE_URL: ${VERITY_SITE_URL:-http://localhost:3000}
       # A chatbot key (vb_…) to show Verity's own chatbot on the landing page; empty for none.
